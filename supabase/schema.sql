@@ -30,8 +30,7 @@ CREATE TABLE fuel_logs (
   cost DECIMAL(10, 2),
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
-  created_by UUID REFERENCES auth.users(id),
-  CONSTRAINT fuel_logs_vehicle_id_fkey FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+  created_by UUID REFERENCES auth.users(id)
 );
 
 -- Service records table
@@ -46,8 +45,7 @@ CREATE TABLE service_records (
   service_provider VARCHAR(200),
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
-  created_by UUID REFERENCES auth.users(id),
-  CONSTRAINT service_records_vehicle_id_fkey FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+  created_by UUID REFERENCES auth.users(id)
 );
 
 -- Issues table
@@ -62,8 +60,7 @@ CREATE TABLE issues (
   resolved_date DATE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
-  created_by UUID REFERENCES auth.users(id),
-  CONSTRAINT issues_vehicle_id_fkey FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+  created_by UUID REFERENCES auth.users(id)
 );
 
 -- Documents table
@@ -76,8 +73,7 @@ CREATE TABLE documents (
   expiration_date DATE,
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
-  created_by UUID REFERENCES auth.users(id),
-  CONSTRAINT documents_vehicle_id_fkey FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+  created_by UUID REFERENCES auth.users(id)
 );
 
 -- Create indexes for better query performance

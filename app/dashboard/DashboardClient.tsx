@@ -16,21 +16,26 @@ interface Vehicle {
   license_plate: string | null
   vin: string | null
   notes: string | null
+  status: string | null
+  driver_id: string | null
 }
 
 interface VehicleWithStats extends Vehicle {
   open_issues_count: number
   expired_documents_count: number
+  driver_name: string | null
 }
 
-type SortField = 'code' | 'current_mileage' | 'oil_status'
+type SortField = 'code' | 'current_mileage' | 'oil_status' | 'status'
 type SortDirection = 'asc' | 'desc'
+type StatusFilter = 'all' | 'active' | 'out_of_service' | 'in_shop'
 
 export default function DashboardClient() {
   const [vehicles, setVehicles] = useState<VehicleWithStats[]>([])
   const [filteredVehicles, setFilteredVehicles] = useState<VehicleWithStats[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [sortField, setSortField] = useState<SortField>('code')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [showImportModal, setShowImportModal] = useState(false)
@@ -43,7 +48,7 @@ export default function DashboardClient() {
 
   useEffect(() => {
     filterAndSortVehicles()
-  }, [vehicles, searchQuery, sortField, sortDirection])
+  }, [vehicles, searchQuery, statusFilter, sortField, sortDirection])
 
   const loadVehicles = async () => {
     try {
@@ -54,6 +59,9 @@ export default function DashboardClient() {
         .order('code', { ascending: true })
 
       if (vehiclesError) throw vehiclesError
+
+      // Fetch drivers
+      const { data: driversData } = await supabase.from('drivers').select('id, first_name, last_name')
 
       // Fetch issues count for each vehicle
       const { data: issuesData, error: issuesError } = await supabase
@@ -72,6 +80,11 @@ export default function DashboardClient() {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
+      const driversMap = new Map()
+      driversData?.forEach((driver) => {
+        driversMap.set(driver.id, `${driver.first_name} ${driver.last_name}`)
+      })
+
       const vehiclesWithStats: VehicleWithStats[] = (vehiclesData || []).map((vehicle) => {
         const openIssues = (issuesData || []).filter(
           (issue) => issue.vehicle_id === vehicle.id && issue.status !== 'resolved'
@@ -86,8 +99,10 @@ export default function DashboardClient() {
 
         return {
           ...vehicle,
+          status: vehicle.status || 'active',
           open_issues_count: openIssues,
           expired_documents_count: expiredDocuments,
+          driver_name: vehicle.driver_id ? driversMap.get(vehicle.driver_id) || null : null,
         }
       })
 
@@ -109,6 +124,14 @@ export default function DashboardClient() {
       )
     }
 
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((vehicle) => {
+        const vehicleStatus = vehicle.status || 'active'
+        return vehicleStatus === statusFilter
+      })
+    }
+
     // Apply sorting
     filtered.sort((a, b) => {
       let aValue: any
@@ -119,6 +142,9 @@ export default function DashboardClient() {
         const bOverdue = b.current_mileage >= b.oil_change_due_mileage
         aValue = aOverdue ? 1 : 0
         bValue = bOverdue ? 1 : 0
+      } else if (sortField === 'status') {
+        aValue = a.status || 'active'
+        bValue = b.status || 'active'
       } else {
         aValue = a[sortField]
         bValue = b[sortField]
@@ -221,46 +247,91 @@ export default function DashboardClient() {
           </div>
         </div>
 
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search by vehicle code..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+        <div className="mb-6 flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Search by vehicle code..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleSort('code')}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${
+                  sortField === 'code'
+                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
+                    : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                Sort by Code {sortField === 'code' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </button>
+              <button
+                onClick={() => handleSort('current_mileage')}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${
+                  sortField === 'current_mileage'
+                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
+                    : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                Sort by Mileage {sortField === 'current_mileage' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </button>
+              <button
+                onClick={() => handleSort('oil_status')}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${
+                  sortField === 'oil_status'
+                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
+                    : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                Sort by Oil Status {sortField === 'oil_status' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </button>
+            </div>
           </div>
+          {/* Status Filters */}
           <div className="flex gap-2">
             <button
-              onClick={() => handleSort('code')}
+              onClick={() => setStatusFilter('all')}
               className={`px-4 py-2 rounded-md text-sm font-medium ${
-                sortField === 'code'
-                  ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
+                statusFilter === 'all'
+                  ? 'bg-indigo-600 text-white'
                   : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
-              Sort by Code {sortField === 'code' && (sortDirection === 'asc' ? '↑' : '↓')}
+              All
             </button>
             <button
-              onClick={() => handleSort('current_mileage')}
+              onClick={() => setStatusFilter('active')}
               className={`px-4 py-2 rounded-md text-sm font-medium ${
-                sortField === 'current_mileage'
-                  ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
+                statusFilter === 'active'
+                  ? 'bg-green-600 text-white'
                   : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
-              Sort by Mileage {sortField === 'current_mileage' && (sortDirection === 'asc' ? '↑' : '↓')}
+              Active
             </button>
             <button
-              onClick={() => handleSort('oil_status')}
+              onClick={() => setStatusFilter('out_of_service')}
               className={`px-4 py-2 rounded-md text-sm font-medium ${
-                sortField === 'oil_status'
-                  ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
+                statusFilter === 'out_of_service'
+                  ? 'bg-red-600 text-white'
                   : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
-              Sort by Oil Status {sortField === 'oil_status' && (sortDirection === 'asc' ? '↑' : '↓')}
+              Out of Service
+            </button>
+            <button
+              onClick={() => setStatusFilter('in_shop')}
+              className={`px-4 py-2 rounded-md text-sm font-medium ${
+                statusFilter === 'in_shop'
+                  ? 'bg-yellow-600 text-white'
+                  : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              In Shop
             </button>
           </div>
         </div>
@@ -275,14 +346,42 @@ export default function DashboardClient() {
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow"
               >
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                    {vehicle.code}
-                  </h3>
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded ${oilStatus.color}`}
-                  >
-                    {oilStatus.status === 'overdue' ? 'Oil Overdue' : 'Oil OK'}
-                  </span>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      {vehicle.code}
+                    </h3>
+                    {vehicle.driver_name && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Driver: {vehicle.driver_name}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1 items-end">
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded ${
+                        vehicle.status === 'active'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                          : vehicle.status === 'out_of_service'
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                          : vehicle.status === 'in_shop'
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                          : 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                      }`}
+                    >
+                      {vehicle.status === 'active'
+                        ? 'Active'
+                        : vehicle.status === 'out_of_service'
+                        ? 'Out of Service'
+                        : vehicle.status === 'in_shop'
+                        ? 'In Shop'
+                        : 'Active'}
+                    </span>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded ${oilStatus.color}`}
+                    >
+                      {oilStatus.status === 'overdue' ? 'Oil Overdue' : 'Oil OK'}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-2 text-sm">

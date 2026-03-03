@@ -6,16 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "import-fleetio": "node scripts/import-fleetio.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
-    "@supabase/ssr": "^0.1.0",
+    "@supabase/ssr": "^0.5.1",
     "next": "14.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "papaparse": "^5.4.1",
-    "date-fns": "^3.0.6"
+    "date-fns": "^3.0.6",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "@types/node": "^20",

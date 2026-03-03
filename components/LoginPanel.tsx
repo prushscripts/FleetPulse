@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import Image from 'next/image'
 
-export default function LoginPage() {
+export default function LoginPanel() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -34,24 +34,12 @@ export default function LoginPage() {
 
       console.log('Login successful:', data)
       
-      // Wait a moment for cookies to be set
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
       // Refresh the session to ensure cookies are set
-      const { data: sessionData } = await supabase.auth.getSession()
+      await supabase.auth.getSession()
       
-      if (sessionData?.session) {
-        setLoading(false)
-        // Use router.push first, then fallback to window.location if needed
-        router.push('/dashboard')
-        // Force a full page reload after a short delay to ensure server-side can read cookies
-        setTimeout(() => {
-          window.location.href = '/dashboard'
-        }, 100)
-      } else {
-        setError('Session not established. Please try again.')
-        setLoading(false)
-      }
+      setLoading(false)
+      // Force a full page reload to ensure server-side can read cookies
+      window.location.href = '/dashboard'
     } catch (error: any) {
       console.error('Login exception:', error)
       setError(error.message || 'An error occurred during login')
@@ -60,31 +48,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 px-4 py-12">
-      <div className="max-w-md w-full">
-        {/* Logo and Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-6">
-            <Image
-              src="/fplogo.png"
-              alt="FleetPulse"
-              width={200}
-              height={60}
-              className="h-12 w-auto"
-              priority
-              unoptimized
-            />
+    <div className="h-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col hidden lg:flex">
+      {/* Desktop: Premium glass panel */}
+
+      <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+        {/* Header */}
+        <div className="p-8 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome Back</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Sign in to continue</p>
+            </div>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Welcome Back
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Sign in to your account
-          </p>
         </div>
 
-        {/* Login Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
+        {/* Login Form */}
+        <div className="flex-1 p-8 flex flex-col justify-center">
           <form onSubmit={handleLogin} className="space-y-6">
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
@@ -107,7 +91,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 placeholder="you@example.com"
               />
             </div>
@@ -124,7 +108,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 placeholder="••••••••"
               />
             </div>
@@ -179,7 +163,7 @@ export default function LoginPage() {
                 <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">New to FleetPulse?</span>
+                <span className="px-2 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">New to FleetPulse?</span>
               </div>
             </div>
 
@@ -193,22 +177,10 @@ export default function LoginPage() {
               </svg>
             </Link>
           </div>
-
-          <div className="mt-6 text-center">
-            <Link
-              href="/"
-              className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 inline-flex items-center gap-1"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              <span>Back to home</span>
-            </Link>
-          </div>
         </div>
 
-        {/* Security Footer */}
-        <div className="mt-6 text-center">
+        {/* Footer */}
+        <div className="p-6 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />

@@ -17,6 +17,8 @@ interface Vehicle {
   license_plate: string | null
   vin: string | null
   notes: string | null
+  status: string | null
+  driver_id: string | null
 }
 
 interface ServiceRecord {
@@ -86,7 +88,15 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
         .single()
 
       if (vehicleError) throw vehicleError
-      setVehicle(vehicleData)
+      setVehicle({ ...vehicleData, status: vehicleData.status || 'active' })
+
+      // Load drivers
+      const { data: driversData } = await supabase
+        .from('drivers')
+        .select('id, first_name, last_name')
+        .eq('active', true)
+        .order('last_name', { ascending: true })
+      setDrivers(driversData || [])
 
       // Load service records
       const { data: serviceData, error: serviceError } = await supabase
@@ -156,6 +166,8 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
       license_plate: formData.get('license_plate') as string || null,
       vin: formData.get('vin') as string || null,
       notes: formData.get('notes') as string || null,
+      status: formData.get('status') as string || 'active',
+      driver_id: formData.get('driver_id') as string || null,
     }
 
     try {
@@ -501,6 +513,38 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
                           defaultValue={vehicle.vin || ''}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                         />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Status *
+                        </label>
+                        <select
+                          name="status"
+                          defaultValue={vehicle.status || 'active'}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        >
+                          <option value="active">Active</option>
+                          <option value="out_of_service">Out of Service</option>
+                          <option value="in_shop">In Shop</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Assigned Driver
+                        </label>
+                        <select
+                          name="driver_id"
+                          defaultValue={vehicle.driver_id || ''}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        >
+                          <option value="">No Driver Assigned</option>
+                          {drivers.map((driver) => (
+                            <option key={driver.id} value={driver.id}>
+                              {driver.first_name} {driver.last_name}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                     <div>

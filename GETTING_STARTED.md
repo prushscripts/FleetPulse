@@ -26,6 +26,14 @@ git remote add origin https://github.com/YOUR-USERNAME/FleetPulse.git
 git push -u origin main
 ```
 
+**Note:** If you get a "403 Permission denied" error:
+- Make sure the repo is under YOUR account (not an organization you don't have access to)
+- GitHub requires a Personal Access Token instead of password:
+  1. Go to GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+  2. Generate new token with `repo` scope
+  3. When prompted for password, paste the token instead
+- Or use SSH authentication (set up SSH keys first)
+
 **If you skip this step**, you can still run the app locally, but you'll need to do this later if you want to deploy to Vercel.
 
 ---

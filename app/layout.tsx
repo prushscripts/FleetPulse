@@ -1,9 +1,28 @@
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
+import { ThemeProvider } from '@/components/ThemeProvider'
+
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+})
 
 export const metadata: Metadata = {
   title: 'FleetPulse - Fleet Management System',
-  description: 'Internal fleet management web application for vehicle tracking and maintenance',
+  description: 'Modern fleet management platform for vehicle tracking and maintenance',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://FleetPulseHQ.com'),
+  openGraph: {
+    title: 'FleetPulse - Fleet Management System',
+    description: 'Modern fleet management platform for vehicle tracking and maintenance',
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://FleetPulseHQ.com',
+    siteName: 'FleetPulse',
+  },
+  icons: {
+    icon: '/fpfavicon.png',
+    apple: '/fpfavicon.png',
+  },
 }
 
 export default function RootLayout({
@@ -12,8 +31,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
+      <body className={inter.className}>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   )
 }
