@@ -554,15 +554,146 @@ export default function DriversClient() {
                 </div>
               ))}
             </div>
+            
+            {/* Mobile List View */}
+            <div className="md:hidden space-y-6">
+              {sortedLocations.map((location) => (
+                <div key={location} className="space-y-3">
+                  {/* Location Header */}
+                  <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl shadow-lg px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <h3 className="text-lg font-bold">{location}</h3>
+                      <span className="ml-auto px-2 py-1 bg-white/20 rounded-full text-xs font-semibold">
+                        {grouped[location].length}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Mobile Driver List Items */}
+                  <div className="space-y-3">
+                    {grouped[location].map((driver) => {
+                      const licenseStatus = getLicenseStatus(driver.license_expiration)
+                      return (
+                        <div
+                          key={driver.id}
+                          className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-4 space-y-3"
+                        >
+                          {/* Driver Name and Status */}
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                                {driver.first_name} {driver.last_name}
+                              </h3>
+                              {driver.email && (
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{driver.email}</p>
+                              )}
+                            </div>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                driver.active
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              {driver.active ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                          
+                          {/* Driver Details Grid */}
+                          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Phone</p>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                {driver.phone || 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">License</p>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                {driver.license_number || 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">License Status</p>
+                              <div className="flex items-center gap-1">
+                                {driver.license_expiration ? (
+                                  <>
+                                    <span className={`text-base ${licenseStatus.color}`}>
+                                      {licenseStatus.icon}
+                                    </span>
+                                    <span className="text-xs text-gray-700 dark:text-gray-200">
+                                      {new Date(driver.license_expiration).toLocaleDateString()}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-xs text-gray-400 dark:text-gray-500">N/A</span>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Hire Date</p>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                {driver.hire_date ? new Date(driver.hire_date).toLocaleDateString() : 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Citation Policy */}
+                          <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500 dark:text-gray-400">Citation Policy</span>
+                              <span
+                                className={`text-xs font-medium ${
+                                  driver.signed_citation_policy ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
+                                }`}
+                              >
+                                {driver.signed_citation_policy ? '✓ Signed' : '✗ Not signed'}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Actions */}
+                          <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <button
+                              onClick={() => handleEdit(driver)}
+                              className="flex-1 px-3 py-2 rounded-md text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => openWriteupsModal(driver)}
+                              className="flex-1 px-3 py-2 rounded-md text-xs font-medium bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/50"
+                            >
+                              Writeups
+                            </button>
+                            <button
+                              onClick={() => handleDelete(driver.id)}
+                              className="flex-1 px-3 py-2 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            </>
           )
         })()}
 
         {/* Card View */}
-        {(() => {
+        {viewMode === 'cards' && (() => {
           const { grouped, sortedLocations } = groupDriversByLocation()
           
           return (
-            <div className={`${viewMode === 'list' ? 'md:hidden' : ''} space-y-6`}>
+            <div className="space-y-6">
               {sortedLocations.map((location) => (
                 <div key={location} className="space-y-4">
                   {/* Location Header */}
