@@ -14,6 +14,8 @@ interface Driver {
   license_expiration: string | null
   notes: string | null
   active: boolean
+  hire_date: string | null
+  signed_citation_policy: boolean
 }
 
 export default function DriversClient() {
@@ -30,6 +32,8 @@ export default function DriversClient() {
     license_expiration: '',
     notes: '',
     active: true,
+    hire_date: '',
+    signed_citation_policy: false,
   })
   const supabase = createClient()
 
@@ -59,6 +63,7 @@ export default function DriversClient() {
       const submitData = {
         ...formData,
         license_expiration: formData.license_expiration || null,
+        hire_date: formData.hire_date || null,
       }
 
       if (editingDriver) {
@@ -83,6 +88,8 @@ export default function DriversClient() {
         license_expiration: '',
         notes: '',
         active: true,
+        hire_date: '',
+        signed_citation_policy: false,
       })
       loadDrivers()
     } catch (error: any) {
@@ -101,6 +108,8 @@ export default function DriversClient() {
       license_expiration: driver.license_expiration || '',
       notes: driver.notes || '',
       active: driver.active,
+      hire_date: driver.hire_date || '',
+      signed_citation_policy: driver.signed_citation_policy || false,
     })
     setShowModal(true)
   }
@@ -147,6 +156,8 @@ export default function DriversClient() {
                 license_expiration: '',
                 notes: '',
                 active: true,
+                hire_date: '',
+                signed_citation_policy: false,
               })
               setShowModal(true)
             }}
@@ -170,6 +181,15 @@ export default function DriversClient() {
                   {driver.email && (
                     <p className="text-sm text-gray-600 dark:text-gray-400">{driver.email}</p>
                   )}
+                  <div className="mt-1 flex items-center gap-2">
+                    <span
+                      className={`text-xs font-medium ${
+                        driver.signed_citation_policy ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
+                      }`}
+                    >
+                      {driver.signed_citation_policy ? '✓ Citation policy signed' : '✗ Citation policy not signed'}
+                    </span>
+                  </div>
                 </div>
                 <span
                   className={`px-2 py-1 text-xs font-medium rounded ${
@@ -205,6 +225,14 @@ export default function DriversClient() {
                     </span>
                   </div>
                 )}
+                {driver.hire_date && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Hire Date:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {new Date(driver.hire_date).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="mt-4 flex gap-2">
@@ -233,12 +261,22 @@ export default function DriversClient() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setShowModal(false)
+            setEditingDriver(null)
+          }}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8 max-w-3xl w-full mx-4 animate-fade-in-scale max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">
               {editingDriver ? 'Edit Driver' : 'Add Driver'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   First Name *
@@ -309,6 +347,18 @@ export default function DriversClient() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Hire Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.hire_date}
+                  onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
+              </div>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Notes
                 </label>
                 <textarea
@@ -318,16 +368,29 @@ export default function DriversClient() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.active}
-                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                  className="mr-2"
-                />
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Active
-                </label>
+              <div className="md:col-span-2 flex items-center gap-6">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.active}
+                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                    className="mr-2"
+                  />
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Active
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.signed_citation_policy}
+                    onChange={(e) => setFormData({ ...formData, signed_citation_policy: e.target.checked })}
+                    className="mr-2"
+                  />
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Signed citation policy
+                  </label>
+                </div>
               </div>
               <div className="flex gap-4">
                 <button

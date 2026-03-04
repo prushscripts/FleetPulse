@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { normalizeTier, TIER_CONFIG } from '@/lib/tiers'
 
 export default function NewVehicleClient() {
   const [loading, setLoading] = useState(false)
@@ -28,6 +29,20 @@ export default function NewVehicleClient() {
     }
 
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      const tier = normalizeTier(user?.user_metadata?.subscription_tier)
+      const { count, error: countError } = await supabase
+        .from('vehicles')
+        .select('*', { count: 'exact', head: true })
+      if (countError) throw countError
+      if ((count || 0) >= TIER_CONFIG[tier].maxVehicles) {
+        throw new Error(
+          `Vehicle limit reached for ${tier} tier (${TIER_CONFIG[tier].maxVehicles} max vehicles).`
+        )
+      }
+
       const { data, error } = await supabase.from('vehicles').insert(newVehicle).select().single()
       if (error) throw error
       router.push(`/dashboard/vehicles/${data.id}`)

@@ -22,14 +22,16 @@ export default async function Home() {
   return (
     <>
       <div className="min-h-screen bg-white dark:bg-gray-900">
-        {/* Top Right Controls */}
+        {/* Top Controls */}
+        <div className="fixed top-4 left-4 z-50">
+          {/* Theme Toggle moved left to avoid overlap with auth controls */}
+          <LandingThemeToggle />
+        </div>
         <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
           {/* Floating Login Card - Desktop Only */}
           <div className="hidden lg:block">
             <FloatingLoginCard />
           </div>
-          {/* Theme Toggle */}
-          <LandingThemeToggle />
         </div>
 
         {/* Scroll to Top Button */}
@@ -247,7 +249,7 @@ export default async function Home() {
                       Simple, transparent pricing
                     </h2>
                     <p className="text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto select-none cursor-default">
-                      Choose the plan that fits your fleet size
+                      Per-vehicle pricing that scales with your operation
                     </p>
                   </div>
                 </ScrollReveal>
@@ -258,8 +260,8 @@ export default async function Home() {
                     <div className="group bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-xl hover:scale-105 transition-all duration-300">
                       <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 select-none cursor-default">Starter</h3>
                       <div className="mb-4 select-none cursor-default">
-                        <span className="text-4xl font-bold text-gray-900 dark:text-white">$29</span>
-                        <span className="text-gray-600 dark:text-gray-400">/month</span>
+                        <span className="text-4xl font-bold text-gray-900 dark:text-white">$3</span>
+                        <span className="text-gray-600 dark:text-gray-400"> per vehicle / month</span>
                       </div>
                       <ul className="space-y-2 mb-6 text-sm select-none cursor-default">
                         <li className="flex items-start">
@@ -280,7 +282,11 @@ export default async function Home() {
                         </li>
                         <li className="flex items-start">
                           <span className="text-green-500 mr-2">✓</span>
-                          <span className="text-gray-600 dark:text-gray-400">Email support</span>
+                          <span className="text-gray-600 dark:text-gray-400">Manual service reminders</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">✓</span>
+                          <span className="text-gray-600 dark:text-gray-400">No CSV import</span>
                         </li>
                       </ul>
                       <Link
@@ -300,8 +306,8 @@ export default async function Home() {
                       </div>
                       <h3 className="text-xl font-bold text-white mb-2 select-none cursor-default">Professional</h3>
                       <div className="mb-4 select-none cursor-default">
-                        <span className="text-4xl font-bold text-white">$79</span>
-                        <span className="text-indigo-200">/month</span>
+                        <span className="text-4xl font-bold text-white">$6</span>
+                        <span className="text-indigo-200"> per vehicle / month</span>
                       </div>
                       <ul className="space-y-2 mb-6 text-sm select-none cursor-default">
                         <li className="flex items-start">
@@ -330,7 +336,7 @@ export default async function Home() {
                         </li>
                         <li className="flex items-start">
                           <span className="text-white mr-2">✓</span>
-                          <span className="text-indigo-100">Priority support</span>
+                          <span className="text-indigo-100">Advanced analytics dashboards</span>
                         </li>
                       </ul>
                       <Link
@@ -345,10 +351,10 @@ export default async function Home() {
                   {/* Enterprise Plan */}
                   <ScrollReveal delay={200}>
                     <div className="group bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-xl hover:scale-105 transition-all duration-300">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 select-none cursor-default">Enterprise</h3>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 select-none cursor-default">Premium</h3>
                       <div className="mb-4 select-none cursor-default">
-                        <span className="text-4xl font-bold text-gray-900 dark:text-white">$199</span>
-                        <span className="text-gray-600 dark:text-gray-400">/month</span>
+                        <span className="text-4xl font-bold text-gray-900 dark:text-white">$9</span>
+                        <span className="text-gray-600 dark:text-gray-400"> per vehicle / month</span>
                       </div>
                       <ul className="space-y-2 mb-6 text-sm select-none cursor-default">
                         <li className="flex items-start">
@@ -369,7 +375,7 @@ export default async function Home() {
                         </li>
                         <li className="flex items-start">
                           <span className="text-green-500 mr-2">✓</span>
-                          <span className="text-gray-600 dark:text-gray-400">Custom integrations</span>
+                          <span className="text-gray-600 dark:text-gray-400">Custom integrations + roles</span>
                         </li>
                         <li className="flex items-start">
                           <span className="text-green-500 mr-2">✓</span>
@@ -377,7 +383,7 @@ export default async function Home() {
                         </li>
                         <li className="flex items-start">
                           <span className="text-green-500 mr-2">✓</span>
-                          <span className="text-gray-600 dark:text-gray-400">SLA guarantee</span>
+                          <span className="text-gray-600 dark:text-gray-400">Priority support</span>
                         </li>
                       </ul>
                       <Link
