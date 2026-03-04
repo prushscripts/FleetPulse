@@ -12,7 +12,6 @@ export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [routeAnimating, setRouteAnimating] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const supabase = createClient()
   const { theme, toggleTheme } = useTheme()
@@ -55,16 +54,6 @@ export default function Navbar() {
     return pathname.startsWith(href)
   }
 
-  const startRouteAnimation = () => {
-    setRouteAnimating(true)
-  }
-
-  // Stop animation shortly after route settles.
-  useEffect(() => {
-    if (!routeAnimating) return
-    const timer = window.setTimeout(() => setRouteAnimating(false), 350)
-    return () => window.clearTimeout(timer)
-  }, [pathname, routeAnimating])
 
   return (
     <nav className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md shadow-sm border-b border-gray-200/60 dark:border-gray-700/60 sticky top-0 z-40">
@@ -90,7 +79,6 @@ export default function Navbar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={startRouteAnimation}
                     className={`relative inline-flex items-center px-4 py-2.5 text-xs tracking-wide rounded-t-lg transition-all duration-250 ${
                       active
                         ? 'text-gray-900 dark:text-white font-semibold bg-gradient-to-b from-indigo-50/60 to-transparent dark:from-indigo-900/30'
@@ -121,7 +109,6 @@ export default function Navbar() {
             </button>
             <Link
               href="/dashboard/settings"
-                onClick={startRouteAnimation}
               className={`p-2 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 ${
                 pathname.startsWith('/dashboard/settings')
                   ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30'
@@ -180,10 +167,9 @@ export default function Navbar() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      onClick={() => {
-                        setMobileOpen(false)
-                        startRouteAnimation()
-                      }}
+                    onClick={() => {
+                      setMobileOpen(false)
+                    }}
                       className={`group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
                         active
                           ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/50 scale-[1.02]'
@@ -239,10 +225,9 @@ export default function Navbar() {
                 })}
                 <Link
                   href="/dashboard/settings"
-                  onClick={() => {
-                    setMobileOpen(false)
-                    startRouteAnimation()
-                  }}
+                    onClick={() => {
+                      setMobileOpen(false)
+                    }}
                   className={`group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
                     pathname.startsWith('/dashboard/settings')
                       ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/50 scale-[1.02]'
@@ -271,11 +256,6 @@ export default function Navbar() {
           </div>
         )}
       </div>
-      <div
-        className={`absolute left-0 bottom-0 h-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 transition-all duration-500 ${
-          routeAnimating ? 'w-full opacity-100' : 'w-0 opacity-0'
-        }`}
-      />
     </nav>
   )
 }

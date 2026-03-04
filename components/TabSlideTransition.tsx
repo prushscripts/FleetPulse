@@ -39,8 +39,6 @@ export default function TabSlideTransition({ children }: { children: React.React
   const prevPathnameRef = useRef<string>('')
   const prevTabIndexRef = useRef<number>(-1)
   const isInitialMount = useRef(true)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const childrenKeyRef = useRef(0)
 
   useEffect(() => {
     const currentTabIndex = getTabIndex(pathname)
@@ -52,7 +50,6 @@ export default function TabSlideTransition({ children }: { children: React.React
       prevTabIndexRef.current = currentTabIndex
       prevPathnameRef.current = pathname
       setCurrentChildren(children)
-      childrenKeyRef.current++
       return
     }
 
@@ -65,11 +62,8 @@ export default function TabSlideTransition({ children }: { children: React.React
       setPrevChildren(currentChildren)
       setIsAnimating(true)
       
-      // Use setTimeout to ensure DOM updates before animation
-      setTimeout(() => {
-        setCurrentChildren(children)
-        childrenKeyRef.current++
-      }, 10)
+      // Update children immediately
+      setCurrentChildren(children)
 
       // Reset animation state after animation completes
       const resetTimer = setTimeout(() => {
@@ -91,45 +85,22 @@ export default function TabSlideTransition({ children }: { children: React.React
         prevTabIndexRef.current = currentTabIndex
       }
       setCurrentChildren(children)
-      childrenKeyRef.current++
     }
-  }, [pathname, children])
-
-  const getExitAnimationClass = () => {
-    if (!isAnimating || !slideDirection || !prevChildren) return ''
-    if (slideDirection === 'right') {
-      return 'animate-tab-slide-out-left'
-    } else {
-      return 'animate-tab-slide-out-right'
-    }
-  }
-
-  const getEnterAnimationClass = () => {
-    if (!isAnimating || !slideDirection) return ''
-    if (slideDirection === 'right') {
-      return 'animate-tab-slide-in-right'
-    } else {
-      return 'animate-tab-slide-in-left'
-    }
-  }
+  }, [pathname, children, currentChildren])
 
   return (
     <div 
-      ref={containerRef}
       className="relative overflow-hidden"
       style={{ minHeight: '100vh', width: '100%' }}
     >
       {/* Previous page sliding out */}
       {prevChildren && isAnimating && (
         <div 
-          key={`prev-${childrenKeyRef.current - 1}`}
-          className="absolute inset-0 w-full"
+          className="absolute inset-0 w-full transition-all duration-500 ease-in-out"
           style={{ 
             zIndex: 1,
             transform: slideDirection === 'right' ? 'translateX(-100%)' : 'translateX(100%)',
             opacity: 0,
-            transition: 'transform 500ms cubic-bezier(0.4, 0, 0.2, 1), opacity 500ms cubic-bezier(0.4, 0, 0.2, 1)',
-            willChange: 'transform, opacity'
           }}
         >
           {prevChildren}
@@ -138,34 +109,30 @@ export default function TabSlideTransition({ children }: { children: React.React
       
       {/* Current page sliding in */}
       <div 
-        key={`current-${childrenKeyRef.current}`}
-        className="w-full"
+        className="w-full transition-all duration-500 ease-in-out"
         style={{ 
           position: prevChildren && isAnimating ? 'relative' : 'static',
           zIndex: prevChildren && isAnimating ? 2 : 1,
           transform: isAnimating 
-            ? (slideDirection === 'right' ? 'translateX(0)' : 'translateX(0)')
+            ? (slideDirection === 'right' ? 'translateX(100%)' : 'translateX(-100%)')
             : 'translateX(0)',
-          opacity: isAnimating ? 1 : 1,
-          transition: isAnimating 
-            ? 'transform 500ms cubic-bezier(0.4, 0, 0.2, 1), opacity 500ms cubic-bezier(0.4, 0, 0.2, 1)' 
-            : 'none',
-          willChange: isAnimating ? 'transform, opacity' : 'auto'
+          opacity: isAnimating ? 0 : 1,
         }}
         ref={(el) => {
           if (el && isAnimating && slideDirection) {
-            // Set initial position for slide-in animation
-            const initialTransform = slideDirection === 'right' ? 'translateX(100%)' : 'translateX(-100%)'
-            el.style.transform = initialTransform
-            el.style.opacity = '0'
-            
-            // Trigger animation after a frame
+            // Force reflow and then animate
+            el.offsetHeight
             requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                el.style.transform = 'translateX(0)'
-                el.style.opacity = '1'
-              })
+              el.style.transform = 'translateX(0)'
+              el.style.opacity = '1'
             })
+          }
+        }}
+        onTransitionEnd={() => {
+          if (isAnimating) {
+            setIsAnimating(false)
+            setSlideDirection(null)
+            setPrevChildren(null)
           }
         }}
       >
