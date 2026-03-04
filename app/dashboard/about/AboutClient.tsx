@@ -169,36 +169,77 @@ export default function AboutClient({ displayName }: { displayName: string }) {
         </div>
       </div>
 
-      {/* Content with smooth transitions */}
+      {/* Content with smooth slide transitions */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="relative min-h-[600px]">
+        <div className="relative min-h-[600px] overflow-hidden">
           {/* Features Tab */}
           <div
-            className={`transition-all duration-500 ease-in-out ${
+            className={`absolute inset-0 transition-all duration-500 ease-in-out ${
               activeTab === 'features'
                 ? 'opacity-100 translate-x-0'
-                : 'opacity-0 absolute inset-0 translate-x-[-20px] pointer-events-none'
+                : 'opacity-0 translate-x-[-100%] pointer-events-none'
             }`}
           >
-            <div className="space-y-10">
+            <div className="space-y-12">
               <div className="text-center">
-                <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
+                <div className="inline-block px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-full mb-4">
+                  <span className="text-sm font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    Comprehensive Features
+                  </span>
+                </div>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
                   Everything you need to manage your fleet
                 </h2>
-                <p className="text-lg text-gray-600 dark:text-gray-400">Powerful features at a fraction of the cost</p>
+                <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                  Powerful features at a fraction of the cost
+                </p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              
+              {/* Unique Feature Layout - Alternating Cards */}
+              <div className="space-y-8">
                 {features.map((feature, idx) => (
                   <div
                     key={idx}
-                    className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-2xl hover:border-indigo-400 dark:hover:border-indigo-600 transition-all duration-300 hover:-translate-y-1"
-                    style={{ animationDelay: `${idx * 50}ms` }}
+                    className={`group relative overflow-hidden rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 transition-all duration-500 hover:shadow-2xl ${
+                      idx % 2 === 0
+                        ? 'bg-gradient-to-r from-white to-indigo-50/50 dark:from-gray-800 dark:to-indigo-900/20'
+                        : 'bg-gradient-to-r from-purple-50/50 to-white dark:from-purple-900/20 dark:to-gray-800'
+                    }`}
                   >
-                    <div className="text-4xl mb-4 transform group-hover:scale-110 transition-transform duration-300">
-                      {feature.icon}
+                    {/* Decorative gradient overlay */}
+                    <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${
+                      idx % 2 === 0
+                        ? 'bg-gradient-to-r from-indigo-500/10 to-transparent'
+                        : 'bg-gradient-to-r from-transparent to-purple-500/10'
+                    }`} />
+                    
+                    <div className={`relative p-8 flex flex-col ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} items-center gap-8`}>
+                      {/* Icon Section */}
+                      <div className={`flex-shrink-0 ${idx % 2 === 0 ? 'md:order-1' : 'md:order-2'}`}>
+                        <div className="relative">
+                          <div className={`absolute inset-0 rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity ${
+                            idx % 2 === 0 ? 'bg-indigo-500' : 'bg-purple-500'
+                          }`} />
+                          <div className={`relative w-24 h-24 rounded-2xl flex items-center justify-center text-5xl transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 ${
+                            idx % 2 === 0 
+                              ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/50'
+                              : 'bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/50'
+                          }`}>
+                            {feature.icon}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Content Section */}
+                      <div className={`flex-1 ${idx % 2 === 0 ? 'md:order-2' : 'md:order-1'} text-center md:text-left`}>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                          {feature.title}
+                        </h3>
+                        <p className="text-base text-gray-600 dark:text-gray-400 leading-relaxed max-w-2xl">
+                          {feature.description}
+                        </p>
+                      </div>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">{feature.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{feature.description}</p>
                   </div>
                 ))}
               </div>
@@ -207,10 +248,10 @@ export default function AboutClient({ displayName }: { displayName: string }) {
 
           {/* Pricing Tab */}
           <div
-            className={`transition-all duration-500 ease-in-out ${
+            className={`absolute inset-0 transition-all duration-500 ease-in-out ${
               activeTab === 'pricing'
                 ? 'opacity-100 translate-x-0'
-                : 'opacity-0 absolute inset-0 translate-x-[20px] pointer-events-none'
+                : 'opacity-0 translate-x-[100%] pointer-events-none'
             }`}
           >
             <div className="space-y-10">
