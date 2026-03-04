@@ -129,7 +129,7 @@ export default function AboutClient({ displayName }: { displayName: string }) {
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <span>Welcome back, {displayName}</span>
+              <span>Welcome back, {displayName.charAt(0).toUpperCase() + displayName.slice(1)}</span>
             </div>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">FleetPulse</h1>
@@ -137,104 +137,129 @@ export default function AboutClient({ displayName }: { displayName: string }) {
         </div>
       </section>
 
-      {/* Tabs */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-10">
-        <div className="flex gap-2 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-1 inline-flex">
+      {/* Enhanced Tabs */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
+        <div className="flex gap-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200/60 dark:border-gray-700/60 p-2 inline-flex">
           <button
             onClick={() => setActiveTab('features')}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`relative px-8 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
               activeTab === 'features'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/50 scale-105'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}
           >
-            Features
+            <span className="relative z-10">Features</span>
+            {activeTab === 'features' && (
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl animate-pulse opacity-20" />
+            )}
           </button>
           <button
             onClick={() => setActiveTab('pricing')}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`relative px-8 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
               activeTab === 'pricing'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/50 scale-105'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}
           >
-            Pricing
+            <span className="relative z-10">Pricing</span>
+            {activeTab === 'pricing' && (
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl animate-pulse opacity-20" />
+            )}
           </button>
         </div>
       </div>
 
-      {/* Content */}
+      {/* Content with smooth transitions */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {activeTab === 'features' && (
-          <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                Everything you need to manage your fleet
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400">Powerful features at a fraction of the cost</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {features.map((feature, idx) => (
-                <div
-                  key={idx}
-                  className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600 transition-all"
-                >
-                  <div className="text-2xl mb-3">{feature.icon}</div>
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">{feature.title}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{feature.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'pricing' && (
-          <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                Simple, transparent pricing
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400">Choose the plan that fits your fleet size</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {tiers.map((tier, idx) => (
-                <div
-                  key={idx}
-                  className={`relative bg-white dark:bg-gray-800 rounded-xl shadow-md border-2 p-6 ${
-                    tier.popular
-                      ? 'border-indigo-500 scale-105 shadow-xl'
-                      : 'border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  {tier.popular && (
-                    <div className="absolute -top-3 right-4 bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold">
-                      MOST POPULAR
+        <div className="relative min-h-[600px]">
+          {/* Features Tab */}
+          <div
+            className={`transition-all duration-500 ease-in-out ${
+              activeTab === 'features'
+                ? 'opacity-100 translate-x-0'
+                : 'opacity-0 absolute inset-0 translate-x-[-20px] pointer-events-none'
+            }`}
+          >
+            <div className="space-y-10">
+              <div className="text-center">
+                <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
+                  Everything you need to manage your fleet
+                </h2>
+                <p className="text-lg text-gray-600 dark:text-gray-400">Powerful features at a fraction of the cost</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {features.map((feature, idx) => (
+                  <div
+                    key={idx}
+                    className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-2xl hover:border-indigo-400 dark:hover:border-indigo-600 transition-all duration-300 hover:-translate-y-1"
+                    style={{ animationDelay: `${idx * 50}ms` }}
+                  >
+                    <div className="text-4xl mb-4 transform group-hover:scale-110 transition-transform duration-300">
+                      {feature.icon}
                     </div>
-                  )}
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{tier.name}</h3>
-                  <div className="mb-4">
-                    <span className="text-3xl font-bold text-gray-900 dark:text-white">{tier.price}</span>
-                    <span className="text-gray-600 dark:text-gray-400 text-sm ml-1">{tier.period}</span>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">{feature.title}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{feature.description}</p>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">*Billed annually</p>
-                  <ul className="space-y-3 mb-6">
-                    {tier.features.map((feature, fIdx) => (
-                      <li key={fIdx} className="flex items-start text-sm">
-                        <span className="text-green-500 mr-2 mt-0.5">✓</span>
-                        <span className="text-gray-600 dark:text-gray-400">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="text-center">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {userTier === tier.name.toLowerCase() ? '✓ Your current tier' : ''}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        )}
+
+          {/* Pricing Tab */}
+          <div
+            className={`transition-all duration-500 ease-in-out ${
+              activeTab === 'pricing'
+                ? 'opacity-100 translate-x-0'
+                : 'opacity-0 absolute inset-0 translate-x-[20px] pointer-events-none'
+            }`}
+          >
+            <div className="space-y-10">
+              <div className="text-center">
+                <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
+                  Simple, transparent pricing
+                </h2>
+                <p className="text-lg text-gray-600 dark:text-gray-400">Choose the plan that fits your fleet size</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {tiers.map((tier, idx) => (
+                  <div
+                    key={idx}
+                    className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 p-8 transition-all duration-300 hover:scale-105 ${
+                      tier.popular
+                        ? 'border-indigo-500 shadow-2xl shadow-indigo-500/30 scale-105'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'
+                    }`}
+                  >
+                    {tier.popular && (
+                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg">
+                        MOST POPULAR
+                      </div>
+                    )}
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{tier.name}</h3>
+                    <div className="mb-6">
+                      <span className="text-4xl font-bold text-gray-900 dark:text-white">{tier.price}</span>
+                      <span className="text-gray-600 dark:text-gray-400 text-sm ml-2">{tier.period}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-8">*Billed annually</p>
+                    <ul className="space-y-4 mb-8">
+                      {tier.features.map((feature, fIdx) => (
+                        <li key={fIdx} className="flex items-start text-sm">
+                          <span className="text-green-500 mr-3 mt-0.5 text-lg">✓</span>
+                          <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                        {userTier === tier.name.toLowerCase() ? '✓ Your current tier' : ''}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* CTA */}

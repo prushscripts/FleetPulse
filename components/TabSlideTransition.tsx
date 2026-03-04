@@ -40,6 +40,7 @@ export default function TabSlideTransition({ children }: { children: React.React
   const prevTabIndexRef = useRef<number>(-1)
   const isInitialMount = useRef(true)
   const containerRef = useRef<HTMLDivElement>(null)
+  const childrenKeyRef = useRef(0)
 
   useEffect(() => {
     const currentTabIndex = getTabIndex(pathname)
@@ -51,11 +52,12 @@ export default function TabSlideTransition({ children }: { children: React.React
       prevTabIndexRef.current = currentTabIndex
       prevPathnameRef.current = pathname
       setCurrentChildren(children)
+      childrenKeyRef.current++
       return
     }
 
-    // Only animate if we're switching between known tabs
-    if (currentTabIndex !== -1 && prevTabIndex !== -1 && currentTabIndex !== prevTabIndex) {
+    // Only animate if we're switching between known tabs and pathname actually changed
+    if (pathname !== prevPathnameRef.current && currentTabIndex !== -1 && prevTabIndex !== -1 && currentTabIndex !== prevTabIndex) {
       const direction = currentTabIndex > prevTabIndex ? 'right' : 'left'
       setSlideDirection(direction)
       setIsAnimating(true)
@@ -64,13 +66,14 @@ export default function TabSlideTransition({ children }: { children: React.React
       setPrevChildren(currentChildren)
       // Immediately set new children for entrance animation
       setCurrentChildren(children)
+      childrenKeyRef.current++
 
       // Reset animation state after animation completes
       const resetTimer = setTimeout(() => {
         setIsAnimating(false)
         setSlideDirection(null)
         setPrevChildren(null)
-      }, 400)
+      }, 450)
 
       prevTabIndexRef.current = currentTabIndex
       prevPathnameRef.current = pathname
@@ -78,14 +81,16 @@ export default function TabSlideTransition({ children }: { children: React.React
       return () => {
         clearTimeout(resetTimer)
       }
-    } else {
+    } else if (pathname !== prevPathnameRef.current) {
+      // Pathname changed but not a tab switch, just update without animation
       prevPathnameRef.current = pathname
       if (currentTabIndex !== -1) {
         prevTabIndexRef.current = currentTabIndex
       }
       setCurrentChildren(children)
+      childrenKeyRef.current++
     }
-  }, [pathname, children])
+  }, [pathname, children, currentChildren])
 
   const getExitAnimationClass = () => {
     if (!isAnimating || !slideDirection || !prevChildren) return ''
@@ -109,17 +114,19 @@ export default function TabSlideTransition({ children }: { children: React.React
     <div 
       ref={containerRef}
       className="relative overflow-hidden"
-      style={{ minHeight: '100vh', width: '100%' }}
+      style={{ minHeight: '100vh', width: '100%', willChange: isAnimating ? 'transform' : 'auto' }}
     >
       {/* Previous page sliding out */}
       {prevChildren && isAnimating && (
         <div 
+          key={`prev-${childrenKeyRef.current - 1}`}
           className={`absolute inset-0 w-full ${getExitAnimationClass()}`}
           style={{ 
             zIndex: 1,
-            animationDuration: '400ms',
-            animationTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-            animationFillMode: 'forwards'
+            animationDuration: '450ms',
+            animationTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            animationFillMode: 'forwards',
+            willChange: 'transform, opacity'
           }}
         >
           {prevChildren}
@@ -128,13 +135,15 @@ export default function TabSlideTransition({ children }: { children: React.React
       
       {/* Current page sliding in */}
       <div 
+        key={`current-${childrenKeyRef.current}`}
         className={`w-full ${isAnimating ? getEnterAnimationClass() : ''}`}
         style={{ 
           position: prevChildren && isAnimating ? 'relative' : 'static',
           zIndex: prevChildren && isAnimating ? 2 : 1,
-          animationDuration: '400ms',
-          animationTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-          animationFillMode: 'forwards'
+          animationDuration: '450ms',
+          animationTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          animationFillMode: 'forwards',
+          willChange: isAnimating ? 'transform, opacity' : 'auto'
         }}
       >
         {currentChildren}
