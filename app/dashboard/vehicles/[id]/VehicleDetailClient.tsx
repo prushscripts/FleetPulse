@@ -62,6 +62,7 @@ interface VehicleComment {
   id: string
   comment: string
   author_email: string | null
+  author_name: string | null
   created_at: string
 }
 
