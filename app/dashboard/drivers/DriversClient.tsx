@@ -408,11 +408,13 @@ export default function DriversClient() {
           </div>
         </div>
 
-        {/* List View */}
+        {/* List View - Desktop */}
         {viewMode === 'list' && (() => {
           const { grouped, sortedLocations } = groupDriversByLocation()
           
           return (
+            <>
+            {/* Desktop Table View */}
             <div className="hidden md:block space-y-6">
               {sortedLocations.map((location) => (
                 <div key={location} className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/90 shadow-md">
