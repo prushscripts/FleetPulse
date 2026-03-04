@@ -65,6 +65,7 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
   const [issues, setIssues] = useState<Issue[]>([])
   const [documents, setDocuments] = useState<Document[]>([])
   const [mileageHistory, setMileageHistory] = useState<MileageHistory[]>([])
+  const [drivers, setDrivers] = useState<Array<{ id: string; first_name: string; last_name: string }>>([])
   const [activeTab, setActiveTab] = useState<'details' | 'service' | 'issues' | 'documents'>('details')
   const [showServiceModal, setShowServiceModal] = useState(false)
   const [showIssueModal, setShowIssueModal] = useState(false)
