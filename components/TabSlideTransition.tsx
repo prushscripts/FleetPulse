@@ -39,6 +39,7 @@ export default function TabSlideTransition({ children }: { children: React.React
   const prevPathnameRef = useRef<string>('')
   const prevTabIndexRef = useRef<number>(-1)
   const isInitialMount = useRef(true)
+  const [showPrev, setShowPrev] = useState(false)
 
   useEffect(() => {
     const currentTabIndex = getTabIndex(pathname)
@@ -60,6 +61,7 @@ export default function TabSlideTransition({ children }: { children: React.React
       
       // Store previous children for exit animation
       setPrevChildren(currentChildren)
+      setShowPrev(true)
       setIsAnimating(true)
       
       // Update children immediately
@@ -70,6 +72,7 @@ export default function TabSlideTransition({ children }: { children: React.React
         setIsAnimating(false)
         setSlideDirection(null)
         setPrevChildren(null)
+        setShowPrev(false)
       }, 500)
 
       prevTabIndexRef.current = currentTabIndex
@@ -94,14 +97,16 @@ export default function TabSlideTransition({ children }: { children: React.React
       style={{ minHeight: '100vh', width: '100%' }}
     >
       {/* Previous page sliding out */}
-      {prevChildren && isAnimating && (
+      {showPrev && prevChildren && (
         <div 
-          className="absolute inset-0 w-full transition-all duration-500 ease-in-out"
-          style={{ 
-            zIndex: 1,
-            transform: slideDirection === 'right' ? 'translateX(-100%)' : 'translateX(100%)',
-            opacity: 0,
-          }}
+          className={`absolute inset-0 w-full transition-all duration-500 ease-in-out ${
+            isAnimating
+              ? (slideDirection === 'right' 
+                  ? 'translate-x-[-100%] opacity-0' 
+                  : 'translate-x-[100%] opacity-0')
+              : 'translate-x-0 opacity-100'
+          }`}
+          style={{ zIndex: 1 }}
         >
           {prevChildren}
         </div>
@@ -109,31 +114,16 @@ export default function TabSlideTransition({ children }: { children: React.React
       
       {/* Current page sliding in */}
       <div 
-        className="w-full transition-all duration-500 ease-in-out"
+        className={`w-full transition-all duration-500 ease-in-out ${
+          isAnimating 
+            ? (slideDirection === 'right' 
+                ? 'translate-x-[100%] opacity-0' 
+                : 'translate-x-[-100%] opacity-0')
+            : 'translate-x-0 opacity-100'
+        }`}
         style={{ 
-          position: prevChildren && isAnimating ? 'relative' : 'static',
-          zIndex: prevChildren && isAnimating ? 2 : 1,
-          transform: isAnimating 
-            ? (slideDirection === 'right' ? 'translateX(100%)' : 'translateX(-100%)')
-            : 'translateX(0)',
-          opacity: isAnimating ? 0 : 1,
-        }}
-        ref={(el) => {
-          if (el && isAnimating && slideDirection) {
-            // Force reflow and then animate
-            el.offsetHeight
-            requestAnimationFrame(() => {
-              el.style.transform = 'translateX(0)'
-              el.style.opacity = '1'
-            })
-          }
-        }}
-        onTransitionEnd={() => {
-          if (isAnimating) {
-            setIsAnimating(false)
-            setSlideDirection(null)
-            setPrevChildren(null)
-          }
+          position: showPrev && isAnimating ? 'relative' : 'static',
+          zIndex: showPrev && isAnimating ? 2 : 1,
         }}
       >
         {currentChildren}
