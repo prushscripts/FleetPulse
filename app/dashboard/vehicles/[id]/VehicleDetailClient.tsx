@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { getUserDisplayName } from '@/lib/user-utils'
 
 interface Vehicle {
   id: string
@@ -178,7 +179,7 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
       // Load comment thread (non-breaking if table doesn't exist yet)
       const { data: commentData, error: commentError } = await supabase
         .from('vehicle_comments')
-        .select('id, comment, author_email, created_at')
+        .select('id, comment, author_email, author_name, created_at')
         .eq('vehicle_id', vehicleId)
         .order('created_at', { ascending: false })
       if (!commentError) {
@@ -198,10 +199,12 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
       const {
         data: { user },
       } = await supabase.auth.getUser()
+      const displayName = getUserDisplayName(user)
       const { error } = await supabase.from('vehicle_comments').insert({
         vehicle_id: vehicleId,
         comment: newComment.trim(),
         author_email: user?.email || null,
+        author_name: displayName,
       })
       if (error) throw error
       setNewComment('')
@@ -828,8 +831,9 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
                 {mileageHistory.length > 0 && (
                   <div className="mt-8">
                     <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">Mileage History</h3>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <div className="overflow-x-auto -mx-4 sm:mx-0">
+                      <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead className="bg-gray-50 dark:bg-gray-900">
                           <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -859,6 +863,7 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
                           ))}
                         </tbody>
                       </table>
+                        </div>
                     </div>
                   </div>
                 )}
@@ -911,7 +916,7 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
                               <div className="flex items-start justify-between mb-2">
                                 <div>
                                   <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-                                    {comment.author_email?.split('@')[0] || 'Unknown user'}
+                                    {comment.author_name || comment.author_email?.split('@')[0] || 'Unknown user'}
                                   </span>
                                   <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
                                     {format(new Date(comment.created_at), 'MMM d, yyyy')} at {format(new Date(comment.created_at), 'h:mm a')}
@@ -1193,11 +1198,11 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
       {/* Service Record Modal */}
       {showServiceModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
           onClick={() => setShowServiceModal(false)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 animate-fade-in-scale"
+            className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 max-w-[calc(100vw-2rem)] sm:max-w-md w-full mx-2 sm:mx-4 animate-fade-in-scale max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Add Service Record</h2>
@@ -1297,11 +1302,11 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
       {/* Issue Modal */}
       {showIssueModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
           onClick={() => setShowIssueModal(false)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 animate-fade-in-scale"
+            className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 max-w-[calc(100vw-2rem)] sm:max-w-md w-full mx-2 sm:mx-4 animate-fade-in-scale max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Add Issue</h2>
@@ -1391,11 +1396,11 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
       {/* Document Upload Modal */}
       {showDocumentModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
           onClick={() => setShowDocumentModal(false)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 animate-fade-in-scale"
+            className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 max-w-[calc(100vw-2rem)] sm:max-w-md w-full mx-2 sm:mx-4 animate-fade-in-scale max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Upload Document</h2>
@@ -1474,7 +1479,7 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
       )}
 
       {toast && (
-        <div className="fixed right-5 bottom-5 z-[70]">
+        <div className="fixed right-3 sm:right-5 bottom-3 sm:bottom-5 z-[70] max-w-[calc(100vw-1.5rem)]">
           <button
             type="button"
             onClick={() => {
@@ -1504,11 +1509,11 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
 
       {showOilResetModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
           onClick={() => setShowOilResetModal(false)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 animate-fade-in-scale"
+            className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 max-w-[calc(100vw-2rem)] sm:max-w-md w-full mx-2 sm:mx-4 animate-fade-in-scale max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Reset Oil Service Reminder</h2>

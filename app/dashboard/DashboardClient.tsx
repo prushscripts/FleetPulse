@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -33,7 +33,7 @@ interface VehicleWithStats extends Vehicle {
 
 type SortField = 'code' | 'current_mileage' | 'oil_status' | 'status'
 type SortDirection = 'asc' | 'desc'
-type StatusFilter = 'all' | 'active' | 'out_of_service' | 'in_shop'
+type StatusFilter = 'all' | 'active' | 'out_of_service' | 'in_shop' | 'hidden'
 type ToastState = {
   title: string
   message: string
@@ -50,12 +50,13 @@ export default function DashboardClient() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [showImportModal, setShowImportModal] = useState(false)
   const [csvFile, setCsvFile] = useState<File | null>(null)
-  const [groupFilter, setGroupFilter] = useState<'all' | 'New York' | 'DMV'>('all')
-  const [typeFilter, setTypeFilter] = useState<'all' | 'van' | 'truck' | 'suv' | 'other'>('all')
-  const [oilFilter, setOilFilter] = useState<'all' | 'ok' | 'overdue'>('all')
-  const [issuesFilter, setIssuesFilter] = useState<'all' | 'with_issues' | 'no_issues'>('all')
-  const [docsFilter, setDocsFilter] = useState<'all' | 'with_docs' | 'expired_docs'>('all')
+  const [groupFilter, setGroupFilter] = useState<string[]>([])
+  const [typeFilter, setTypeFilter] = useState<string[]>([])
+  const [oilFilter, setOilFilter] = useState<string[]>([])
+  const [issuesFilter, setIssuesFilter] = useState<string[]>([])
+  const [docsFilter, setDocsFilter] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<'list' | 'cards'>('list')
+  const [showFilters, setShowFilters] = useState(false)
   const [showAddIssueModal, setShowAddIssueModal] = useState(false)
   const [issueVehicle, setIssueVehicle] = useState<VehicleWithStats | null>(null)
   const [issueTitle, setIssueTitle] = useState('')
@@ -84,6 +85,8 @@ export default function DashboardClient() {
   const [userEmail, setUserEmail] = useState<string>('Unknown user')
   const [tier, setTier] = useState<SubscriptionTier>('professional')
   const [lastVehicleId, setLastVehicleId] = useState<string | null>(null)
+  const [hiddenVehicles, setHiddenVehicles] = useState<string[]>([])
+  const filterMenuRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
   const router = useRouter()
 
@@ -93,7 +96,24 @@ export default function DashboardClient() {
 
   useEffect(() => {
     filterAndSortVehicles()
-  }, [vehicles, searchQuery, statusFilter, sortField, sortDirection, groupFilter, typeFilter, oilFilter, issuesFilter, docsFilter])
+  }, [vehicles, searchQuery, statusFilter, sortField, sortDirection, groupFilter, typeFilter, oilFilter, issuesFilter, docsFilter, hiddenVehicles])
+
+  // Close filter menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterMenuRef.current && !filterMenuRef.current.contains(event.target as Node)) {
+        setShowFilters(false)
+      }
+    }
+
+    if (showFilters) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showFilters])
 
   useEffect(() => {
     const loadUser = async () => {
@@ -102,6 +122,10 @@ export default function DashboardClient() {
       } = await supabase.auth.getUser()
       setUserEmail(user?.email || 'Unknown user')
       setTier(normalizeTier(user?.user_metadata?.subscription_tier))
+      // Load hidden vehicles from user metadata
+      if (user?.user_metadata?.hidden_vehicles && Array.isArray(user.user_metadata.hidden_vehicles)) {
+        setHiddenVehicles(user.user_metadata.hidden_vehicles)
+      }
     }
     loadUser()
   }, [supabase])
@@ -248,38 +272,54 @@ export default function DashboardClient() {
     }
 
     // Apply status filter
-    if (statusFilter !== 'all') {
+    if (statusFilter === 'hidden') {
+      // Show only hidden vehicles
+      filtered = filtered.filter((vehicle) => hiddenVehicles.includes(vehicle.id))
+    } else if (statusFilter !== 'all') {
+      // Apply normal status filter and exclude hidden vehicles
       filtered = filtered.filter((vehicle) => {
         const vehicleStatus = vehicle.status || 'active'
-        return vehicleStatus === statusFilter
+        return vehicleStatus === statusFilter && !hiddenVehicles.includes(vehicle.id)
       })
+    } else {
+      // Show all except hidden vehicles
+      filtered = filtered.filter((vehicle) => !hiddenVehicles.includes(vehicle.id))
     }
 
-    if (groupFilter !== 'all') {
-      filtered = filtered.filter((vehicle) => vehicle.group_name === groupFilter)
+    if (groupFilter.length > 0) {
+      filtered = filtered.filter((vehicle) => groupFilter.includes(vehicle.group_name))
     }
 
-    if (typeFilter !== 'all') {
-      filtered = filtered.filter((vehicle) => vehicle.vehicle_type === typeFilter)
+    if (typeFilter.length > 0) {
+      filtered = filtered.filter((vehicle) => typeFilter.includes(vehicle.vehicle_type))
     }
 
-    if (oilFilter !== 'all') {
+    if (oilFilter.length > 0) {
       filtered = filtered.filter((vehicle) => {
         const overdue = vehicle.current_mileage >= vehicle.oil_change_due_mileage
-        return oilFilter === 'overdue' ? overdue : !overdue
+        if (oilFilter.includes('overdue') && oilFilter.includes('ok')) return true
+        if (oilFilter.includes('overdue')) return overdue
+        if (oilFilter.includes('ok')) return !overdue
+        return false
       })
     }
 
-    if (issuesFilter !== 'all') {
-      filtered = filtered.filter((vehicle) =>
-        issuesFilter === 'with_issues' ? vehicle.open_issues_count > 0 : vehicle.open_issues_count === 0
-      )
+    if (issuesFilter.length > 0) {
+      filtered = filtered.filter((vehicle) => {
+        if (issuesFilter.includes('with_issues') && issuesFilter.includes('no_issues')) return true
+        if (issuesFilter.includes('with_issues')) return vehicle.open_issues_count > 0
+        if (issuesFilter.includes('no_issues')) return vehicle.open_issues_count === 0
+        return false
+      })
     }
 
-    if (docsFilter !== 'all') {
-      filtered = filtered.filter((vehicle) =>
-        docsFilter === 'with_docs' ? vehicle.documents_count > 0 : vehicle.expired_documents_count > 0
-      )
+    if (docsFilter.length > 0) {
+      filtered = filtered.filter((vehicle) => {
+        if (docsFilter.includes('with_docs') && docsFilter.includes('expired_docs')) return true
+        if (docsFilter.includes('with_docs')) return vehicle.documents_count > 0
+        if (docsFilter.includes('expired_docs')) return vehicle.expired_documents_count > 0
+        return false
+      })
     }
 
     // Apply sorting
@@ -348,12 +388,21 @@ export default function DashboardClient() {
             oil_change_due_mileage: parseInt(
               row.oil_change_due_mileage || row.Oil_Change_Due_Mileage || row.OIL_CHANGE_DUE_MILEAGE || '0'
             ),
-            license_plate: row.license_plate || row.License_Plate || row.LICENSE_PLATE || null,
+            license_plate: row.license_plate || row.License_Plate || row.LICENSE_PLATE || 
+                           row['License Plate'] || row['LICENSE PLATE'] || 
+                           row.plate || row.Plate || row.PLATE ||
+                           row['State Plate'] || row['STATE PLATE'] || null,
             vin: row.vin || row.VIN || null,
             notes: row.notes || row.Notes || row.NOTES || null,
           }))
 
-          const { error } = await supabase.from('vehicles').insert(vehiclesToInsert)
+          // Use upsert to update existing vehicles by code, or insert new ones
+          const { error } = await supabase
+            .from('vehicles')
+            .upsert(vehiclesToInsert, { 
+              onConflict: 'code',
+              ignoreDuplicates: false 
+            })
 
           if (error) throw error
 
@@ -523,14 +572,54 @@ export default function DashboardClient() {
       })
       if (error) throw error
 
+      const vehicleCode = issueVehicle.code
       setShowAddIssueModal(false)
       setIssueVehicle(null)
       await loadVehicles()
-      showToast('Issue created', `New issue logged for ${issueVehicle.code}.`)
+      showToast('Issue created', `New issue logged for ${vehicleCode}.`)
     } catch (error: any) {
       showToast('Issue failed', error.message || 'Could not create issue.')
     } finally {
       setIssueSaving(false)
+    }
+  }
+
+  const toggleHideVehicle = async (vehicleId: string) => {
+    try {
+      const isHidden = hiddenVehicles.includes(vehicleId)
+      let newHiddenVehicles: string[]
+      
+      if (isHidden) {
+        // Unhide
+        newHiddenVehicles = hiddenVehicles.filter((id) => id !== vehicleId)
+      } else {
+        // Hide
+        newHiddenVehicles = [...hiddenVehicles, vehicleId]
+      }
+      
+      setHiddenVehicles(newHiddenVehicles)
+      
+      // Save to user metadata
+      const { error } = await supabase.auth.updateUser({
+        data: { hidden_vehicles: newHiddenVehicles }
+      })
+      
+      if (error) throw error
+      
+      // If we're on the hidden filter and unhiding the last vehicle, switch to 'all'
+      if (statusFilter === 'hidden' && newHiddenVehicles.length === 0) {
+        setStatusFilter('all')
+      }
+      
+      showToast(
+        isHidden ? 'Vehicle shown' : 'Vehicle hidden',
+        `Vehicle ${isHidden ? 'will now appear' : 'has been hidden'} in your list.`
+      )
+    } catch (error: any) {
+      console.error('Error toggling vehicle visibility:', error)
+      showToast('Error', 'Failed to update vehicle visibility.')
+      // Revert on error
+      setHiddenVehicles(hiddenVehicles)
     }
   }
 
@@ -608,10 +697,10 @@ export default function DashboardClient() {
               </div>
               <input
                 type="text"
-                placeholder="Search by vehicle code..."
+                placeholder="Search by truck #..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm"
+                className="w-full pl-9 pr-4 py-2.5 text-xs border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm"
               />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -623,7 +712,7 @@ export default function DashboardClient() {
                     : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm'
                 }`}
               >
-                Sort by Code {sortField === 'code' && (sortDirection === 'asc' ? '↑' : '↓')}
+                Sort by Truck # {sortField === 'code' && (sortDirection === 'asc' ? '↑' : '↓')}
               </button>
               <button
                 onClick={() => handleSort('current_mileage')}
@@ -667,8 +756,8 @@ export default function DashboardClient() {
               </button>
             </div>
           </div>
-          {/* Status Filters */}
-          <div className="flex flex-wrap gap-2">
+          {/* Status Filters with Filters Button */}
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setStatusFilter('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
@@ -709,141 +798,400 @@ export default function DashboardClient() {
             >
               In Shop
             </button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-            <select
-              value={groupFilter}
-              onChange={(e) => setGroupFilter(e.target.value as 'all' | 'New York' | 'DMV')}
-              className="px-3 py-2 rounded-lg text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
-            >
-              <option value="all">Group: All</option>
-              <option value="New York">Group: New York</option>
-              <option value="DMV">Group: DMV</option>
-            </select>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as 'all' | 'van' | 'truck' | 'suv' | 'other')}
-              className="px-3 py-2 rounded-lg text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
-            >
-              <option value="all">Type: All</option>
-              <option value="van">Van</option>
-              <option value="truck">Truck</option>
-              <option value="suv">SUV</option>
-              <option value="other">Other</option>
-            </select>
-            <select
-              value={oilFilter}
-              onChange={(e) => setOilFilter(e.target.value as 'all' | 'ok' | 'overdue')}
-              className="px-3 py-2 rounded-lg text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
-            >
-              <option value="all">Oil: All</option>
-              <option value="ok">Oil OK</option>
-              <option value="overdue">Oil Overdue</option>
-            </select>
-            <select
-              value={issuesFilter}
-              onChange={(e) => setIssuesFilter(e.target.value as 'all' | 'with_issues' | 'no_issues')}
-              className="px-3 py-2 rounded-lg text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
-            >
-              <option value="all">Issues: All</option>
-              <option value="with_issues">With issues</option>
-              <option value="no_issues">No issues</option>
-            </select>
-            <select
-              value={docsFilter}
-              onChange={(e) => setDocsFilter(e.target.value as 'all' | 'with_docs' | 'expired_docs')}
-              className="px-3 py-2 rounded-lg text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
-            >
-              <option value="all">Documents: All</option>
-              <option value="with_docs">With documents</option>
-              <option value="expired_docs">Expired docs</option>
-            </select>
+            
+            {/* Vertical Separator */}
+            <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 mx-1"></div>
+            
+            {/* Hidden Filter Button - Only show if there are hidden vehicles */}
+            {hiddenVehicles.length > 0 && (
+              <button
+                onClick={() => setStatusFilter(statusFilter === 'hidden' ? 'all' : 'hidden')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
+                  statusFilter === 'hidden'
+                    ? 'bg-gray-600 text-white shadow-md'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm'
+                }`}
+              >
+                Hidden ({hiddenVehicles.length})
+              </button>
+            )}
+            
+            {/* Compact Filters Menu */}
+            <div className="relative" ref={filterMenuRef}>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
+                  showFilters || groupFilter.length > 0 || typeFilter.length > 0 || oilFilter.length > 0 || issuesFilter.length > 0 || docsFilter.length > 0
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filters
+                {(groupFilter.length > 0 || typeFilter.length > 0 || oilFilter.length > 0 || issuesFilter.length > 0 || docsFilter.length > 0) && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded text-[10px]">
+                    {groupFilter.length + typeFilter.length + oilFilter.length + issuesFilter.length + docsFilter.length}
+                  </span>
+                )}
+              </button>
+              
+              {showFilters && (
+                <div className="absolute top-full left-0 mt-2 w-[calc(100vw-2rem)] sm:w-[500px] max-w-[500px] bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-5 z-50">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Filter Options</h3>
+                    <button
+                      onClick={() => setShowFilters(false)}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    {/* Left Column */}
+                    <div className="space-y-5">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-900 dark:text-white mb-2.5">Group</label>
+                        <div className="space-y-2">
+                          {['New York', 'DMV'].map((group) => (
+                            <label key={group} className="flex items-center gap-2.5 cursor-pointer group">
+                              <div className="relative">
+                                <input
+                                  type="checkbox"
+                                  checked={groupFilter.includes(group)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setGroupFilter([...groupFilter, group])
+                                    } else {
+                                      setGroupFilter(groupFilter.filter((g) => g !== group))
+                                    }
+                                  }}
+                                  className="sr-only"
+                                />
+                                <div className={`w-[18px] h-[18px] rounded border-2 transition-all duration-200 flex items-center justify-center ${
+                                  groupFilter.includes(group)
+                                    ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-indigo-600 dark:border-indigo-500 shadow-sm'
+                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 group-hover:border-indigo-400 dark:group-hover:border-indigo-500'
+                                }`}>
+                                  {groupFilter.includes(group) && (
+                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
+                                {group}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-900 dark:text-white mb-2.5">Oil Status</label>
+                        <div className="space-y-2">
+                          {[
+                            { value: 'ok', label: 'Oil OK' },
+                            { value: 'overdue', label: 'Oil Overdue' },
+                          ].map((option) => (
+                            <label key={option.value} className="flex items-center gap-2.5 cursor-pointer group">
+                              <div className="relative">
+                                <input
+                                  type="checkbox"
+                                  checked={oilFilter.includes(option.value)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setOilFilter([...oilFilter, option.value])
+                                    } else {
+                                      setOilFilter(oilFilter.filter((o) => o !== option.value))
+                                    }
+                                  }}
+                                  className="sr-only"
+                                />
+                                <div className={`w-[18px] h-[18px] rounded border-2 transition-all duration-200 flex items-center justify-center ${
+                                  oilFilter.includes(option.value)
+                                    ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-indigo-600 dark:border-indigo-500 shadow-sm'
+                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 group-hover:border-indigo-400 dark:group-hover:border-indigo-500'
+                                }`}>
+                                  {oilFilter.includes(option.value) && (
+                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
+                                {option.label}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-900 dark:text-white mb-2.5">Documents</label>
+                        <div className="space-y-2">
+                          {[
+                            { value: 'with_docs', label: 'With Documents' },
+                            { value: 'expired_docs', label: 'Expired Documents' },
+                          ].map((option) => (
+                            <label key={option.value} className="flex items-center gap-2.5 cursor-pointer group">
+                              <div className="relative">
+                                <input
+                                  type="checkbox"
+                                  checked={docsFilter.includes(option.value)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setDocsFilter([...docsFilter, option.value])
+                                    } else {
+                                      setDocsFilter(docsFilter.filter((d) => d !== option.value))
+                                    }
+                                  }}
+                                  className="sr-only"
+                                />
+                                <div className={`w-[18px] h-[18px] rounded border-2 transition-all duration-200 flex items-center justify-center ${
+                                  docsFilter.includes(option.value)
+                                    ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-indigo-600 dark:border-indigo-500 shadow-sm'
+                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 group-hover:border-indigo-400 dark:group-hover:border-indigo-500'
+                                }`}>
+                                  {docsFilter.includes(option.value) && (
+                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
+                                {option.label}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Right Column */}
+                    <div className="space-y-5">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-900 dark:text-white mb-2.5">Type</label>
+                        <div className="space-y-2">
+                          {['van', 'truck', 'suv', 'other'].map((type) => (
+                            <label key={type} className="flex items-center gap-2.5 cursor-pointer group">
+                              <div className="relative">
+                                <input
+                                  type="checkbox"
+                                  checked={typeFilter.includes(type)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setTypeFilter([...typeFilter, type])
+                                    } else {
+                                      setTypeFilter(typeFilter.filter((t) => t !== type))
+                                    }
+                                  }}
+                                  className="sr-only"
+                                />
+                                <div className={`w-[18px] h-[18px] rounded border-2 transition-all duration-200 flex items-center justify-center ${
+                                  typeFilter.includes(type)
+                                    ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-indigo-600 dark:border-indigo-500 shadow-sm'
+                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 group-hover:border-indigo-400 dark:group-hover:border-indigo-500'
+                                }`}>
+                                  {typeFilter.includes(type) && (
+                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors capitalize">
+                                {type}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-900 dark:text-white mb-2.5">Issues</label>
+                        <div className="space-y-2">
+                          {[
+                            { value: 'with_issues', label: 'With Issues' },
+                            { value: 'no_issues', label: 'No Issues' },
+                          ].map((option) => (
+                            <label key={option.value} className="flex items-center gap-2.5 cursor-pointer group">
+                              <div className="relative">
+                                <input
+                                  type="checkbox"
+                                  checked={issuesFilter.includes(option.value)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setIssuesFilter([...issuesFilter, option.value])
+                                    } else {
+                                      setIssuesFilter(issuesFilter.filter((i) => i !== option.value))
+                                    }
+                                  }}
+                                  className="sr-only"
+                                />
+                                <div className={`w-[18px] h-[18px] rounded border-2 transition-all duration-200 flex items-center justify-center ${
+                                  issuesFilter.includes(option.value)
+                                    ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-indigo-600 dark:border-indigo-500 shadow-sm'
+                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 group-hover:border-indigo-400 dark:group-hover:border-indigo-500'
+                                }`}>
+                                  {issuesFilter.includes(option.value) && (
+                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
+                                {option.label}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      setGroupFilter([])
+                      setTypeFilter([])
+                      setOilFilter([])
+                      setIssuesFilter([])
+                      setDocsFilter([])
+                    }}
+                    className="w-full mt-5 px-4 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {viewMode === 'list' ? (
-          <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/90 shadow-md">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-[13px]">
-                <thead className="bg-gray-50 dark:bg-gray-900/60">
-                  <tr className="text-left text-xs tracking-wide text-gray-500 dark:text-gray-400">
-                    <th className="px-4 py-3">Vehicle</th>
-                    <th className="px-4 py-3">Plate</th>
-                    <th className="px-4 py-3">Group</th>
-                    <th className="px-4 py-3">Type</th>
-                    <th className="px-4 py-3">Mileage</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Open Issues</th>
-                    <th className="px-4 py-3">Documents</th>
-                    <th className="px-4 py-3">Actions</th>
+          <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+                <table className="min-w-full">
+                <thead className="bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                  <tr>
+                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Truck #</th>
+                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Plate</th>
+                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Group</th>
+                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Type</th>
+                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Mileage</th>
+                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Issues</th>
+                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Docs</th>
+                    <th className="px-5 py-3.5 text-right text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredVehicles.map((vehicle) => {
+                <tbody>
+                  {filteredVehicles.map((vehicle, index) => {
                     const oilStatus = getOilStatus(vehicle)
                     return (
                       <tr
                         key={vehicle.id}
-                        className={`text-sm ${
+                        className={`group hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors ${
                           lastVehicleId === vehicle.id
-                            ? 'bg-indigo-50/30 dark:bg-indigo-900/20 border-l-2 border-indigo-500'
+                            ? 'bg-indigo-50/40 dark:bg-indigo-900/10 border-l-2 border-indigo-500'
                             : ''
-                        }`}
+                        } ${index < filteredVehicles.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''}`}
                       >
-                        <td className="px-4 py-3">
-                          <button onClick={() => navigateToVehicle(vehicle.id)} className="text-left">
-                            <p className="font-semibold text-gray-900 dark:text-white">{vehicle.code}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <td className="px-5 py-3.5">
+                          <button onClick={() => navigateToVehicle(vehicle.id)} className="text-left group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                            <p className="text-xs font-medium text-gray-900 dark:text-gray-100 leading-tight mb-0.5">{vehicle.code}</p>
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">
                               {[vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ')}
-                              {vehicle.vin ? ` - VIN ${vehicle.vin}` : ''}
+                              {vehicle.vin ? ` • ${vehicle.vin.slice(-8)}` : ''}
                             </p>
                           </button>
                         </td>
-                        <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
-                          {vehicle.license_plate || 'N/A'}
+                        <td className="px-5 py-3.5">
+                          <span className="text-xs text-gray-700 dark:text-gray-300 font-mono">{vehicle.license_plate || '—'}</span>
                         </td>
-                        <td className="px-4 py-3 text-gray-700 dark:text-gray-200">{vehicle.group_name}</td>
-                        <td className="px-4 py-3 uppercase text-xs text-gray-700 dark:text-gray-200">{vehicle.vehicle_type}</td>
-                        <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
-                          <div>{vehicle.current_mileage.toLocaleString()}</div>
-                          <div className={`text-xs ${oilStatus.status === 'overdue' ? 'text-red-500' : 'text-green-500'}`}>
+                        <td className="px-5 py-3.5">
+                          <span className="text-xs text-gray-700 dark:text-gray-300">{vehicle.group_name}</span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className="text-[11px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">{vehicle.vehicle_type}</span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <div className="text-xs font-medium text-gray-900 dark:text-gray-100">{vehicle.current_mileage.toLocaleString()}</div>
+                          <div className={`text-[11px] mt-0.5 ${oilStatus.status === 'overdue' ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
                             due {vehicle.oil_change_due_mileage.toLocaleString()}
                           </div>
                         </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getVehicleStatusColor(vehicle.status)}`}>
+                        <td className="px-5 py-3.5">
+                          <span className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${getVehicleStatusColor(vehicle.status)}`}>
                             {getVehicleStatusLabel(vehicle.status)}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-gray-700 dark:text-gray-200">{vehicle.open_issues_count}</td>
-                        <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
-                          {vehicle.documents_count}
-                          {vehicle.expired_documents_count > 0 ? (
-                            <span className="ml-1 text-xs text-red-500">({vehicle.expired_documents_count} expired)</span>
-                          ) : null}
+                        <td className="px-5 py-3.5">
+                          <span className="text-xs text-gray-700 dark:text-gray-300">{vehicle.open_issues_count || 0}</span>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap gap-2.5">
+                        <td className="px-5 py-3.5">
+                          <div className="text-xs text-gray-700 dark:text-gray-300">
+                            {vehicle.documents_count || 0}
+                            {vehicle.expired_documents_count > 0 && (
+                              <span className="ml-1.5 text-[10px] text-red-600 dark:text-red-400">({vehicle.expired_documents_count})</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-1.5 justify-end">
                             <button
                               type="button"
                               onClick={() => openVehicleDocuments(vehicle.id)}
-                              className="px-3 py-1 rounded-md text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
+                              className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
                             >
-                              Documents
+                              Docs
                             </button>
                             <button
                               type="button"
                               onClick={() => openAddIssueModal(vehicle)}
-                              className="px-3 py-1 rounded-md text-xs bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                              className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
                             >
                               + Issue
                             </button>
                             <button
                               type="button"
                               onClick={() => openQuickEdit(vehicle)}
-                              className="px-3 py-1 rounded-md text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                              className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                             >
                               Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleHideVehicle(vehicle.id)
+                              }}
+                              className={`p-1.5 rounded-md transition-colors ${
+                                hiddenVehicles.includes(vehicle.id)
+                                  ? 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400'
+                                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                              }`}
+                              title={hiddenVehicles.includes(vehicle.id) ? 'Show vehicle' : 'Hide vehicle'}
+                            >
+                              {hiddenVehicles.includes(vehicle.id) ? (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              )}
                             </button>
                           </div>
                         </td>
@@ -852,6 +1200,7 @@ export default function DashboardClient() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         ) : null}
@@ -888,20 +1237,46 @@ export default function DashboardClient() {
                       </p>
                     </div>
                     <div className="flex flex-col gap-1.5 items-end">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          openQuickEdit(vehicle)
-                        }}
-                        className="p-1.5 rounded-md text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
-                        aria-label={`Quick edit ${vehicle.code}`}
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                      </button>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleHideVehicle(vehicle.id)
+                          }}
+                          className={`p-1.5 rounded-md transition-colors ${
+                            hiddenVehicles.includes(vehicle.id)
+                              ? 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400'
+                              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                          }`}
+                          title={hiddenVehicles.includes(vehicle.id) ? 'Show vehicle' : 'Hide vehicle'}
+                        >
+                          {hiddenVehicles.includes(vehicle.id) ? (
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                          ) : (
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            openQuickEdit(vehicle)
+                          }}
+                          className="p-1.5 rounded-md text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+                          aria-label={`Quick edit ${vehicle.code}`}
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </button>
+                      </div>
                       <span
                         className={`px-2.5 py-1 text-xs font-semibold rounded-full ${getVehicleStatusColor(
                           vehicle.status
@@ -1033,11 +1408,11 @@ export default function DashboardClient() {
 
       {quickEditVehicle && (
         <div
-          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4"
           onClick={closeQuickEdit}
         >
           <div
-            className={`w-full max-w-2xl rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-2xl ${
+            className={`w-full max-w-[calc(100vw-2rem)] sm:max-w-2xl rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto ${
               quickClosing ? 'animate-quick-edit-close' : 'animate-fade-in-scale'
             }`}
             onClick={(e) => e.stopPropagation()}
@@ -1153,7 +1528,7 @@ export default function DashboardClient() {
       )}
 
       {toast && (
-        <div className="fixed right-5 bottom-5 z-[60]">
+        <div className="fixed right-3 sm:right-5 bottom-3 sm:bottom-5 z-[60] max-w-[calc(100vw-1.5rem)]">
           <button
             type="button"
             onClick={dismissToast}
@@ -1180,7 +1555,7 @@ export default function DashboardClient() {
 
       {showAddIssueModal && issueVehicle && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4"
           onClick={() => {
             setShowAddIssueModal(false)
             setIssueVehicle(null)
@@ -1264,7 +1639,7 @@ export default function DashboardClient() {
 
       {showImportModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4"
           onClick={() => {
             setShowImportModal(false)
             setCsvFile(null)
@@ -1277,8 +1652,11 @@ export default function DashboardClient() {
             <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent dark:from-indigo-400 dark:to-purple-400">
               Import Vehicles from CSV
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               CSV should have columns: code, make, model, year, current_mileage, oil_change_due_mileage, license_plate, vin, notes
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
+              Note: If your CSV only has state abbreviations (e.g., "FL", "MT") in the license_plate column, you can update the full plate numbers later using the Edit button on each vehicle.
             </p>
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1315,7 +1693,7 @@ export default function DashboardClient() {
 
       {/* Custom Unsaved Changes Modal */}
       {showUnsavedModal && (
-        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8 max-w-md w-full animate-fade-in-scale">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900/30">

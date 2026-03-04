@@ -13,8 +13,17 @@ export default function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [routeAnimating, setRouteAnimating] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const supabase = createClient()
   const { theme, toggleTheme } = useTheme()
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setIsAdmin(user?.user_metadata?.is_admin === true)
+    }
+    checkAdmin()
+  }, [supabase])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -29,6 +38,10 @@ export default function Navbar() {
     { label: 'Inspections', href: '/dashboard/inspections' },
     { label: 'About', href: '/dashboard/about' },
   ]
+
+  if (isAdmin) {
+    navItems.push({ label: 'Admin', href: '/dashboard/admin' })
+  }
 
   if (pathname.startsWith('/dashboard/settings')) {
     navItems.push({ label: 'Settings', href: '/dashboard/settings' })

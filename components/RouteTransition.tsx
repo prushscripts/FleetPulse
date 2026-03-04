@@ -3,11 +3,31 @@
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 
+// Dashboard routes that use TabSlideTransition instead
+const DASHBOARD_ROUTES = [
+  '/home',
+  '/dashboard',
+  '/dashboard/drivers',
+  '/dashboard/inspections',
+  '/dashboard/about',
+  '/dashboard/admin',
+  '/dashboard/settings',
+]
+
+function isDashboardRoute(pathname: string): boolean {
+  return DASHBOARD_ROUTES.some(route => pathname === route || pathname.startsWith(route + '/'))
+}
+
 export default function RouteTransition() {
   const pathname = usePathname()
   const [isTransitioning, setIsTransitioning] = useState(false)
 
   useEffect(() => {
+    // Skip transition overlay for dashboard routes (they use slide animation)
+    if (isDashboardRoute(pathname)) {
+      return
+    }
+
     setIsTransitioning(true)
     const timer = setTimeout(() => setIsTransitioning(false), 400)
     return () => clearTimeout(timer)
