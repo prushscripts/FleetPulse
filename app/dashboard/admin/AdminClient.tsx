@@ -343,6 +343,7 @@ export default function AdminClient({ user }: AdminClientProps) {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
           </div>
