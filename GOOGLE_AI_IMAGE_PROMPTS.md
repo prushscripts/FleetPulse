@@ -165,6 +165,74 @@ Create a complete logo for FleetPulse consisting of two parts: (1) A small logo 
 
 ---
 
+## Banner WITH “FleetPulse” in the image (share card / link preview style)
+
+**Purpose:** When the image itself should show the name “FleetPulse” (e.g. for link previews, social posts, or a branded hero where the wordmark is part of the art). You said the current generations are “not quite there yet”—these prompts push for a clearer, more polished “FleetPulse” wordmark and layout.
+
+---
+
+### Banner with FleetPulse wordmark – Hero / share card
+
+```
+Create a wide-format image (16:9) that works as a hero banner or link-preview card for a fleet management product. The word “FleetPulse” must be the main visual focus: large, bold, modern sans-serif type, clearly readable. Place it in the center or slightly left of center. Use a gradient background from deep indigo (#312e81, #4f46e5) through violet (#7c3aed) to purple (#5b21b6)—smooth and premium, not noisy. Add a short tagline in smaller text below the name, for example “Modern fleet management” or “Track vehicles. Manage maintenance.” in a lighter shade (e.g. white at 80% opacity). No literal vehicles or clip art; the only graphic elements can be very subtle (e.g. a soft glow behind the text, or a minimal pulse line or curve that does not compete with the type). The result should look like a professional SaaS or tech product hero: clean, confident, and unmistakably branded as FleetPulse. High quality, suitable for use as a social share image or hero with the name already on it.
+```
+
+---
+
+### Banner with FleetPulse + small logo mark
+
+```
+Design a wide banner (16:9) for FleetPulse with the name prominently displayed. Layout: on the left or center-left, include a small logo mark (icon) that suggests “pulse” and “fleet”—for example a minimal truck silhouette with a pulse or heartbeat line integrated, or a simple pulse wave with a subtle vehicle shape. To the right of (or below) the icon, display the word “FleetPulse” in a bold, modern sans-serif, large enough to be the main focus. Background: gradient from indigo to purple (#4f46e5 to #7c3aed), with optional very subtle grid or glow. The tagline “Modern fleet management” can appear in smaller text. The goal is a shareable, professional card where the FleetPulse name is clearly the hero and the icon supports it without cluttering. No other text, no literal photos. High quality, suitable for link previews and social.
+```
+
+---
+
+### Refining the “FleetPulse + truck outline + pulse” concept
+
+You already have generations where “FleetPulse” appears with a pulse line integrated into a truck/van outline. These prompts ask for **refinements** of that idea so the name and the graphic feel more polished and “there.”
+
+---
+
+### Refinement 1 – Cleaner type and single focal point
+
+```
+Create a logo or wordmark image for FleetPulse. The text “FleetPulse” must be the dominant element: bold, clean, modern sans-serif, in a purple-to-indigo gradient (#6d28d9 to #4f46e5). To the left of the word “FleetPulse,” include a single, minimal graphic: a stylized side profile of a delivery van or truck as a simple outline or silhouette, with a smooth pulse or heartbeat line that starts from or flows into the truck shape (one continuous, elegant line that suggests both “fleet” and “pulse”). The truck should be simplified—no detail, just a recognizable silhouette—and the pulse line should feel integrated, not pasted on. White or light grey background. No other elements. The result should feel like a final logo: balanced, professional, and ready for use on a website or business card. Horizontal layout, high quality.
+```
+
+---
+
+### Refinement 2 – More “hero” and less “logo lockup”
+
+```
+Generate a wide image (16:9) for FleetPulse that feels like a hero or share card, not just a logo. The word “FleetPulse” must appear large and centered (or slightly off-center), in a bold sans-serif with a subtle indigo-to-purple gradient fill. Behind and around the text, use a soft gradient background (indigo #4f46e5, violet #7c3aed, purple #5b21b6). Integrate one clear graphic motif: a pulse or heartbeat line that flows across the composition—either under the text, through it, or from the side—combined with a very subtle suggestion of a vehicle (e.g. a minimal truck outline in low opacity, or a single curved “road” line). The pulse and vehicle elements should support the name “FleetPulse,” not overpower it. Add a short tagline in smaller type below, e.g. “Modern fleet management.” No clip art, no photos. Professional, premium, suitable for a link preview or hero section where the name is already on the image.
+```
+
+---
+
+### Refinement 3 – Typography-first, graphic accent only
+
+```
+Create a branded image where “FleetPulse” is the only strong text. Use a premium, bold sans-serif typeface; the letters can have a subtle gradient (indigo to purple) or be solid. Place the word centered or left-aligned on a gradient background (deep indigo to violet). Add a single, minimal graphic accent: either a small pulse/heartbeat line near the “F” or “e,” or a tiny truck silhouette or road curve in the corner or under the word—something that says “fleet” and “pulse” without competing with the type. The goal is “FleetPulse” first, graphic second. Clean, professional, suitable for use as a share image or hero where the name is clearly the focus. 16:9 or similar wide format, high quality.
+```
+
+---
+
+## Using your current generations (where each could work)
+
+Based on what you described from the grid:
+
+| What you have | Best use |
+|---------------|----------|
+| **Top row (FleetPulse + truck outline + pulse)** | Strong starting point for a **banner or share card** where the name is on the image. Use the refinement prompts above to get a version that feels “there”—cleaner type, clearer hierarchy, maybe add a tagline. |
+| **Middle center (S/road + pulse in app icon shape)** | Good candidate for an **app icon** or **favicon**: simple, recognizable at small size, and the pulse + road reads “FleetPulse” without text. You could keep your current favicon and use this for the app icon, or test swapping. |
+| **Bottom right (chevron + pulse line)** | Works as a **small logo mark** for nav, buttons, or social—compact and clear. Could sit next to “FleetPulse” in the navbar or on marketing. |
+| **Top right / middle left (arrow + bars, growth)** | Useful as **secondary branding** (e.g. “growth,” “insights”) or in product UI. Less “logo” and more “illustration accent.” |
+| **Wavy road / parallel waves** | Good for **backgrounds or dividers**—suggest “routes” and “flow” without being a logo. Could sit behind type on the site. |
+
+**Bottom line:** For the **banner where the name is on the image**, lean on the “Banner WITH FleetPulse” and “Refinement” prompts so the word “FleetPulse” is unmistakable and the truck+pulse idea is refined, not busy. For **icons and small marks**, the S/road+pulse and chevron+pulse from your grid are already in a good direction.
+
+---
+
 ## Quick copy-paste (condensed fallbacks)
 
 If you need a shorter prompt in a pinch, you can use these; the longer versions above will generally give better control.
@@ -177,6 +245,11 @@ Wide hero banner, 16:9, abstract soft gradient from deep indigo through violet t
 **Logo icon (short):**
 ```
 Minimal logo icon for FleetPulse fleet management app: pulse or wave shape combined with subtle vehicle/motion symbol, indigo and purple (#4f46e5, #7c3aed), flat design, square 1:1, no text, works on light and dark backgrounds, professional and memorable.
+```
+
+**Banner with FleetPulse name (short):**
+```
+Wide image 16:9, gradient indigo to purple background, the word “FleetPulse” large and bold as the main focus, optional short tagline below like “Modern fleet management,” minimal graphic (pulse line or truck outline) that supports the name without overpowering it. Professional SaaS share card, high quality.
 ```
 
 ---

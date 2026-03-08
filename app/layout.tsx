@@ -11,8 +11,8 @@ const inter = Inter({
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://FleetPulseHQ.com'
-// Absolute URL so messaging apps and crawlers always fetch the full preview image
-const ogImageUrl = `${siteUrl}/opengraph-image`
+// Use /og-image route (simpler path, explicit PNG) so messaging apps show full card
+const ogImageUrl = `${siteUrl}/og-image`
 
 export const metadata: Metadata = {
   title: 'FleetPulse - Fleet Management System',
@@ -28,8 +28,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: ogImageUrl,
-        width: 2400,
-        height: 1256,
+        width: 1200,
+        height: 630,
         alt: 'FleetPulse – Modern Fleet Management',
       },
     ],
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/fpfavicon.png',
-    apple: '/fpfavicon.png',
+    apple: '/apple-icon',
   },
 }
 
