@@ -20,13 +20,17 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   const [tier, setTier] = useState<SubscriptionTier>('professional')
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState<string | null>(null)
-  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
+  type CompanyEntry = { id: string; name: string; displayName?: string }
+  const [companies, setCompanies] = useState<CompanyEntry[]>([])
   const [companyKeyInput, setCompanyKeyInput] = useState('')
   const [companyActivating, setCompanyActivating] = useState(false)
   const [companyError, setCompanyError] = useState<string | null>(null)
   const [addCompanyKey, setAddCompanyKey] = useState('')
   const [addCompanyLoading, setAddCompanyLoading] = useState(false)
   const [addCompanyError, setAddCompanyError] = useState<string | null>(null)
+  const [editingDisplayNameId, setEditingDisplayNameId] = useState<string | null>(null)
+  const [editingDisplayNameValue, setEditingDisplayNameValue] = useState('')
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'account' | 'companies' | 'billing'>('account')
   const supabase = createClient()
   const router = useRouter()
@@ -51,7 +55,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
       const cname = currentUser?.user_metadata?.company_name ?? null
       setCompanyId(cid)
       setCompanyName(cname)
-      const list = currentUser?.user_metadata?.companies as { id: string; name: string }[] | undefined
+      const list = currentUser?.user_metadata?.companies as CompanyEntry[] | undefined
       if (list?.length) {
         setCompanies(list)
       } else if (cid && cname) {
@@ -128,7 +132,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         return
       }
       const existing = companies.filter((c) => c.id !== company.id)
-      const merged = existing.length === companies.length ? [...companies, { id: company.id, name: company.name }] : companies
+      const merged = existing.length === companies.length ? [...companies, { id: company.id, name: company.name, displayName: company.name }] : companies
       const { error: updateError } = await supabase.auth.updateUser({
         data: { company_id: company.id, company_name: company.name, companies: merged },
       })
@@ -145,6 +149,58 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     } finally {
       setCompanyActivating(false)
     }
+  }
+
+  const companyLogoSlug = (c: CompanyEntry) => {
+    let n = (c.displayName || c.name).toLowerCase()
+    n = n.replace(/\s*(group|llc|inc|co|corp|ltd)\.?(\s*(group|llc|inc|co|corp|ltd)\.?)*\s*$/gi, '').trim()
+    return n.replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')
+  }
+
+  const handleSaveDisplayName = async (c: CompanyEntry, newDisplayName: string) => {
+    const trimmed = newDisplayName.trim() || c.name
+    const updated = companies.map((ent) =>
+      ent.id === c.id ? { ...ent, displayName: trimmed === ent.name ? undefined : trimmed } : ent
+    )
+    const { error } = await supabase.auth.updateUser({ data: { companies: updated } })
+    if (error) {
+      setMessage({ type: 'error', text: error.message })
+      return
+    }
+    setCompanies(updated)
+    setEditingDisplayNameId(null)
+    setEditingDisplayNameValue('')
+    if (companyId === c.id) {
+      await supabase.auth.updateUser({ data: { company_name: trimmed } })
+      setCompanyName(trimmed)
+      router.refresh()
+    }
+    setMessage({ type: 'success', text: 'Display name updated.' })
+    setTimeout(() => setMessage(null), 3000)
+  }
+
+  const handleDeleteCompany = async (c: CompanyEntry) => {
+    const next = companies.filter((ent) => ent.id !== c.id)
+    const newCurrentId = companyId === c.id ? (next[0]?.id ?? null) : companyId
+    const newCurrentName = companyId === c.id ? (next[0] ? (next[0].displayName ?? next[0].name) : null) : companyName
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        companies: next,
+        ...(newCurrentId !== null && { company_id: newCurrentId, company_name: newCurrentName }),
+      },
+    })
+    if (error) {
+      setMessage({ type: 'error', text: error.message })
+      setDeleteConfirmId(null)
+      return
+    }
+    setCompanies(next)
+    setCompanyId(newCurrentId)
+    setCompanyName(newCurrentName)
+    setDeleteConfirmId(null)
+    setMessage({ type: 'success', text: 'Company removed from your account.' })
+    setTimeout(() => setMessage(null), 3000)
+    router.refresh()
   }
 
   const handleAddCompany = async (e: React.FormEvent) => {
@@ -173,7 +229,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         setAddCompanyLoading(false)
         return
       }
-      const merged = [...companies, { id: company.id, name: company.name }]
+      const merged = [...companies, { id: company.id, name: company.name, displayName: company.name }]
       const { error: updateError } = await supabase.auth.updateUser({
         data: { companies: merged },
       })
@@ -378,6 +434,24 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           {activeTab === 'companies' && (
             <div className="p-5 sm:p-6">
               <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">My Companies</h2>
+
+              {/* Logo upload hint */}
+              <div className="mb-6 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50">
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Company logo</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                      Add an image at <code className="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[11px]">public/images/companylogos/&#123;slug&#125;.png</code> or <code className="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[11px]">.jpg</code> (e.g. <code className="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[11px]">wheelzup.png</code>, <code className="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[11px]">prushlogistics.jpg</code>) to show it in the navbar. Use lowercase, no spaces; suffixes like “Group” or “LLC” are stripped automatically.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {companies.length === 0 ? (
                 <form onSubmit={handleCompanyActivate} className="space-y-4 max-w-md">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -403,10 +477,60 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                 <>
                   <ul className="space-y-2 mb-6">
                     {companies.map((c) => (
-                      <li key={c.id} className="flex items-center justify-between py-2.5 px-4 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
-                        <span className="font-medium text-gray-900 dark:text-white">{c.name}</span>
+                      <li key={c.id} className="flex flex-wrap items-center gap-2 sm:gap-3 py-3 px-4 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
+                        <span className="font-medium text-gray-900 dark:text-white min-w-0 truncate">
+                          {editingDisplayNameId === c.id ? (
+                            <span className="flex items-center gap-2 flex-wrap">
+                              <input
+                                type="text"
+                                value={editingDisplayNameValue}
+                                onChange={(e) => setEditingDisplayNameValue(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveDisplayName(c, editingDisplayNameValue); if (e.key === 'Escape') { setEditingDisplayNameId(null); setEditingDisplayNameValue(''); } }}
+                                className="w-40 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm"
+                                autoFocus
+                              />
+                              <button type="button" onClick={() => handleSaveDisplayName(c, editingDisplayNameValue)} className="text-xs px-2 py-1 bg-indigo-600 text-white rounded">Save</button>
+                              <button type="button" onClick={() => { setEditingDisplayNameId(null); setEditingDisplayNameValue(''); }} className="text-xs px-2 py-1 text-gray-600 dark:text-gray-400">Cancel</button>
+                            </span>
+                          ) : (
+                            <>
+                              {c.displayName ?? c.name}
+                              {c.displayName && <span className="text-gray-500 dark:text-gray-400 text-xs font-normal"> ({c.name})</span>}
+                            </>
+                          )}
+                        </span>
                         {companyId === c.id && (
                           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">Current</span>
+                        )}
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400 w-full sm:w-auto">Logo: <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">{companyLogoSlug(c)}.png</code> or <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">.jpg</code></span>
+                        {editingDisplayNameId !== c.id && (
+                          <button
+                            type="button"
+                            onClick={() => { setEditingDisplayNameId(c.id); setEditingDisplayNameValue(c.displayName ?? c.name); }}
+                            className="text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                            title="Edit display name"
+                          >
+                            Edit name
+                          </button>
+                        )}
+                        {deleteConfirmId === c.id ? (
+                          <span className="flex items-center gap-1 ml-auto">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Remove?</span>
+                            <button type="button" onClick={() => handleDeleteCompany(c)} className="text-xs px-2 py-1 bg-red-600 text-white rounded">Yes</button>
+                            <button type="button" onClick={() => setDeleteConfirmId(null)} className="text-xs px-2 py-1 text-gray-600 dark:text-gray-400">No</button>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirmId(c.id)}
+                            className="ml-auto p-1.5 rounded-lg text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            title="Remove company from account"
+                            aria-label="Delete company"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
                         )}
                       </li>
                     ))}

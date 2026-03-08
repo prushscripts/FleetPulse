@@ -53,12 +53,20 @@ export default async function HomeDashboardPage() {
 
   const territoryMap = buildTerritoryMap()
   const companyId = user.user_metadata?.company_id as string | undefined
+  const companySettings = (user.user_metadata?.company_settings as Record<string, { territorySegments?: string[] }>) || {}
+  const territorySegments = companyId && companySettings[companyId]?.territorySegments?.length
+    ? companySettings[companyId].territorySegments!
+    : (Object.keys(territoryMap).length ? ['New York', 'DMV'] : [])
 
   return (
     <>
       <Navbar />
       <TabSlideTransition>
-        <HomeDashboardClient territoryMap={territoryMap} companyId={companyId} />
+        <HomeDashboardClient
+          territoryMap={territoryMap}
+          companyId={companyId}
+          territorySegmentLabels={territorySegments}
+        />
       </TabSlideTransition>
     </>
   )

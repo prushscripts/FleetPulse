@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
-type TerritoryFilterValue = 'all' | 'New York' | 'DMV'
+type TerritoryFilterValue = 'all' | (string & {})
 
 interface FleetStats {
   totalVehicles: number
@@ -34,9 +34,11 @@ interface VehicleRow {
 export default function HomeDashboardClient({
   territoryMap = {},
   companyId,
+  territorySegmentLabels = [],
 }: {
   territoryMap?: Record<string, string>
   companyId?: string | null
+  territorySegmentLabels?: string[]
 }) {
   const [vehicles, setVehicles] = useState<VehicleRow[]>([])
   const [issues, setIssues] = useState<Array<{ vehicle_id: string; status: string; priority?: string }>>([])
@@ -45,7 +47,6 @@ export default function HomeDashboardClient({
   const [territoryFilter, setTerritoryFilter] = useState<TerritoryFilterValue>('all')
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
-
   const getTerritory = (vehicle: VehicleRow): string => {
     const code = vehicle.code?.toLowerCase()
     if (!code) return 'Other'
@@ -168,8 +169,7 @@ export default function HomeDashboardClient({
 
   const territoryTabs: { value: TerritoryFilterValue; label: string }[] = [
     { value: 'all', label: 'Full fleet' },
-    { value: 'New York', label: 'New York' },
-    { value: 'DMV', label: 'DMV' },
+    ...territorySegmentLabels.map((label) => ({ value: label as TerritoryFilterValue, label })),
   ]
 
   return (
@@ -184,7 +184,7 @@ export default function HomeDashboardClient({
           </p>
         </div>
 
-        {/* Territory tabs: Full fleet | New York | DMV */}
+        {/* Territory tabs: Full fleet | custom segments */}
         <div className="mb-6">
           <div className="inline-flex gap-1 p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/60 dark:border-gray-700/60">
             {territoryTabs.map(({ value, label }) => (

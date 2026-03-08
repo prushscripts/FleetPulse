@@ -535,6 +535,7 @@ export default function DashboardClient(
         })
         .eq('id', quickEditVehicle.id)
       if (error) throw error
+      setQuickDirty(false)
       closeQuickEdit()
       await loadVehicles()
       showToast('Vehicle updated', `${quickEditVehicle.code} was saved successfully.`)
@@ -1453,12 +1454,16 @@ export default function DashboardClient(
           className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4"
           onClick={closeQuickEdit}
         >
+          {/* Wrapper with buffer: clicks in the padding (up to ~2rem outside modal) don't close */}
           <div
-            className={`w-full max-w-[calc(100vw-2rem)] sm:max-w-2xl rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto ${
-              quickClosing ? 'animate-quick-edit-close' : 'animate-fade-in-scale'
-            }`}
+            className="flex items-center justify-center w-full max-w-2xl p-6 sm:p-8"
             onClick={(e) => e.stopPropagation()}
           >
+            <div
+              className={`w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto ${
+                quickClosing ? 'animate-quick-edit-close' : 'animate-fade-in-scale'
+              }`}
+            >
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
                 <h3 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">
@@ -1551,19 +1556,20 @@ export default function DashboardClient(
             <div className="mt-6 flex gap-3">
               <button
                 type="button"
+                onClick={closeQuickEdit}
+                className="flex-1 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 text-sm font-medium py-2.5 hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
                 onClick={handleQuickSave}
                 disabled={quickSaving}
                 className="flex-1 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium py-2.5 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50"
               >
                 {quickSaving ? 'Saving...' : 'Save Changes'}
               </button>
-              <button
-                type="button"
-                onClick={closeQuickEdit}
-                className="flex-1 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 text-sm font-medium py-2.5 hover:bg-gray-200 dark:hover:bg-gray-600"
-              >
-                Cancel
-              </button>
+            </div>
             </div>
           </div>
         </div>
@@ -1750,16 +1756,16 @@ export default function DashboardClient(
             </p>
             <div className="flex gap-3">
               <button
-                onClick={handleConfirmClose}
-                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
-              >
-                Close Without Saving
-              </button>
-              <button
                 onClick={handleCancelClose}
                 className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg text-sm font-medium transition-all"
               >
                 Cancel
+              </button>
+              <button
+                onClick={handleConfirmClose}
+                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
+              >
+                Close Without Saving
               </button>
             </div>
           </div>

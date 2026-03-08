@@ -8,7 +8,42 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useTheme } from '@/components/ThemeProvider'
 
-type Company = { id: string; name: string }
+export type Company = { id: string; name: string; displayName?: string }
+
+function companyLogoSlug(c: Company): string {
+  let n = (c.displayName || c.name).toLowerCase()
+  n = n.replace(/\s*(group|llc|inc|co|corp|ltd)\.?(\s*(group|llc|inc|co|corp|ltd)\.?)*\s*$/gi, '').trim()
+  return n.replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')
+}
+
+const LOGO_EXTENSIONS = ['.png', '.jpg', '.jpeg']
+
+function CompanyLogoImage({ company, className }: { company: Company; className?: string }) {
+  const slug = companyLogoSlug(company)
+  const [failed, setFailed] = useState(false)
+  const [extIndex, setExtIndex] = useState(0)
+  const ext = LOGO_EXTENSIONS[extIndex]
+  if (failed || !slug) {
+    return (
+      <span className={`flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded ${className || 'w-7 h-7'}`} aria-hidden>
+        <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      </span>
+    )
+  }
+  return (
+    <img
+      src={`/images/companylogos/${slug}${ext}`}
+      alt=""
+      className={className}
+      onError={() => {
+        if (extIndex < LOGO_EXTENSIONS.length - 1) setExtIndex((i) => i + 1)
+        else setFailed(true)
+      }}
+    />
+  )
+}
 
 export default function Navbar() {
   const router = useRouter()
@@ -25,22 +60,28 @@ export default function Navbar() {
     (pathname.startsWith('/dashboard') || pathname.startsWith('/home')) &&
     companies.length >= 2
 
+  const [companySettings, setCompanySettings] = useState<{ inspectionsEnabled?: boolean } | null>(null)
+
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setIsAdmin(user?.user_metadata?.is_admin === true)
       const list = user?.user_metadata?.companies as Company[] | undefined
       const cid = user?.user_metadata?.company_id as string | undefined
+      const cname = user?.user_metadata?.company_name as string | undefined
       if (list?.length) {
         setCompanies(list)
         setCurrentCompanyId(cid ?? null)
-      } else if (cid && user?.user_metadata?.company_name) {
-        setCompanies([{ id: cid, name: user.user_metadata.company_name }])
+      } else if (cid && cname) {
+        setCompanies([{ id: cid, name: cname }])
         setCurrentCompanyId(cid)
       } else {
         setCompanies([])
         setCurrentCompanyId(null)
       }
+      const settings = user?.user_metadata?.company_settings as Record<string, { inspectionsEnabled?: boolean }> | undefined
+      const current = cid && settings?.[cid] ? settings[cid] : null
+      setCompanySettings(current ?? null)
     }
     load()
   }, [supabase, pathname])
@@ -51,8 +92,9 @@ export default function Navbar() {
       return
     }
     try {
+      const displayName = company.displayName ?? company.name
       await supabase.auth.updateUser({
-        data: { company_id: company.id, company_name: company.name },
+        data: { company_id: company.id, company_name: displayName },
       })
       setCompanySwitcherOpen(false)
       window.location.reload()
@@ -67,16 +109,19 @@ export default function Navbar() {
     router.refresh()
   }
 
-  const currentCompanyName = companies.find((c) => c.id === currentCompanyId)?.name ?? ''
+  const currentCompany = companies.find((c) => c.id === currentCompanyId)
+  const currentCompanyName = currentCompany?.displayName ?? currentCompany?.name ?? ''
   const showRoadmap = /prush/i.test(currentCompanyName)
 
+  const inspectionsEnabled = companySettings?.inspectionsEnabled !== false
   const navItems = [
     { label: 'Home', href: '/home' },
     { label: 'Vehicles', href: '/dashboard' },
     { label: 'Drivers', href: '/dashboard/drivers' },
-    { label: 'Inspections', href: '/dashboard/inspections' },
+    ...(inspectionsEnabled ? [{ label: 'Inspections', href: '/dashboard/inspections' }] : []),
     { label: 'About', href: '/dashboard/about' },
     ...(showRoadmap ? [{ label: 'Roadmap', href: '/dashboard/roadmap' }] : []),
+    ...(currentCompanyId ? [{ label: 'Control Panel', href: '/dashboard/control-panel' }] : []),
   ]
 
   if (isAdmin) {
@@ -100,15 +145,15 @@ export default function Navbar() {
     <nav className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-sm border-b border-gray-200/80 dark:border-gray-700/80 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-[4.5rem] min-h-[4.5rem]">
-          {/* Logo: larger and wider so tagline is readable */}
-          <div className="flex items-center justify-start sm:justify-center min-w-[220px] sm:min-w-[320px] flex-shrink-0">
-            <Link href="/home" className="flex items-center justify-center group">
+          {/* Logo: prominent, fits correctly */}
+          <div className="flex items-center justify-start flex-shrink-0 w-[200px] sm:w-[280px]">
+            <Link href="/home" className="flex items-center h-full min-h-[44px] sm:min-h-[52px] group">
               <Image
                 src="/images/banner1.png"
                 alt="FleetPulse"
-                width={480}
-                height={200}
-                className="h-16 sm:h-[5rem] max-w-[320px] sm:max-w-[420px] w-auto transition-transform duration-200 group-hover:scale-105 object-contain object-center"
+                width={280}
+                height={80}
+                className="h-11 sm:h-[52px] w-auto max-w-full transition-transform duration-200 group-hover:scale-[1.02] object-contain object-left"
                 priority
                 unoptimized
               />
@@ -137,41 +182,48 @@ export default function Navbar() {
                 )
               })}
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 ml-2 sm:ml-6">
             {showCompanySwitcher && (
               <div className="relative hidden sm:block">
                 <button
                   type="button"
                   onClick={() => setCompanySwitcherOpen((v) => !v)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-all shadow-sm"
+                  className="flex items-center gap-2.5 pl-2 pr-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-all shadow-sm min-w-[160px]"
                   aria-label="Switch company"
                 >
-                  <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5. M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  <span className="max-w-[140px] truncate">
-                    {companies.find((c) => c.id === currentCompanyId)?.name ?? 'Company'}
+                  {currentCompany ? (
+                    <CompanyLogoImage company={currentCompany} className="w-7 h-7 rounded-md flex-shrink-0 object-contain bg-gray-100 dark:bg-gray-700" />
+                  ) : (
+                    <span className="w-7 h-7 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-600">
+                      <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </span>
+                  )}
+                  <span className="max-w-[120px] truncate">
+                    {currentCompanyName || 'Company'}
                   </span>
-                  <svg className={`w-4 h-4 text-gray-500 transition-transform ${companySwitcherOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-4 h-4 text-gray-500 flex-shrink-0 transition-transform ${companySwitcherOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
                 {companySwitcherOpen && (
                   <>
                     <div className="fixed inset-0 z-30" aria-hidden onClick={() => setCompanySwitcherOpen(false)} />
-                    <div className="absolute right-0 top-full mt-1 z-40 min-w-[200px] py-1 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl">
+                    <div className="absolute right-0 top-full mt-1.5 z-40 min-w-[220px] py-1.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl">
                       {companies.map((c) => (
                         <button
                           key={c.id}
                           type="button"
                           onClick={() => handleSwitchCompany(c)}
-                          className={`w-full flex items-center justify-between gap-2 text-left px-4 py-2.5 text-sm transition-colors ${
+                          className={`w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm transition-colors ${
                             c.id === currentCompanyId
                               ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium'
                               : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/80'
                           }`}
                         >
-                          <span className="truncate">{c.name}</span>
+                          <CompanyLogoImage company={c} className="w-6 h-6 rounded flex-shrink-0 object-contain bg-gray-100 dark:bg-gray-700" />
+                          <span className="truncate flex-1">{c.displayName ?? c.name}</span>
                           {c.id === currentCompanyId && (
                             <svg className="w-4 h-4 flex-shrink-0 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -246,13 +298,14 @@ export default function Navbar() {
                         key={c.id}
                         type="button"
                         onClick={() => { handleSwitchCompany(c); setMobileOpen(false) }}
-                        className={`w-full flex items-center justify-between rounded-xl px-4 py-2.5 text-sm ${
+                        className={`w-full flex items-center gap-3 justify-between rounded-xl px-4 py-2.5 text-sm ${
                           c.id === currentCompanyId
                             ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-medium'
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
                         }`}
                       >
-                        <span className="truncate">{c.name}</span>
+                        <CompanyLogoImage company={c} className="w-6 h-6 rounded flex-shrink-0 object-contain bg-gray-100 dark:bg-gray-700" />
+                        <span className="truncate flex-1 text-left">{c.displayName ?? c.name}</span>
                         {c.id === currentCompanyId && (
                           <svg className="w-4 h-4 flex-shrink-0 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -321,6 +374,17 @@ export default function Navbar() {
                         {item.label === 'About' && (
                           <svg className={`w-4 h-4 ${active ? 'text-white' : 'text-gray-600 dark:text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                        {item.label === 'Roadmap' && (
+                          <svg className={`w-4 h-4 ${active ? 'text-white' : 'text-gray-600 dark:text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                        )}
+                        {item.label === 'Control Panel' && (
+                          <svg className={`w-4 h-4 ${active ? 'text-white' : 'text-gray-600 dark:text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
                         )}
                         {item.label === 'Admin' && (
