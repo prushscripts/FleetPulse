@@ -6,8 +6,6 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import Image from 'next/image'
 
-const LOGO_SRCS = ['/images/bottom1.png', '/images/banner1.png']
-
 export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -15,13 +13,8 @@ export default function SignupPage() {
   const [companyKey, setCompanyKey] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [logoIdx, setLogoIdx] = useState(0)
   const router = useRouter()
   const supabase = createClient()
-
-  const handleLogoError = () => {
-    setLogoIdx((i) => (i < LOGO_SRCS.length - 1 ? i + 1 : LOGO_SRCS.length))
-  }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -93,21 +86,16 @@ export default function SignupPage() {
       <div className="max-w-md w-full">
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-6 min-h-[3.5rem]">
-            {logoIdx < LOGO_SRCS.length ? (
-              <Image
-                src={LOGO_SRCS[logoIdx]}
-                alt="FleetPulse"
-                width={280}
-                height={120}
-                className="h-14 w-auto max-w-[260px] object-contain mx-auto"
-                priority
-                unoptimized
-                onError={handleLogoError}
-              />
-            ) : (
-              <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">FleetPulse</span>
-            )}
+          <div className="flex justify-center mb-6">
+            <Image
+              src="/images/banner1.png"
+              alt="FleetPulse"
+              width={240}
+              height={100}
+              className="h-12 sm:h-14 w-auto max-w-[220px] object-contain mx-auto"
+              priority
+              unoptimized
+            />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Create Your Account

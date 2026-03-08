@@ -11,8 +11,8 @@ const inter = Inter({
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://FleetPulseHQ.com'
-// Link preview: use dynamic /og-image so an image always loads when sharing. Add public/images/banner1.png and switch to /images/banner1.png for your custom card.
-const ogImageUrl = `${siteUrl}/og-image`
+// Link preview when you text the link = your FleetPulse card (banner1)
+const ogImageUrl = `${siteUrl}/images/banner1.png`
 
 export const metadata: Metadata = {
   title: 'FleetPulse - Fleet Management System',
