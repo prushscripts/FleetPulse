@@ -11,6 +11,7 @@ const TAB_ORDER: Record<string, number> = {
   '/dashboard/drivers': 2,
   '/dashboard/inspections': 3,
   '/dashboard/about': 4,
+  '/dashboard/roadmap': 4.2,
   '/dashboard/activate': 4.5,
   '/dashboard/welcome': 4.5,
   '/dashboard/admin': 5,

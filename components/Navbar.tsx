@@ -54,9 +54,8 @@ export default function Navbar() {
       await supabase.auth.updateUser({
         data: { company_id: company.id, company_name: company.name },
       })
-      setCurrentCompanyId(company.id)
       setCompanySwitcherOpen(false)
-      router.refresh()
+      window.location.reload()
     } catch {
       setCompanySwitcherOpen(false)
     }
@@ -68,12 +67,16 @@ export default function Navbar() {
     router.refresh()
   }
 
+  const currentCompanyName = companies.find((c) => c.id === currentCompanyId)?.name ?? ''
+  const showRoadmap = /prush/i.test(currentCompanyName)
+
   const navItems = [
     { label: 'Home', href: '/home' },
     { label: 'Vehicles', href: '/dashboard' },
     { label: 'Drivers', href: '/dashboard/drivers' },
     { label: 'Inspections', href: '/dashboard/inspections' },
     { label: 'About', href: '/dashboard/about' },
+    ...(showRoadmap ? [{ label: 'Roadmap', href: '/dashboard/roadmap' }] : []),
   ]
 
   if (isAdmin) {
