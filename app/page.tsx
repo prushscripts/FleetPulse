@@ -257,7 +257,7 @@ export default async function Home() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                   {/* Starter Plan */}
                   <ScrollReveal delay={0}>
-                    <div className="group bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-xl hover:scale-105 transition-all duration-300">
+                    <div className="group bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-300">
                       <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1 select-none cursor-default">Starter</h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 select-none cursor-default">For smaller fleets to organize vehicle inventory & manage inspections</p>
                       <div className="mb-2 select-none cursor-default">
@@ -303,51 +303,51 @@ export default async function Home() {
 
                   {/* Professional Plan */}
                   <ScrollReveal delay={100}>
-                    <div className="group bg-white dark:bg-gray-800 border-2 border-indigo-500 rounded-xl p-6 transform scale-105 shadow-xl relative hover:shadow-2xl transition-all duration-300">
-                      <div className="absolute -top-px left-0 right-0 bg-indigo-600 text-white text-center py-1.5 rounded-t-xl text-xs font-bold">
+                    <div className="group bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl p-6 transform scale-105 shadow-xl relative border-2 border-indigo-500 hover:scale-110 hover:-translate-y-2 hover:shadow-2xl transition-all duration-300">
+                      <div className="absolute -top-3 right-4 bg-yellow-400 text-indigo-900 px-3 py-1 rounded-full text-xs font-bold animate-float">
                         MOST POPULAR
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1 select-none cursor-default pt-2">Professional</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 select-none cursor-default">For growing fleets to improve service tracking, communication & reporting</p>
+                      <h3 className="text-xl font-bold text-white mb-1 select-none cursor-default">Professional</h3>
+                      <p className="text-sm text-indigo-200 mb-4 select-none cursor-default">For growing fleets to improve service tracking, communication & reporting</p>
                       <div className="mb-2 select-none cursor-default">
-                        <span className="text-4xl font-bold text-gray-900 dark:text-white">$6</span>
-                        <span className="text-gray-600 dark:text-gray-400 text-sm ml-2">per vehicle, per month</span>
+                        <span className="text-4xl font-bold text-white">$6</span>
+                        <span className="text-indigo-200 text-sm ml-2">per vehicle, per month</span>
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mb-4 select-none cursor-default">Billed annually only</p>
+                      <p className="text-xs text-indigo-200 mb-4 select-none cursor-default">Billed annually only</p>
                       <ul className="space-y-2 mb-6 text-sm select-none cursor-default">
                         <li className="flex items-start">
-                          <span className="text-green-500 mr-2">✓</span>
-                          <span className="text-gray-600 dark:text-gray-400">Everything in Starter</span>
+                          <span className="text-white mr-2">✓</span>
+                          <span className="text-indigo-100">Everything in Starter</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-green-500 mr-2">✓</span>
-                          <span className="text-gray-600 dark:text-gray-400">Driver management</span>
+                          <span className="text-white mr-2">✓</span>
+                          <span className="text-indigo-100">Driver management</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-green-500 mr-2">✓</span>
-                          <span className="text-gray-600 dark:text-gray-400">Digital inspections</span>
+                          <span className="text-white mr-2">✓</span>
+                          <span className="text-indigo-100">Digital inspections</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-green-500 mr-2">✓</span>
-                          <span className="text-gray-600 dark:text-gray-400">Fleet health dashboard</span>
+                          <span className="text-white mr-2">✓</span>
+                          <span className="text-indigo-100">Fleet health dashboard</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-green-500 mr-2">✓</span>
-                          <span className="text-gray-600 dark:text-gray-400">CSV import/export</span>
+                          <span className="text-white mr-2">✓</span>
+                          <span className="text-indigo-100">CSV import/export</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-green-500 mr-2">✓</span>
-                          <span className="text-gray-600 dark:text-gray-400">Advanced analytics dashboards</span>
+                          <span className="text-white mr-2">✓</span>
+                          <span className="text-indigo-100">Advanced analytics dashboards</span>
                         </li>
                       </ul>
                       <Link
                         href="/signup"
-                        className="block w-full text-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors cursor-pointer text-sm"
+                        className="block w-full text-center px-4 py-2.5 bg-white text-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition-colors cursor-pointer text-sm"
                       >
                         Get Started
                       </Link>
                       <p className="text-center mt-3 text-sm">
-                        <Link href="/signup" className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium cursor-pointer">
+                        <Link href="/signup" className="text-white hover:underline font-medium cursor-pointer">
                           or Start a Free Trial
                         </Link>
                       </p>
@@ -356,7 +356,7 @@ export default async function Home() {
 
                   {/* Premium Plan */}
                   <ScrollReveal delay={200}>
-                    <div className="group bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-xl hover:scale-105 transition-all duration-300">
+                    <div className="group bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-300">
                       <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1 select-none cursor-default">Premium</h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 select-none cursor-default">For advanced fleets to integrate fleet systems & customize workflows</p>
                       <div className="mb-2 select-none cursor-default">
