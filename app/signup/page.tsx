@@ -88,7 +88,7 @@ export default function SignupPage() {
         <div className="text-center mb-6">
           <div className="flex justify-center mb-5">
             <Image
-              src="/images/banner1new.png"
+              src="/images/banner1.png"
               alt="FleetPulse"
               width={380}
               height={140}

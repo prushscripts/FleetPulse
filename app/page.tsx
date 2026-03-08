@@ -72,7 +72,7 @@ export default async function Home() {
               <ScrollReveal delay={0}>
                 <div className="flex justify-center mb-6 sm:mb-8">
                   <Image
-                    src="/images/banner1new.png"
+                    src="/images/banner1.png"
                     alt="FleetPulse"
                     width={360}
                     height={140}
@@ -435,7 +435,7 @@ export default async function Home() {
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 py-8">
                 <div className="flex justify-center mb-6">
                   <Image
-                    src="/images/banner1new.png"
+                    src="/images/banner1.png"
                     alt="FleetPulse"
                     width={280}
                     height={100}

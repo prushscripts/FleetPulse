@@ -12,7 +12,7 @@ const inter = Inter({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://FleetPulseHQ.com'
 // Link preview when you text the link = FleetPulse card (transparent banner)
-const ogImageUrl = `${siteUrl}/images/banner1new.png`
+const ogImageUrl = `${siteUrl}/images/banner1.png`
 
 export const metadata: Metadata = {
   title: 'FleetPulse - Fleet Management System',

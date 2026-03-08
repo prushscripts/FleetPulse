@@ -63,7 +63,7 @@ export default function Navbar() {
             <div className="flex-shrink-0 flex items-center">
               <Link href="/home" className="flex items-center gap-2 group">
                 <Image
-                  src="/images/banner1new.png"
+                  src="/images/banner1.png"
                   alt="FleetPulse"
                   width={180}
                   height={72}
