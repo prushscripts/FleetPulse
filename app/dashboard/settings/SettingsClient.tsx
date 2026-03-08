@@ -20,9 +20,13 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   const [tier, setTier] = useState<SubscriptionTier>('professional')
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState<string | null>(null)
+  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
   const [companyKeyInput, setCompanyKeyInput] = useState('')
   const [companyActivating, setCompanyActivating] = useState(false)
   const [companyError, setCompanyError] = useState<string | null>(null)
+  const [addCompanyKey, setAddCompanyKey] = useState('')
+  const [addCompanyLoading, setAddCompanyLoading] = useState(false)
+  const [addCompanyError, setAddCompanyError] = useState<string | null>(null)
   const supabase = createClient()
   const router = useRouter()
 
@@ -36,8 +40,18 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         setNickname(currentUser?.email?.split('@')[0] || '')
       }
       setTier(normalizeTier(currentUser?.user_metadata?.subscription_tier))
-      setCompanyId(currentUser?.user_metadata?.company_id ?? null)
-      setCompanyName(currentUser?.user_metadata?.company_name ?? null)
+      const cid = currentUser?.user_metadata?.company_id ?? null
+      const cname = currentUser?.user_metadata?.company_name ?? null
+      setCompanyId(cid)
+      setCompanyName(cname)
+      const list = currentUser?.user_metadata?.companies as { id: string; name: string }[] | undefined
+      if (list?.length) {
+        setCompanies(list)
+      } else if (cid && cname) {
+        setCompanies([{ id: cid, name: cname }])
+      } else {
+        setCompanies([])
+      }
     }
     loadUserData()
   }, [supabase])
@@ -106,12 +120,15 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         setCompanyActivating(false)
         return
       }
+      const existing = companies.filter((c) => c.id !== company.id)
+      const merged = existing.length === companies.length ? [...companies, { id: company.id, name: company.name }] : companies
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { company_id: company.id, company_name: company.name },
+        data: { company_id: company.id, company_name: company.name, companies: merged },
       })
       if (updateError) throw updateError
       setCompanyId(company.id)
       setCompanyName(company.name)
+      setCompanies(merged)
       setCompanyKeyInput('')
       setMessage({ type: 'success', text: 'Company activated. You now have access to your company data.' })
       setTimeout(() => setMessage(null), 4000)
@@ -120,6 +137,49 @@ export default function SettingsClient({ user }: SettingsClientProps) {
       setCompanyError(err?.message || 'Activation failed.')
     } finally {
       setCompanyActivating(false)
+    }
+  }
+
+  const handleAddCompany = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const key = addCompanyKey.trim()
+    if (!key) {
+      setAddCompanyError('Enter a company authentication key.')
+      return
+    }
+    setAddCompanyLoading(true)
+    setAddCompanyError(null)
+    try {
+      const { data: company, error: fetchError } = await supabase
+        .from('companies')
+        .select('id, name')
+        .eq('auth_key', key)
+        .maybeSingle()
+      if (fetchError) throw fetchError
+      if (!company) {
+        setAddCompanyError('Invalid company key. Check the key and try again.')
+        setAddCompanyLoading(false)
+        return
+      }
+      if (companies.some((c) => c.id === company.id)) {
+        setAddCompanyError('You already have access to this company.')
+        setAddCompanyLoading(false)
+        return
+      }
+      const merged = [...companies, { id: company.id, name: company.name }]
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { companies: merged },
+      })
+      if (updateError) throw updateError
+      setCompanies(merged)
+      setAddCompanyKey('')
+      setMessage({ type: 'success', text: `Added "${company.name}". Switch to it using the company switcher at the top of the page.` })
+      setTimeout(() => setMessage(null), 4000)
+      router.refresh()
+    } catch (err: any) {
+      setAddCompanyError(err?.message || 'Failed to add company.')
+    } finally {
+      setAddCompanyLoading(false)
     }
   }
 
@@ -222,29 +282,31 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           </div>
         </div>
 
-        {/* Company / Authentication key */}
+        {/* My Companies */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Company</h2>
-          {companyId && companyName ? (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Active company:</span>
-              <span className="font-medium text-gray-900 dark:text-white">{companyName}</span>
-            </div>
-          ) : (
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">My Companies</h2>
+          {companies.length === 0 ? (
             <form onSubmit={handleCompanyActivate} className="space-y-3">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                Enter your company authentication key to access your fleet data. Your administrator provides this key.
+                Enter your company authentication key to access your fleet data.
               </p>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Company authentication key
+                <span
+                  className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-gray-400 dark:border-gray-500 text-gray-500 dark:text-gray-400 cursor-help text-xs font-bold"
+                  title="If you don't have an ID, contact your company administration to acquire one."
+                >
+                  ?
+                </span>
+              </label>
               <input
                 type="text"
                 value={companyKeyInput}
                 onChange={(e) => setCompanyKeyInput(e.target.value)}
-                placeholder="Company authentication key"
+                placeholder=""
                 className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
-              {companyError && (
-                <p className="text-sm text-red-600 dark:text-red-400">{companyError}</p>
-              )}
+              {companyError && <p className="text-sm text-red-600 dark:text-red-400">{companyError}</p>}
               <button
                 type="submit"
                 disabled={companyActivating}
@@ -253,6 +315,57 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                 {companyActivating ? 'Activating…' : 'Activate'}
               </button>
             </form>
+          ) : (
+            <>
+              <ul className="space-y-2 mb-6">
+                {companies.map((c) => (
+                  <li
+                    key={c.id}
+                    className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700"
+                  >
+                    <span className="font-medium text-gray-900 dark:text-white">{c.name}</span>
+                    {companyId === c.id && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
+                        Current
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Add another company</p>
+                <form onSubmit={handleAddCompany} className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1">
+                    <label className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Company invite code
+                      <span
+                        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-gray-400 dark:border-gray-500 text-gray-500 cursor-help text-[10px] font-bold"
+                        title="If you don't have an ID, contact your company administration to acquire one."
+                      >
+                        ?
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={addCompanyKey}
+                      onChange={(e) => setAddCompanyKey(e.target.value)}
+                      placeholder=""
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <button
+                      type="submit"
+                      disabled={addCompanyLoading}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium whitespace-nowrap"
+                    >
+                      {addCompanyLoading ? 'Adding…' : 'Add company'}
+                    </button>
+                  </div>
+                </form>
+                {addCompanyError && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{addCompanyError}</p>}
+              </div>
+            </>
           )}
         </div>
 

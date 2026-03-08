@@ -33,8 +33,10 @@ interface VehicleRow {
 
 export default function HomeDashboardClient({
   territoryMap = {},
+  companyId,
 }: {
   territoryMap?: Record<string, string>
+  companyId?: string | null
 }) {
   const [vehicles, setVehicles] = useState<VehicleRow[]>([])
   const [issues, setIssues] = useState<Array<{ vehicle_id: string; status: string; priority?: string }>>([])
@@ -52,26 +54,28 @@ export default function HomeDashboardClient({
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [companyId])
 
   const loadData = async () => {
     try {
+      let vehiclesQuery = supabase.from('vehicles').select('id, code, status, current_mileage, oil_change_due_mileage')
+      if (companyId) vehiclesQuery = vehiclesQuery.eq('company_id', companyId)
       const [
         { data: vehiclesData },
         { data: issuesData },
         { data: documentsData },
         { data: inspectionsData },
       ] = await Promise.all([
-        supabase.from('vehicles').select('id, code, status, current_mileage, oil_change_due_mileage'),
+        vehiclesQuery,
         supabase.from('issues').select('vehicle_id, status, priority').neq('status', 'resolved'),
         supabase.from('documents').select('vehicle_id, expiration_date'),
         supabase.from('inspections').select('vehicle_id, status'),
       ])
-
+      const vehicleIds = new Set((vehiclesData || []).map((v) => v.id))
       setVehicles(vehiclesData || [])
-      setIssues(issuesData || [])
-      setDocuments(documentsData || [])
-      setInspections(inspectionsData || [])
+      setIssues((issuesData || []).filter((i) => vehicleIds.has(i.vehicle_id)))
+      setDocuments((documentsData || []).filter((d) => vehicleIds.has(d.vehicle_id)))
+      setInspections((inspectionsData || []).filter((i) => vehicleIds.has(i.vehicle_id)))
     } catch (error) {
       console.error('Error loading home data:', error)
     } finally {

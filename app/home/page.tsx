@@ -52,12 +52,13 @@ export default async function HomeDashboardPage() {
   }
 
   const territoryMap = buildTerritoryMap()
+  const companyId = user.user_metadata?.company_id as string | undefined
 
   return (
     <>
       <Navbar />
       <TabSlideTransition>
-        <HomeDashboardClient territoryMap={territoryMap} />
+        <HomeDashboardClient territoryMap={territoryMap} companyId={companyId} />
       </TabSlideTransition>
     </>
   )

@@ -35,10 +35,17 @@ export default function ActivateClient({ userEmail }: { userEmail: string }) {
         return
       }
 
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      const existing = (currentUser?.user_metadata?.companies as { id: string; name: string }[]) ?? []
+      const merged = existing.some((c: { id: string }) => c.id === company.id)
+        ? existing
+        : [...existing, { id: company.id, name: company.name }]
+
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
           company_id: company.id,
           company_name: company.name,
+          companies: merged,
         },
       })
       if (updateError) throw updateError
@@ -77,15 +84,21 @@ export default function ActivateClient({ userEmail }: { userEmail: string }) {
 
           <form onSubmit={handleActivate} className="space-y-4">
             <div>
-              <label htmlFor="companyKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="companyKey" className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Company authentication key
+                <span
+                  className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-gray-400 dark:border-gray-500 text-gray-500 dark:text-gray-400 cursor-help text-xs font-bold"
+                  title="If you don't have an ID, contact your company administration to acquire one."
+                >
+                  ?
+                </span>
               </label>
               <input
                 id="companyKey"
                 type="text"
                 value={companyKey}
                 onChange={(e) => setCompanyKey(e.target.value)}
-                placeholder="e.g. WheelzUpAPD2026"
+                placeholder=""
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 autoComplete="off"
                 autoFocus

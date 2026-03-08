@@ -62,7 +62,11 @@ export default function SignupPage() {
           .maybeSingle()
         if (company) {
           await supabase.auth.updateUser({
-            data: { company_id: company.id, company_name: company.name },
+            data: {
+              company_id: company.id,
+              company_name: company.name,
+              companies: [{ id: company.id, name: company.name }],
+            },
           })
           router.push('/dashboard')
           setTimeout(() => { window.location.href = '/dashboard' }, 100)
@@ -177,8 +181,14 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label htmlFor="companyKey" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+              <label htmlFor="companyKey" className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
                 Company invite code <span className="font-normal text-gray-400">(optional)</span>
+                <span
+                  className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-gray-400 dark:border-gray-500 text-gray-500 dark:text-gray-400 cursor-help text-[10px] font-bold"
+                  title="If you don't have an ID, contact your company administration to acquire one."
+                >
+                  ?
+                </span>
               </label>
               <input
                 id="companyKey"
@@ -188,11 +198,8 @@ export default function SignupPage() {
                 value={companyKey}
                 onChange={(e) => setCompanyKey(e.target.value)}
                 className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                placeholder="e.g. WheelzUpAPD2026"
+                placeholder=""
               />
-              <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                Enter a code from your team to join your company.
-              </p>
             </div>
 
             <button

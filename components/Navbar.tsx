@@ -8,21 +8,59 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useTheme } from '@/components/ThemeProvider'
 
+type Company = { id: string; name: string }
+
 export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [currentCompanyId, setCurrentCompanyId] = useState<string | null>(null)
+  const [companySwitcherOpen, setCompanySwitcherOpen] = useState(false)
   const supabase = createClient()
   const { theme, toggleTheme } = useTheme()
 
+  const showCompanySwitcher =
+    (pathname.startsWith('/dashboard') || pathname.startsWith('/home')) &&
+    companies.length >= 2
+
   useEffect(() => {
-    const checkAdmin = async () => {
+    const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setIsAdmin(user?.user_metadata?.is_admin === true)
+      const list = user?.user_metadata?.companies as Company[] | undefined
+      const cid = user?.user_metadata?.company_id as string | undefined
+      if (list?.length) {
+        setCompanies(list)
+        setCurrentCompanyId(cid ?? null)
+      } else if (cid && user?.user_metadata?.company_name) {
+        setCompanies([{ id: cid, name: user.user_metadata.company_name }])
+        setCurrentCompanyId(cid)
+      } else {
+        setCompanies([])
+        setCurrentCompanyId(null)
+      }
     }
-    checkAdmin()
-  }, [supabase])
+    load()
+  }, [supabase, pathname])
+
+  const handleSwitchCompany = async (company: Company) => {
+    if (company.id === currentCompanyId) {
+      setCompanySwitcherOpen(false)
+      return
+    }
+    try {
+      await supabase.auth.updateUser({
+        data: { company_id: company.id, company_name: company.name },
+      })
+      setCurrentCompanyId(company.id)
+      setCompanySwitcherOpen(false)
+      router.refresh()
+    } catch {
+      setCompanySwitcherOpen(false)
+    }
+  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -97,7 +135,54 @@ export default function Navbar() {
               })}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {showCompanySwitcher && (
+              <div className="relative hidden sm:block">
+                <button
+                  type="button"
+                  onClick={() => setCompanySwitcherOpen((v) => !v)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-all shadow-sm"
+                  aria-label="Switch company"
+                >
+                  <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5. M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <span className="max-w-[140px] truncate">
+                    {companies.find((c) => c.id === currentCompanyId)?.name ?? 'Company'}
+                  </span>
+                  <svg className={`w-4 h-4 text-gray-500 transition-transform ${companySwitcherOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {companySwitcherOpen && (
+                  <>
+                    <div className="fixed inset-0 z-30" aria-hidden onClick={() => setCompanySwitcherOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1 z-40 min-w-[200px] py-1 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl">
+                      {companies.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => handleSwitchCompany(c)}
+                          className={`w-full flex items-center justify-between gap-2 text-left px-4 py-2.5 text-sm transition-colors ${
+                            c.id === currentCompanyId
+                              ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium'
+                              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/80'
+                          }`}
+                        >
+                          <span className="truncate">{c.name}</span>
+                          {c.id === currentCompanyId && (
+                            <svg className="w-4 h-4 flex-shrink-0 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
@@ -143,12 +228,39 @@ export default function Navbar() {
             >
               Logout
             </button>
+            </div>
           </div>
         </div>
 
         {mobileOpen && (
           <div className="sm:hidden pb-3 animate-fade-in-scale">
             <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-xl p-3 space-y-2">
+              {showCompanySwitcher && (
+                <div className="mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-2 block mb-2">Company</span>
+                  <div className="space-y-1">
+                    {companies.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => { handleSwitchCompany(c); setMobileOpen(false) }}
+                        className={`w-full flex items-center justify-between rounded-xl px-4 py-2.5 text-sm ${
+                          c.id === currentCompanyId
+                            ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-medium'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                        }`}
+                      >
+                        <span className="truncate">{c.name}</span>
+                        {c.id === currentCompanyId && (
+                          <svg className="w-4 h-4 flex-shrink-0 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex items-center justify-between mb-2 px-2">
                 <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Navigation</span>
                 <button
