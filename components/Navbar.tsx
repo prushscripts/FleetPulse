@@ -103,9 +103,9 @@ export default function Navbar() {
                 <Image
                   src="/images/banner1.png"
                   alt="FleetPulse"
-                  width={280}
-                  height={112}
-                  className="h-14 max-w-[260px] w-auto transition-transform duration-200 group-hover:scale-105 object-contain"
+                  width={340}
+                  height={136}
+                  className="h-[4.25rem] max-w-[320px] w-auto transition-transform duration-200 group-hover:scale-105 object-contain"
                   priority
                   unoptimized
                 />

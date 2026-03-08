@@ -185,6 +185,37 @@
       transform: rotate(360deg);
     }
   }
+
+  /* Auth pages: tech / pulse animated background */
+  @keyframes authGridDrift {
+    0% { background-position: 0 0; }
+    100% { background-position: 56px 56px; }
+  }
+  @keyframes authPulse {
+    0%, 100% { opacity: 0.35; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.08); }
+  }
+  @keyframes authPulseSlow {
+    0%, 100% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(1.12); }
+  }
+  @keyframes authScan {
+    0% { transform: translateY(-100%); opacity: 0.03; }
+    50% { opacity: 0.08; }
+    100% { transform: translateY(100vh); opacity: 0.03; }
+  }
+  .animate-auth-grid {
+    animation: authGridDrift 28s linear infinite;
+  }
+  .animate-auth-pulse {
+    animation: authPulse 4s ease-in-out infinite;
+  }
+  .animate-auth-pulse-slow {
+    animation: authPulseSlow 6s ease-in-out infinite;
+  }
+  .animate-auth-scan {
+    animation: authScan 8s linear infinite;
+  }
   
   .animate-fade-in {
     animation: fade-in 0.8s ease-out;
