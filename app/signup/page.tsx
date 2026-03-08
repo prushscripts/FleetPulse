@@ -88,11 +88,11 @@ export default function SignupPage() {
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
             <Image
-              src="/fplogo.png"
+              src="/images/bottom1.png"
               alt="FleetPulse"
-              width={200}
-              height={60}
-              className="h-12 w-auto"
+              width={280}
+              height={120}
+              className="h-14 w-auto max-w-[260px] object-contain mx-auto"
               priority
               unoptimized
             />

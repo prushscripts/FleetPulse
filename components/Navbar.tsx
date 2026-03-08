@@ -63,12 +63,13 @@ export default function Navbar() {
             <div className="flex-shrink-0 flex items-center">
               <Link href="/home" className="flex items-center gap-2 group">
                 <Image
-                  src="/fplogo.png"
+                  src="/images/bottom1.png"
                   alt="FleetPulse"
-                  width={120}
-                  height={40}
-                  className="h-7 w-auto transition-transform duration-200 group-hover:scale-105"
+                  width={160}
+                  height={64}
+                  className="h-8 w-auto transition-transform duration-200 group-hover:scale-105 object-contain"
                   priority
+                  unoptimized
                 />
               </Link>
             </div>

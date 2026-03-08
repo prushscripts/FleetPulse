@@ -11,8 +11,8 @@ const inter = Inter({
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://FleetPulseHQ.com'
-// Static PNG = fast, reliable for iMessage large preview (run node scripts/generate-og-image.js to regenerate)
-const ogImageUrl = `${siteUrl}/og-image.png`
+// Main logo = link preview (texts) + branding. Use public/images/bottom1.png (your FleetPulse card).
+const ogImageUrl = `${siteUrl}/images/bottom1.png`
 
 export const metadata: Metadata = {
   title: 'FleetPulse - Fleet Management System',
