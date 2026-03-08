@@ -94,24 +94,24 @@ export default function Navbar() {
 
 
   return (
-    <nav className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md shadow-sm border-b border-gray-200/60 dark:border-gray-700/60 sticky top-0 z-40">
+    <nav className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-sm border-b border-gray-200/80 dark:border-gray-700/80 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-14">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <Link href="/home" className="flex items-center gap-2 group">
-                <Image
-                  src="/images/banner1.png"
-                  alt="FleetPulse"
-                  width={340}
-                  height={136}
-                  className="h-[4.25rem] max-w-[320px] w-auto transition-transform duration-200 group-hover:scale-105 object-contain"
-                  priority
-                  unoptimized
-                />
-              </Link>
-            </div>
-            <div className="hidden sm:ml-8 sm:flex sm:space-x-0.5">
+        <div className="flex justify-between items-center h-16 min-h-[4rem]">
+          {/* Logo zone: centered in left section so tagline is readable */}
+          <div className="flex items-center justify-start sm:justify-center min-w-[200px] sm:min-w-[280px] flex-shrink-0">
+            <Link href="/home" className="flex items-center justify-center group">
+              <Image
+                src="/images/banner1.png"
+                alt="FleetPulse"
+                width={400}
+                height={160}
+                className="h-14 sm:h-[4rem] max-w-[280px] sm:max-w-[360px] w-auto transition-transform duration-200 group-hover:scale-105 object-contain object-center"
+                priority
+                unoptimized
+              />
+            </Link>
+          </div>
+          <div className="hidden sm:flex sm:flex-1 sm:justify-center sm:items-center sm:space-x-0.5">
               {navItems.map((item) => {
                 const active = isTabActive(item.href)
                 return (
@@ -133,9 +133,8 @@ export default function Navbar() {
                   </Link>
                 )
               })}
-            </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-shrink-0">
             {showCompanySwitcher && (
               <div className="relative hidden sm:block">
                 <button

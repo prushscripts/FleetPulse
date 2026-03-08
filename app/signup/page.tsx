@@ -87,23 +87,31 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-indigo-950/95 via-gray-900 to-purple-950/95 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950/90">
-      {/* Animated grid */}
+      {/* Animated grid - stronger */}
       <div
-        className="absolute inset-0 opacity-40 dark:opacity-30 animate-auth-grid"
+        className="absolute inset-0 opacity-60 dark:opacity-50 animate-auth-grid"
         style={{
-          backgroundImage: 'linear-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.12) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(rgba(99, 102, 241, 0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.18) 1px, transparent 1px)',
           backgroundSize: '56px 56px',
         }}
       />
-      {/* Soft pulsing orbs */}
-      <div className="absolute top-1/4 left-1/4 w-[480px] h-[480px] rounded-full bg-indigo-500/20 dark:bg-indigo-600/15 blur-[100px] pointer-events-none animate-auth-pulse" />
-      <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] rounded-full bg-purple-500/15 dark:bg-purple-600/10 blur-[80px] pointer-events-none animate-auth-pulse-slow" />
-      <div className="absolute top-1/2 right-1/3 w-[320px] h-[320px] rounded-full bg-indigo-400/10 dark:bg-indigo-500/10 blur-[60px] pointer-events-none animate-auth-pulse" style={{ animationDelay: '1.5s' }} />
-      {/* Subtle scan line */}
+      {/* Secondary diagonal grid */}
       <div
-        className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-400/30 to-transparent pointer-events-none animate-auth-scan"
-        style={{ width: '100%' }}
+        className="absolute inset-0 opacity-30 dark:opacity-20 animate-auth-grid"
+        style={{
+          backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(139, 92, 246, 0.06) 40px, rgba(139, 92, 246, 0.06) 41px), repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(99, 102, 241, 0.06) 40px, rgba(99, 102, 241, 0.06) 41px)',
+          backgroundSize: '100% 100%',
+          animationDuration: '35s',
+        }}
       />
+      {/* Pulsing orbs - bigger and more visible */}
+      <div className="absolute top-1/4 left-1/4 w-[520px] h-[520px] rounded-full bg-indigo-500/25 dark:bg-indigo-500/20 blur-[120px] pointer-events-none animate-auth-pulse" />
+      <div className="absolute bottom-1/3 right-1/4 w-[440px] h-[440px] rounded-full bg-purple-500/22 dark:bg-purple-600/18 blur-[100px] pointer-events-none animate-auth-pulse-slow" />
+      <div className="absolute top-1/2 right-1/3 w-[380px] h-[380px] rounded-full bg-indigo-400/18 dark:bg-indigo-500/15 blur-[80px] pointer-events-none animate-auth-pulse" style={{ animationDelay: '1.5s' }} />
+      <div className="absolute bottom-1/4 left-1/2 w-[300px] h-[300px] rounded-full bg-violet-500/15 blur-[70px] pointer-events-none animate-auth-pulse-slow" style={{ animationDelay: '-2s' }} />
+      {/* Scan lines - two for more motion */}
+      <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-400/40 to-transparent pointer-events-none animate-auth-scan" />
+      <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-400/25 to-transparent pointer-events-none animate-auth-scan" style={{ animationDelay: '4s', animationDuration: '12s' }} />
       {/* Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">

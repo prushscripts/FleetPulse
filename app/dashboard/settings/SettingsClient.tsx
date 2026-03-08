@@ -27,16 +27,14 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   const [addCompanyKey, setAddCompanyKey] = useState('')
   const [addCompanyLoading, setAddCompanyLoading] = useState(false)
   const [addCompanyError, setAddCompanyError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'account' | 'companies' | 'profile' | 'billing' | 'security'>('account')
+  const [activeTab, setActiveTab] = useState<'account' | 'companies' | 'billing'>('account')
   const supabase = createClient()
   const router = useRouter()
 
   const tabs = [
     { id: 'account' as const, label: 'Account', icon: '👤' },
     { id: 'companies' as const, label: 'Companies', icon: '🏢' },
-    { id: 'profile' as const, label: 'Profile', icon: '✨' },
     { id: 'billing' as const, label: 'Billing', icon: '📋' },
-    { id: 'security' as const, label: 'Security', icon: '🔒' },
   ]
 
   useEffect(() => {
@@ -260,17 +258,17 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           </div>
         )}
 
-        {/* Tab bar */}
-        <div className="flex flex-wrap gap-1 p-1 rounded-xl bg-white dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 shadow-sm mb-6">
+        {/* Tab bar - premium pill style */}
+        <div className="flex flex-wrap gap-0.5 p-1.5 rounded-2xl bg-gray-100/80 dark:bg-gray-800/80 border border-gray-200/80 dark:border-gray-700/80 shadow-inner mb-8">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                 activeTab === tab.id
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/80 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-md border border-gray-200/80 dark:border-gray-600'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50'
               }`}
             >
               <span aria-hidden>{tab.icon}</span>
@@ -279,38 +277,102 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           ))}
         </div>
 
-        {/* Tab content - single card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        {/* Tab content - single card, premium look */}
+        <div className="bg-gradient-to-b from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-800/80 rounded-2xl shadow-xl border border-gray-200/80 dark:border-gray-700/80 overflow-hidden">
           {activeTab === 'account' && (
-            <div className="p-6 sm:p-8">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Account Information</h2>
-              <div className="space-y-4 max-w-md">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Email</label>
-                  <input
-                    type="email"
-                    value={user.email || ''}
-                    disabled
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-                  />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Email cannot be changed</p>
+            <div className="p-6 sm:p-8 space-y-8">
+              <section>
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Account info</h2>
+                <div className="space-y-4 max-w-md">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Email</label>
+                    <input
+                      type="email"
+                      value={user.email || ''}
+                      disabled
+                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 cursor-not-allowed text-sm"
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Email cannot be changed</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">User ID</label>
+                    <input
+                      type="text"
+                      value={user.id}
+                      disabled
+                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 cursor-not-allowed font-mono text-xs"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">User ID</label>
-                  <input
-                    type="text"
-                    value={user.id}
-                    disabled
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed font-mono text-xs"
-                  />
-                </div>
-              </div>
+              </section>
+              <div className="border-t border-gray-200 dark:border-gray-700/80" />
+              <section>
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Display name</h2>
+                <form onSubmit={handleUpdateNickname} className="max-w-md space-y-4">
+                  <div>
+                    <label htmlFor="nickname" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Nickname</label>
+                    <input
+                      id="nickname"
+                      type="text"
+                      value={nickname}
+                      onChange={(e) => setNickname(e.target.value)}
+                      placeholder="Shown throughout the app"
+                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-sm"
+                    />
+                  </div>
+                  <button type="submit" disabled={loading} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium shadow-sm hover:shadow disabled:opacity-50">
+                    {loading ? 'Saving...' : 'Save'}
+                  </button>
+                </form>
+              </section>
+              <div className="border-t border-gray-200 dark:border-gray-700/80" />
+              <section>
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Password</h2>
+                <form onSubmit={handleChangePassword} className="max-w-md space-y-4">
+                  <div>
+                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Current password</label>
+                    <input
+                      id="currentPassword"
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Enter current password"
+                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">New password</label>
+                    <input
+                      id="newPassword"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="At least 6 characters"
+                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Confirm new password</label>
+                    <input
+                      id="confirmPassword"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
+                    />
+                  </div>
+                  <button type="submit" disabled={loading} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium shadow-sm hover:shadow disabled:opacity-50">
+                    {loading ? 'Changing...' : 'Change Password'}
+                  </button>
+                </form>
+              </section>
             </div>
           )}
 
           {activeTab === 'companies' && (
             <div className="p-6 sm:p-8">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">My Companies</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">My Companies</h2>
               {companies.length === 0 ? (
                 <form onSubmit={handleCompanyActivate} className="space-y-4 max-w-md">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -373,90 +435,23 @@ export default function SettingsClient({ user }: SettingsClientProps) {
             </div>
           )}
 
-          {activeTab === 'profile' && (
-            <div className="p-6 sm:p-8">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Display Name</h2>
-              <form onSubmit={handleUpdateNickname} className="max-w-md space-y-4">
-                <div>
-                  <label htmlFor="nickname" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Nickname</label>
-                  <input
-                    id="nickname"
-                    type="text"
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    placeholder="Enter your preferred display name"
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Shown throughout the app</p>
-                </div>
-                <button type="submit" disabled={loading} className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-sm font-medium shadow-md hover:shadow-lg disabled:opacity-50">
-                  {loading ? 'Saving...' : 'Save'}
-                </button>
-              </form>
-            </div>
-          )}
-
           {activeTab === 'billing' && (
             <div className="p-6 sm:p-8">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Subscription Tier</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Subscription Tier</h2>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Feature limits and per-vehicle pricing.</p>
               <form onSubmit={handleUpdateTier} className="max-w-md space-y-4">
                 <select
                   value={tier}
                   onChange={(e) => setTier(normalizeTier(e.target.value))}
-                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
                 >
                   <option value="starter">Starter (${TIER_CONFIG.starter.pricePerVehicleMonthly}/vehicle)</option>
                   <option value="professional">Professional (${TIER_CONFIG.professional.pricePerVehicleMonthly}/vehicle)</option>
                   <option value="premium">Premium (${TIER_CONFIG.premium.pricePerVehicleMonthly}/vehicle)</option>
                 </select>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Max vehicles: {TIER_CONFIG[tier].maxVehicles}</p>
-                <button type="submit" disabled={loading} className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+                <button type="submit" disabled={loading} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium shadow-sm hover:shadow disabled:opacity-50">
                   Save Tier
-                </button>
-              </form>
-            </div>
-          )}
-
-          {activeTab === 'security' && (
-            <div className="p-6 sm:p-8">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Change Password</h2>
-              <form onSubmit={handleChangePassword} className="max-w-md space-y-4">
-                <div>
-                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Current password</label>
-                  <input
-                    id="currentPassword"
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Enter current password"
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">New password</label>
-                  <input
-                    id="newPassword"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="At least 6 characters"
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Confirm new password</label>
-                  <input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <button type="submit" disabled={loading} className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-sm font-medium shadow-md hover:shadow-lg disabled:opacity-50">
-                  {loading ? 'Changing...' : 'Change Password'}
                 </button>
               </form>
             </div>
