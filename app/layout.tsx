@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/fpfavicon.png',
-    apple: '/apple-icon',
+    apple: '/fpfavicon.png',
   },
 }
 
