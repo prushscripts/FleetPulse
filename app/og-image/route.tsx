@@ -2,8 +2,9 @@ import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
 
-const width = 1200
-const height = 630
+// iOS 16+ iMessage often needs 2400+ width to show large card instead of compact
+const width = 2400
+const height = 1256
 
 export async function GET() {
   return new ImageResponse(
@@ -54,7 +55,7 @@ export async function GET() {
         >
           <div
             style={{
-              fontSize: 72,
+              fontSize: 140,
               fontWeight: 800,
               color: 'white',
               letterSpacing: '-0.02em',
@@ -65,10 +66,10 @@ export async function GET() {
           </div>
           <div
             style={{
-              fontSize: 28,
+              fontSize: 52,
               color: 'rgba(255,255,255,0.9)',
               fontWeight: 500,
-              maxWidth: 700,
+              maxWidth: 1000,
               textAlign: 'center',
             }}
           >
@@ -76,14 +77,14 @@ export async function GET() {
           </div>
           <div
             style={{
-              marginTop: 12,
+              marginTop: 24,
               display: 'flex',
               alignItems: 'center',
               gap: 8,
-              padding: '12px 24px',
+              padding: '20px 40px',
               background: 'rgba(255,255,255,0.15)',
               borderRadius: 9999,
-              fontSize: 20,
+              fontSize: 36,
               color: 'white',
               fontWeight: 600,
             }}

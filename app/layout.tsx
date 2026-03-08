@@ -11,8 +11,8 @@ const inter = Inter({
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://FleetPulseHQ.com'
-// Use /og-image route (simpler path, explicit PNG) so messaging apps show full card
-const ogImageUrl = `${siteUrl}/og-image`
+// Static PNG = fast, reliable for iMessage large preview (run node scripts/generate-og-image.js to regenerate)
+const ogImageUrl = `${siteUrl}/og-image.png`
 
 export const metadata: Metadata = {
   title: 'FleetPulse - Fleet Management System',
@@ -28,8 +28,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: ogImageUrl,
-        width: 1200,
-        height: 630,
+        width: 2400,
+        height: 1256,
         alt: 'FleetPulse – Modern Fleet Management',
       },
     ],
