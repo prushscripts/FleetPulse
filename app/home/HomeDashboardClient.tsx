@@ -153,11 +153,11 @@ export default function HomeDashboardClient() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 rounded-2xl border border-gray-200/60 dark:border-gray-700/60 bg-white/70 dark:bg-gray-800/60 backdrop-blur-sm p-6 sm:p-7 shadow-lg">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
+        <div className="mb-6 rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-white/70 dark:bg-gray-800/60 backdrop-blur-sm p-4 sm:p-5 shadow-md">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
             Fleet Health Dashboard
           </h1>
-          <p className="mt-1.5 text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-normal">
+          <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 font-normal">
             Overview of operational health, inspections, and risk indicators
           </p>
         </div>
@@ -194,13 +194,13 @@ export default function HomeDashboardClient() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Oil Change Status */}
           <div className="bg-white/80 dark:bg-gray-800/70 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white mb-4">
+            <h2 className="text-base font-semibold tracking-tight text-gray-900 dark:text-white mb-3">
               Oil Change Status
             </h2>
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Overall Health</span>
-                <span className="text-xl font-semibold text-gray-900 dark:text-white">
+                <span className="text-lg font-semibold text-gray-900 dark:text-white">
                   {oilChangePercentage}%
                 </span>
               </div>
@@ -217,7 +217,7 @@ export default function HomeDashboardClient() {
                 />
               </div>
             </div>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">OK:</span>
                 <span className="font-medium text-green-600 dark:text-green-400">
@@ -241,13 +241,13 @@ export default function HomeDashboardClient() {
 
           {/* Inspection Status */}
           <div className="bg-white/80 dark:bg-gray-800/70 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white mb-4">
+            <h2 className="text-base font-semibold tracking-tight text-gray-900 dark:text-white mb-3">
               Inspection Status
             </h2>
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Pass Rate</span>
-                <span className="text-xl font-semibold text-gray-900 dark:text-white">
+                <span className="text-xs text-gray-600 dark:text-gray-400">Pass Rate</span>
+                <span className="text-lg font-semibold text-gray-900 dark:text-white">
                   {inspectionPassRate}%
                 </span>
               </div>
@@ -264,7 +264,7 @@ export default function HomeDashboardClient() {
                 />
               </div>
             </div>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Passed:</span>
                 <span className="font-medium text-green-600 dark:text-green-400">
@@ -295,27 +295,47 @@ export default function HomeDashboardClient() {
 
         {/* Vehicle Status Breakdown */}
         <div className="bg-white/80 dark:bg-gray-800/70 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 p-6 mb-8">
-          <h2 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white mb-4">
+            <h2 className="text-base font-semibold tracking-tight text-gray-900 dark:text-white mb-3">
             Vehicle Status Breakdown
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
                 {stats.activeVehicles}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Active</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">Active</div>
             </div>
-            <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-              <div className="text-3xl font-bold text-red-600 dark:text-red-400 mb-2">
+            <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">
                 {stats.outOfServiceVehicles}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Out of Service</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">Out of Service</div>
             </div>
-            <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-              <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-2">
+            <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">
                 {stats.inShopVehicles}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">In Shop</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">In Shop</div>
+            </div>
+          </div>
+          
+          {/* Additional Metrics Row */}
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Critical Issues</div>
+              <div className="text-lg font-semibold text-red-600 dark:text-red-400">{stats.criticalIssues}</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Due Soon Oil</div>
+              <div className="text-lg font-semibold text-yellow-600 dark:text-yellow-400">{stats.vehiclesDueSoonOil}</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Overdue Oil</div>
+              <div className="text-lg font-semibold text-red-600 dark:text-red-400">{stats.vehiclesOverdueOil}</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Inspections</div>
+              <div className="text-lg font-semibold text-gray-900 dark:text-white">{stats.totalInspections}</div>
             </div>
           </div>
         </div>
@@ -403,11 +423,11 @@ function StatCard({
   }
 
   return (
-    <div className="bg-white/85 dark:bg-gray-800/75 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 p-5">
+    <div className="bg-white/85 dark:bg-gray-800/75 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs tracking-wide text-gray-600 dark:text-gray-400">{title}</p>
-          <p className="text-4xl font-semibold text-gray-900 dark:text-white mt-2">{value}</p>
+          <p className="text-[11px] tracking-wide text-gray-600 dark:text-gray-400 uppercase">{title}</p>
+          <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{value}</p>
         </div>
         <div className={`p-3 rounded-xl ${colorClasses[color]}`}>
           {icon === 'fleet' && (

@@ -26,8 +26,15 @@ interface VoyagerApiConfig {
   last_sync_at: string | null
 }
 
+interface Company {
+  id: string
+  name: string
+  auth_key: string
+}
+
 export default function AdminClient({ user }: AdminClientProps) {
-  const [activeTab, setActiveTab] = useState<'cards' | 'api'>('cards')
+  const [activeTab, setActiveTab] = useState<'company' | 'cards' | 'api'>('company')
+  const [company, setCompany] = useState<Company | null>(null)
   const [cardMappings, setCardMappings] = useState<VoyagerCardMapping[]>([])
   const [vehicles, setVehicles] = useState<Array<{ id: string; code: string }>>([])
   const [loading, setLoading] = useState(true)
@@ -62,13 +69,23 @@ export default function AdminClient({ user }: AdminClientProps) {
   const loadData = async () => {
     try {
       setLoading(true)
-      
-      // Load vehicles
-      const { data: vehiclesData, error: vehiclesError } = await supabase
-        .from('vehicles')
-        .select('id, code')
-        .order('code', { ascending: true })
 
+      const companyId = user?.user_metadata?.company_id
+      if (companyId) {
+        const { data: companyData } = await supabase
+          .from('companies')
+          .select('id, name, auth_key')
+          .eq('id', companyId)
+          .maybeSingle()
+        setCompany(companyData || null)
+      } else {
+        setCompany(null)
+      }
+      
+      // Load vehicles (scoped by company when multi-tenant)
+      let vehiclesQuery = supabase.from('vehicles').select('id, code').order('code', { ascending: true })
+      if (companyId) vehiclesQuery = vehiclesQuery.eq('company_id', companyId)
+      const { data: vehiclesData, error: vehiclesError } = await vehiclesQuery
       if (vehiclesError) throw vehiclesError
       setVehicles(vehiclesData || [])
 
@@ -237,7 +254,7 @@ export default function AdminClient({ user }: AdminClientProps) {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Admin Panel</h1>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Manage Voyager US Bank fleet gas card integration
+            Company setup, Voyager integration, and fleet configuration
           </p>
         </div>
 
@@ -255,6 +272,16 @@ export default function AdminClient({ user }: AdminClientProps) {
         {/* Tabs */}
         <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex gap-4">
+            <button
+              onClick={() => setActiveTab('company')}
+              className={`px-4 py-2 font-medium text-sm transition-colors ${
+                activeTab === 'company'
+                  ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
+            >
+              Company
+            </button>
             <button
               onClick={() => setActiveTab('cards')}
               className={`px-4 py-2 font-medium text-sm transition-colors ${
@@ -277,6 +304,50 @@ export default function AdminClient({ user }: AdminClientProps) {
             </button>
           </div>
         </div>
+
+        {/* Company Tab */}
+        {activeTab === 'company' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Company authentication</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Share your company authentication key with your team so they can activate their accounts and access this company’s fleet data. New users sign up, then enter this key on the activation page.
+            </p>
+            {company ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Company name</label>
+                  <p className="text-lg font-medium text-gray-900 dark:text-white">{company.name}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Company authentication key</label>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white font-mono text-sm">
+                      {company.auth_key}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(company.auth_key)
+                        setMessage({ type: 'success', text: 'Key copied to clipboard' })
+                        setTimeout(() => setMessage(null), 2000)
+                      }}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Users enter this key on the activation page (or in Settings → Company) to join your company.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                No company assigned. Activate with a company key in Settings to see this section.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Card Mappings Tab */}
         {activeTab === 'cards' && (

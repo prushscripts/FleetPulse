@@ -93,8 +93,8 @@ export default function TabSlideTransition({ children }: { children: React.React
 
   return (
     <div 
-      className="relative overflow-hidden"
-      style={{ minHeight: '100vh', width: '100%' }}
+      className="relative min-h-screen w-full overflow-x-hidden"
+      style={{ overflowY: 'visible' }}
     >
       {/* Previous page sliding out */}
       {showPrev && prevChildren && (

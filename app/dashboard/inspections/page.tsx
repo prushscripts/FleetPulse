@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
+import TabSlideTransition from '@/components/TabSlideTransition'
 
 export default async function InspectionsPage() {
   const supabase = await createClient()
@@ -15,7 +16,8 @@ export default async function InspectionsPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+      <TabSlideTransition>
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 mb-6">
@@ -35,6 +37,7 @@ export default async function InspectionsPage() {
           </div>
         </div>
       </div>
+      </TabSlideTransition>
     </>
   )
 }

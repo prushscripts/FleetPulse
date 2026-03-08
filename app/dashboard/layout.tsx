@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 // Define tab order for navigation direction detection
 const TAB_ORDER: Record<string, number> = {
@@ -10,6 +11,8 @@ const TAB_ORDER: Record<string, number> = {
   '/dashboard/drivers': 2,
   '/dashboard/inspections': 3,
   '/dashboard/about': 4,
+  '/dashboard/activate': 4.5,
+  '/dashboard/welcome': 4.5,
   '/dashboard/admin': 5,
   '/dashboard/settings': 6,
 }
@@ -30,10 +33,29 @@ function getTabIndex(pathname: string): number {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
+  const [activationChecked, setActivationChecked] = useState(false)
   const prevTabIndexRef = useRef<number>(-1)
   const isInitialMount = useRef(true)
+
+  // Redirect unassigned users to activation (except when already on activate or settings)
+  useEffect(() => {
+    if (pathname === '/dashboard/activate' || pathname === '/dashboard/settings' || pathname === '/dashboard/welcome') {
+      setActivationChecked(true)
+      return
+    }
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      const companyId = user?.user_metadata?.company_id
+      if (user && !companyId) {
+        router.replace('/dashboard/welcome')
+        return
+      }
+      setActivationChecked(true)
+    })
+  }, [pathname, router])
 
   useEffect(() => {
     const currentTabIndex = getTabIndex(pathname)
@@ -72,6 +94,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     } else {
       return 'animate-tab-slide-in-left'
     }
+  }
+
+  // Avoid flash of dashboard content before activation redirect
+  if (!activationChecked && pathname !== '/dashboard/activate' && pathname !== '/dashboard/welcome') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-gray-500 dark:text-gray-400 text-sm">Loading…</div>
+      </div>
+    )
   }
 
   return (

@@ -49,7 +49,7 @@ type ToastState = {
   dismissing: boolean
 }
 
-export default function DriversClient() {
+export default function DriversClient({ companyId }: { companyId?: string }) {
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -66,6 +66,9 @@ export default function DriversClient() {
   const [writeupToDelete, setWriteupToDelete] = useState<string | null>(null)
   const [writeupDirty, setWriteupDirty] = useState(false)
   const [showUnsavedWriteupModal, setShowUnsavedWriteupModal] = useState(false)
+  const [driverWriteupCount, setDriverWriteupCount] = useState<Record<string, number>>({})
+  const [draggedDriverId, setDraggedDriverId] = useState<string | null>(null)
+  const [dragOverLocation, setDragOverLocation] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -86,6 +89,22 @@ export default function DriversClient() {
     loadDrivers()
     loadUser()
   }, [])
+
+  const loadWriteupCounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('driver_writeups')
+        .select('driver_id')
+      if (error) throw error
+      const counts: Record<string, number> = {}
+      ;(data || []).forEach((row: { driver_id: string }) => {
+        counts[row.driver_id] = (counts[row.driver_id] || 0) + 1
+      })
+      setDriverWriteupCount(counts)
+    } catch {
+      setDriverWriteupCount({})
+    }
+  }
 
   const loadUser = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -147,13 +166,12 @@ export default function DriversClient() {
 
   const loadDrivers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('drivers')
-        .select('*')
-        .order('last_name', { ascending: true })
-
+      let query = supabase.from('drivers').select('*').order('last_name', { ascending: true })
+      if (companyId) query = query.eq('company_id', companyId)
+      const { data, error } = await query
       if (error) throw error
       setDrivers(data || [])
+      await loadWriteupCounts()
     } catch (error) {
       console.error('Error loading drivers:', error)
     } finally {
@@ -169,6 +187,7 @@ export default function DriversClient() {
         license_expiration: formData.license_expiration || null,
         hire_date: formData.hire_date || null,
         location: formData.location || null,
+        ...(companyId && !editingDriver && { company_id: companyId }),
       }
 
       if (editingDriver) {
@@ -283,6 +302,10 @@ export default function DriversClient() {
       setNewWriteupTier('tier3')
       setWriteupDirty(false)
       await loadWriteups(selectedDriverForWriteups.id)
+      setDriverWriteupCount((prev) => ({
+        ...prev,
+        [selectedDriverForWriteups.id]: (prev[selectedDriverForWriteups.id] || 0) + 1,
+      }))
       showToast('Writeup added', `Writeup added for ${selectedDriverForWriteups.first_name} ${selectedDriverForWriteups.last_name}.`)
     } catch (error: any) {
       console.error('Error adding writeup:', error)
@@ -310,6 +333,10 @@ export default function DriversClient() {
 
       if (selectedDriverForWriteups) {
         await loadWriteups(selectedDriverForWriteups.id)
+        setDriverWriteupCount((prev) => ({
+          ...prev,
+          [selectedDriverForWriteups.id]: Math.max(0, (prev[selectedDriverForWriteups.id] || 1) - 1),
+        }))
       }
       showToast('Writeup deleted', 'Writeup removed successfully.')
       setShowDeleteWriteupModal(false)
@@ -334,6 +361,56 @@ export default function DriversClient() {
     setNewWriteupReason('')
     setNewWriteupTier('tier3')
     setWriteupDirty(false)
+  }
+
+  const updateDriverLocation = async (driverId: string, newLocation: string | null) => {
+    try {
+      const { error } = await supabase
+        .from('drivers')
+        .update({ location: newLocation })
+        .eq('id', driverId)
+      if (error) throw error
+      setDrivers((prev) =>
+        prev.map((d) => (d.id === driverId ? { ...d, location: newLocation } : d))
+      )
+      showToast('Driver moved', 'Driver location updated.')
+    } catch (e: any) {
+      showToast('Error', e?.message || 'Failed to update driver location.')
+    }
+  }
+
+  const handleDragStart = (e: React.DragEvent, driverId: string) => {
+    e.dataTransfer.setData('application/driver-id', driverId)
+    e.dataTransfer.effectAllowed = 'move'
+    setDraggedDriverId(driverId)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedDriverId(null)
+    setDragOverLocation(null)
+  }
+
+  const handleDragOver = (e: React.DragEvent, location: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverLocation(location)
+  }
+
+  const handleDragLeave = () => {
+    setDragOverLocation(null)
+  }
+
+  const handleDrop = (e: React.DragEvent, targetLocation: string) => {
+    e.preventDefault()
+    setDragOverLocation(null)
+    setDraggedDriverId(null)
+    const driverId = e.dataTransfer.getData('application/driver-id')
+    if (!driverId) return
+    const newLocation = targetLocation === 'Unassigned' ? null : targetLocation
+    const driver = drivers.find((d) => d.id === driverId)
+    if (driver && (driver.location || 'Unassigned') !== targetLocation) {
+      updateDriverLocation(driverId, newLocation)
+    }
   }
 
   const handleConfirmCloseWriteupsModal = () => {
@@ -418,23 +495,26 @@ export default function DriversClient() {
             <div className="hidden md:block space-y-6">
               {sortedLocations.map((location) => (
                 <div key={location} className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/90 shadow-md">
-                  {/* Location Header */}
-                  <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
-                          <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{location}</h3>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            {grouped[location].length} {grouped[location].length === 1 ? 'driver' : 'drivers'}
-                          </p>
-                        </div>
-                      </div>
+                  {/* Location Header - slim, drop target */}
+                  <div
+                    onDragOver={(e) => handleDragOver(e, location)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, location)}
+                    className={`flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-2 transition-colors ${
+                      dragOverLocation === location
+                        ? 'bg-indigo-100 dark:bg-indigo-900/40 ring-2 ring-indigo-400 dark:ring-indigo-500'
+                        : 'bg-gray-50/80 dark:bg-gray-800/80'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{location}</h3>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        ({grouped[location].length})
+                      </span>
                     </div>
                   </div>
                   
@@ -444,6 +524,7 @@ export default function DriversClient() {
                       <table className="w-full text-[13px] min-w-[800px] sm:min-w-0">
                       <thead className="bg-gray-50 dark:bg-gray-900/60 sticky top-0 z-10">
                         <tr className="text-left text-xs tracking-wide text-gray-500 dark:text-gray-400">
+                          <th className="w-9 px-1 py-2 border-r border-gray-200/50 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900/60" aria-label="Drag" />
                           <th className="px-4 py-2 border-r border-gray-200/50 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900/60">Driver</th>
                           <th className="px-4 py-2 border-r border-gray-200/50 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900/60">Email</th>
                           <th className="px-4 py-2 border-r border-gray-200/50 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900/60">Phone</th>
@@ -458,11 +539,20 @@ export default function DriversClient() {
                       <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                         {grouped[location].map((driver) => {
                           const licenseStatus = getLicenseStatus(driver.license_expiration)
+                          const writeupCount = driverWriteupCount[driver.id] ?? 0
                           return (
                             <tr
                               key={driver.id}
-                              className="text-sm hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, driver.id)}
+                              onDragEnd={handleDragEnd}
+                              className={`text-sm hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${draggedDriverId === driver.id ? 'opacity-50' : ''}`}
                             >
+                              <td className="w-9 px-1 py-3 border-r border-gray-200/50 dark:border-gray-700/50 whitespace-nowrap cursor-grab active:cursor-grabbing">
+                                <span className="inline-flex p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-hidden title="Drag to move driver">
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden><path d="M8 6h2v2H8V6zm0 5h2v2H8v-2zm0 5h2v2H8v-2zm5-10h2v2h-2V6zm0 5h2v2h-2v-2zm0 5h2v2h-2v-2zm5-10h2v2h-2V6zm0 5h2v2h-2v-2zm0 5h2v2h-2v-2z" /></svg>
+                                </span>
+                              </td>
                               <td className="px-4 py-3 border-r border-gray-200/50 dark:border-gray-700/50 whitespace-nowrap">
                                 <p className="font-semibold text-gray-900 dark:text-white">
                                   {driver.first_name} {driver.last_name}
@@ -523,7 +613,7 @@ export default function DriversClient() {
                                 </span>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-center">
-                                <div className="flex gap-2 justify-center">
+                                <div className="flex gap-2 justify-center items-center">
                                   <button
                                     onClick={() => handleEdit(driver)}
                                     className="px-3 py-1 rounded-md text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
@@ -532,9 +622,14 @@ export default function DriversClient() {
                                   </button>
                                   <button
                                     onClick={() => openWriteupsModal(driver)}
-                                    className="px-3 py-1 rounded-md text-xs bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/50"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/50"
                                   >
                                     Writeups
+                                    {writeupCount > 0 && (
+                                      <span className="min-w-[1.25rem] h-5 px-1.5 inline-flex items-center justify-center rounded-full bg-amber-500/90 text-white text-[10px] font-bold">
+                                        {writeupCount}
+                                      </span>
+                                    )}
                                   </button>
                                   <button
                                     onClick={() => handleDelete(driver.id)}
@@ -559,41 +654,52 @@ export default function DriversClient() {
             <div className="md:hidden space-y-6">
               {sortedLocations.map((location) => (
                 <div key={location} className="space-y-3">
-                  {/* Location Header */}
-                  <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl shadow-lg px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <h3 className="text-lg font-bold">{location}</h3>
-                      <span className="ml-auto px-2 py-1 bg-white/20 rounded-full text-xs font-semibold">
-                        {grouped[location].length}
-                      </span>
-                    </div>
+                  {/* Location Header - slim, drop target */}
+                  <div
+                    onDragOver={(e) => handleDragOver(e, location)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, location)}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors ${
+                      dragOverLocation === location
+                        ? 'bg-indigo-100 dark:bg-indigo-900/40 border-indigo-400 dark:border-indigo-500 ring-2 ring-indigo-400'
+                        : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    <svg className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    </svg>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{location}</h3>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">({grouped[location].length})</span>
                   </div>
                   
                   {/* Mobile Driver List Items */}
                   <div className="space-y-3">
                     {grouped[location].map((driver) => {
                       const licenseStatus = getLicenseStatus(driver.license_expiration)
+                      const writeupCount = driverWriteupCount[driver.id] ?? 0
                       return (
                         <div
                           key={driver.id}
-                          className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-4 space-y-3"
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, driver.id)}
+                          onDragEnd={handleDragEnd}
+                          className={`bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-4 space-y-3 ${draggedDriverId === driver.id ? 'opacity-50' : ''}`}
                         >
                           {/* Driver Name and Status */}
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="cursor-grab active:cursor-grabbing touch-none flex-shrink-0 p-1 text-gray-400" aria-label="Drag to move">
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 6h2v2H8V6zm0 5h2v2H8v-2zm0 5h2v2H8v-2zm5-10h2v2h-2V6zm0 5h2v2h-2v-2zm0 5h2v2h-2v-2zm5-10h2v2h-2V6zm0 5h2v2h-2v-2zm0 5h2v2h-2v-2z" /></svg>
+                            </span>
+                            <div className="flex-1 min-w-0">
                               <h3 className="text-base font-bold text-gray-900 dark:text-white">
                                 {driver.first_name} {driver.last_name}
                               </h3>
                               {driver.email && (
-                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{driver.email}</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate">{driver.email}</p>
                               )}
                             </div>
                             <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              className={`px-2 py-1 rounded-full text-xs font-medium shrink-0 ${
                                 driver.active
                                   ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
                                   : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
@@ -666,9 +772,14 @@ export default function DriversClient() {
                             </button>
                             <button
                               onClick={() => openWriteupsModal(driver)}
-                              className="flex-1 px-3 py-2 rounded-md text-xs font-medium bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/50"
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/50"
                             >
                               Writeups
+                              {writeupCount > 0 && (
+                                <span className="min-w-[1.1rem] h-4 px-1 inline-flex items-center justify-center rounded-full bg-amber-500/90 text-white text-[10px] font-bold">
+                                  {writeupCount}
+                                </span>
+                              )}
                             </button>
                             <button
                               onClick={() => handleDelete(driver.id)}
@@ -696,35 +807,43 @@ export default function DriversClient() {
             <div className="space-y-6">
               {sortedLocations.map((location) => (
                 <div key={location} className="space-y-4">
-                  {/* Location Header */}
-                  <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-gray-200 dark:border-gray-700 px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
-                        <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{location}</h3>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          {grouped[location].length} {grouped[location].length === 1 ? 'driver' : 'drivers'}
-                        </p>
-                      </div>
-                    </div>
+                  {/* Location Header - slim, drop target */}
+                  <div
+                    onDragOver={(e) => handleDragOver(e, location)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, location)}
+                    className={`flex items-center gap-2 rounded-lg border px-4 py-2 transition-colors ${
+                      dragOverLocation === location
+                        ? 'bg-indigo-100 dark:bg-indigo-900/40 border-indigo-400 dark:border-indigo-500 ring-2 ring-indigo-400'
+                        : 'bg-gray-50 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    <svg className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    </svg>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{location}</h3>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">({grouped[location].length})</span>
                   </div>
                   
                   {/* Driver Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {grouped[location].map((driver) => {
             const licenseStatus = getLicenseStatus(driver.license_expiration)
+            const writeupCount = driverWriteupCount[driver.id] ?? 0
             return (
               <div
                 key={driver.id}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+                draggable
+                onDragStart={(e) => handleDragStart(e, driver.id)}
+                onDragEnd={handleDragEnd}
+                className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 cursor-grab active:cursor-grabbing ${draggedDriverId === driver.id ? 'opacity-50' : ''}`}
               >
                 <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
+                  <div className="flex-1 flex items-start gap-2">
+                    <span className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 flex-shrink-0 mt-0.5" aria-label="Drag to move">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 6h2v2H8V6zm0 5h2v2H8v-2zm0 5h2v2H8v-2zm5-10h2v2h-2V6zm0 5h2v2h-2v-2zm0 5h2v2h-2v-2zm5-10h2v2h-2V6zm0 5h2v2h-2v-2zm0 5h2v2h-2v-2z" /></svg>
+                    </span>
+                    <div className="min-w-0">
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                       {driver.first_name} {driver.last_name}
                     </h3>
@@ -740,9 +859,10 @@ export default function DriversClient() {
                         {driver.signed_citation_policy ? '✓ Citation policy signed' : '✗ Citation policy not signed'}
                       </span>
                     </div>
+                    </div>
                   </div>
                   <span
-                    className={`px-2 py-1 text-xs font-medium rounded ${
+                    className={`px-2 py-1 text-xs font-medium rounded shrink-0 ${
                       driver.active
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
                         : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
@@ -796,16 +916,27 @@ export default function DriversClient() {
                   )}
                 </div>
 
-                <div className="mt-4 flex gap-2">
+                <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     onClick={() => handleEdit(driver)}
-                    className="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium"
+                    className="flex-1 min-w-0 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium"
                   >
                     Edit
                   </button>
                   <button
+                    onClick={() => openWriteupsModal(driver)}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500/90 hover:bg-amber-600 text-white rounded-md text-sm font-medium"
+                  >
+                    Writeups
+                    {writeupCount > 0 && (
+                      <span className="min-w-[1.25rem] h-5 px-1.5 inline-flex items-center justify-center rounded-full bg-white/25 text-white text-xs font-bold">
+                        {writeupCount}
+                      </span>
+                    )}
+                  </button>
+                  <button
                     onClick={() => handleDelete(driver.id)}
-                    className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium"
+                    className="flex-1 min-w-0 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium"
                   >
                     Delete
                   </button>

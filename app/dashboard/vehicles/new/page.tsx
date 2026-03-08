@@ -13,10 +13,12 @@ export default async function NewVehiclePage() {
     redirect('/login')
   }
 
+  const companyId = user.user_metadata?.company_id as string | undefined
+
   return (
     <>
       <Navbar />
-      <NewVehicleClient />
+      <NewVehicleClient companyId={companyId} />
     </>
   )
 }

@@ -18,6 +18,11 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [tier, setTier] = useState<SubscriptionTier>('professional')
+  const [companyId, setCompanyId] = useState<string | null>(null)
+  const [companyName, setCompanyName] = useState<string | null>(null)
+  const [companyKeyInput, setCompanyKeyInput] = useState('')
+  const [companyActivating, setCompanyActivating] = useState(false)
+  const [companyError, setCompanyError] = useState<string | null>(null)
   const supabase = createClient()
   const router = useRouter()
 
@@ -28,10 +33,11 @@ export default function SettingsClient({ user }: SettingsClientProps) {
       if (currentUser?.user_metadata?.nickname) {
         setNickname(currentUser.user_metadata.nickname)
       } else {
-        // Default to email username if no nickname
         setNickname(currentUser?.email?.split('@')[0] || '')
       }
       setTier(normalizeTier(currentUser?.user_metadata?.subscription_tier))
+      setCompanyId(currentUser?.user_metadata?.company_id ?? null)
+      setCompanyName(currentUser?.user_metadata?.company_name ?? null)
     }
     loadUserData()
   }, [supabase])
@@ -42,12 +48,16 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     setMessage(null)
 
     try {
+      // Capitalize first letter of nickname
+      const capitalizedNickname = nickname.trim().charAt(0).toUpperCase() + nickname.trim().slice(1).toLowerCase()
+      
       const { error } = await supabase.auth.updateUser({
-        data: { nickname: nickname.trim() }
+        data: { nickname: capitalizedNickname }
       })
 
       if (error) throw error
 
+      setNickname(capitalizedNickname) // Update local state with capitalized version
       setMessage({ type: 'success', text: 'Nickname updated successfully!' })
       setTimeout(() => setMessage(null), 3000)
     } catch (error: any) {
@@ -72,6 +82,44 @@ export default function SettingsClient({ user }: SettingsClientProps) {
       setMessage({ type: 'error', text: error.message || 'Failed to update tier' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCompanyActivate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const key = companyKeyInput.trim()
+    if (!key) {
+      setCompanyError('Enter your company authentication key.')
+      return
+    }
+    setCompanyActivating(true)
+    setCompanyError(null)
+    try {
+      const { data: company, error: fetchError } = await supabase
+        .from('companies')
+        .select('id, name')
+        .eq('auth_key', key)
+        .maybeSingle()
+      if (fetchError) throw fetchError
+      if (!company) {
+        setCompanyError('Invalid company key. Check the key and try again.')
+        setCompanyActivating(false)
+        return
+      }
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { company_id: company.id, company_name: company.name },
+      })
+      if (updateError) throw updateError
+      setCompanyId(company.id)
+      setCompanyName(company.name)
+      setCompanyKeyInput('')
+      setMessage({ type: 'success', text: 'Company activated. You now have access to your company data.' })
+      setTimeout(() => setMessage(null), 4000)
+      router.refresh()
+    } catch (err: any) {
+      setCompanyError(err?.message || 'Activation failed.')
+    } finally {
+      setCompanyActivating(false)
     }
   }
 
@@ -172,6 +220,40 @@ export default function SettingsClient({ user }: SettingsClientProps) {
               />
             </div>
           </div>
+        </div>
+
+        {/* Company / Authentication key */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Company</h2>
+          {companyId && companyName ? (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Active company:</span>
+              <span className="font-medium text-gray-900 dark:text-white">{companyName}</span>
+            </div>
+          ) : (
+            <form onSubmit={handleCompanyActivate} className="space-y-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                Enter your company authentication key to access your fleet data. Your administrator provides this key.
+              </p>
+              <input
+                type="text"
+                value={companyKeyInput}
+                onChange={(e) => setCompanyKeyInput(e.target.value)}
+                placeholder="Company authentication key"
+                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              {companyError && (
+                <p className="text-sm text-red-600 dark:text-red-400">{companyError}</p>
+              )}
+              <button
+                type="submit"
+                disabled={companyActivating}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
+              >
+                {companyActivating ? 'Activating…' : 'Activate'}
+              </button>
+            </form>
+          )}
         </div>
 
         {/* Nickname Settings */}

@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [companyKey, setCompanyKey] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -32,37 +33,50 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
       })
 
-      if (error) {
-        console.error('Signup error:', error)
-        setError(error.message || 'An error occurred during signup')
+      if (signUpError) {
+        setError(signUpError.message || 'An error occurred during signup')
         setLoading(false)
         return
       }
 
-      // Wait a moment for cookies to be set
       await new Promise(resolve => setTimeout(resolve, 100))
-      
-      // Refresh the session to ensure cookies are set
       const { data: sessionData } = await supabase.auth.getSession()
-      
-      if (sessionData?.session) {
-        setLoading(false)
-        router.push('/dashboard')
-        setTimeout(() => {
-          window.location.href = '/dashboard'
-        }, 100)
-      } else {
+
+      if (!sessionData?.session) {
         setError('Account created! Please check your email to verify your account.')
         setLoading(false)
+        return
       }
-    } catch (error: any) {
-      console.error('Signup exception:', error)
-      setError(error.message || 'An error occurred during signup')
+
+      const key = companyKey.trim()
+      if (key) {
+        const { data: company } = await supabase
+          .from('companies')
+          .select('id, name')
+          .eq('auth_key', key)
+          .maybeSingle()
+        if (company) {
+          await supabase.auth.updateUser({
+            data: { company_id: company.id, company_name: company.name },
+          })
+          router.push('/dashboard')
+          setTimeout(() => { window.location.href = '/dashboard' }, 100)
+        } else {
+          router.push('/dashboard/welcome')
+          setTimeout(() => { window.location.href = '/dashboard/welcome' }, 100)
+        }
+      } else {
+        router.push('/dashboard/welcome')
+        setTimeout(() => { window.location.href = '/dashboard/welcome' }, 100)
+      }
+      setLoading(false)
+    } catch (err: any) {
+      setError(err?.message || 'An error occurred during signup')
       setLoading(false)
     }
   }
@@ -160,6 +174,25 @@ export default function SignupPage() {
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 placeholder="••••••••"
               />
+            </div>
+
+            <div>
+              <label htmlFor="companyKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Company invite code <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input
+                id="companyKey"
+                name="companyKey"
+                type="text"
+                autoComplete="off"
+                value={companyKey}
+                onChange={(e) => setCompanyKey(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                placeholder="e.g. WheelzUpAPD2026"
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                If your team gave you an invite code, enter it here to join your company right away.
+              </p>
             </div>
 
             <button

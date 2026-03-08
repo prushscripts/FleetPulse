@@ -111,6 +111,72 @@
     }
   }
 
+  @keyframes tabSlideOutLeft {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+  }
+
+  @keyframes tabSlideOutRight {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes tabSlideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes tabSlideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes tabSlideOutLeft {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+  }
+
+  @keyframes tabSlideOutRight {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+  }
+
   @keyframes spinner {
     0% {
       transform: rotate(0deg);
@@ -146,6 +212,22 @@
 
   .animate-toast-progress {
     animation: toastProgress 4.2s linear forwards;
+  }
+
+  .animate-tab-slide-out-left {
+    animation: tabSlideOutLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .animate-tab-slide-out-right {
+    animation: tabSlideOutRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .animate-tab-slide-in-left {
+    animation: tabSlideInLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .animate-tab-slide-in-right {
+    animation: tabSlideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
   .animate-quick-edit-close {

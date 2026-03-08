@@ -183,17 +183,17 @@ export default function AboutClient({ displayName }: { displayName: string }) {
       </div>
 
       {/* Content with smooth slide transitions */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="relative min-h-[600px] overflow-hidden">
-          {/* Features Tab */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 overflow-visible">
+        <div className="relative min-h-[400px] overflow-visible">
+          {/* Features Tab - scrollable, no clip */}
           <div
-            className={`absolute inset-0 transition-all duration-500 ease-in-out ${
+            className={`transition-all duration-500 ease-in-out overflow-visible ${
               activeTab === 'features'
-                ? 'opacity-100 translate-x-0'
-                : 'opacity-0 translate-x-[-100%] pointer-events-none'
+                ? 'opacity-100 translate-x-0 block'
+                : 'absolute inset-0 opacity-0 translate-x-[-100%] pointer-events-none overflow-hidden'
             }`}
           >
-            <div className="space-y-12">
+            <div className="space-y-8 pb-16">
               <div className="text-center">
                 <div className="inline-block px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-full mb-4">
                   <span className="text-sm font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
@@ -207,8 +207,8 @@ export default function AboutClient({ displayName }: { displayName: string }) {
                   Powerful features at a fraction of the cost
                 </p>
               </div>
-              
-              {/* Unique Feature Layout - Alternating Cards */}
+              {/* Scrollable features list so all 9 are visible */}
+              <div className="max-h-[calc(100vh-320px)] overflow-y-auto overflow-x-hidden overscroll-behavior-smooth rounded-2xl pr-1 -mr-1">
               <div className="space-y-8">
                 {features.map((feature, idx) => (
                   <div
@@ -256,15 +256,16 @@ export default function AboutClient({ displayName }: { displayName: string }) {
                   </div>
                 ))}
               </div>
+              </div>
             </div>
           </div>
 
           {/* Pricing Tab */}
           <div
-            className={`absolute inset-0 transition-all duration-500 ease-in-out ${
+            className={`transition-all duration-500 ease-in-out ${
               activeTab === 'pricing'
                 ? 'opacity-100 translate-x-0'
-                : 'opacity-0 translate-x-[100%] pointer-events-none'
+                : 'absolute inset-0 opacity-0 translate-x-[100%] pointer-events-none overflow-hidden'
             }`}
           >
             <div className="space-y-10">
@@ -274,11 +275,12 @@ export default function AboutClient({ displayName }: { displayName: string }) {
                 </h2>
                 <p className="text-lg text-gray-600 dark:text-gray-400">Per-vehicle pricing that scales with your operation</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Extra padding so hover scale doesn't clip card edges */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-2 py-4 overflow-visible">
                 {tiers.map((tier, idx) => (
                   <div
                     key={idx}
-                    className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 p-8 transition-all duration-300 hover:scale-105 ${
+                    className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 p-8 transition-all duration-300 hover:scale-105 overflow-visible ${
                       tier.popular
                         ? 'border-indigo-500 shadow-2xl shadow-indigo-500/30 scale-105'
                         : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'

@@ -34,17 +34,21 @@ interface VehicleWithStats extends Vehicle {
 type SortField = 'code' | 'current_mileage' | 'oil_status' | 'status'
 type SortDirection = 'asc' | 'desc'
 type StatusFilter = 'all' | 'active' | 'out_of_service' | 'in_shop' | 'hidden'
+type TerritoryFilterValue = 'all' | 'New York' | 'DMV' | 'Other'
 type ToastState = {
   title: string
   message: string
   dismissing: boolean
 }
 
-export default function DashboardClient() {
+export default function DashboardClient(
+  { plateMap = {}, territoryMap = {}, companyId }: { plateMap?: Record<string, string>; territoryMap?: Record<string, string>; companyId?: string }
+) {
   const [vehicles, setVehicles] = useState<VehicleWithStats[]>([])
   const [filteredVehicles, setFilteredVehicles] = useState<VehicleWithStats[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [territoryFilter, setTerritoryFilter] = useState<TerritoryFilterValue>('all')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [sortField, setSortField] = useState<SortField>('code')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
@@ -96,7 +100,7 @@ export default function DashboardClient() {
 
   useEffect(() => {
     filterAndSortVehicles()
-  }, [vehicles, searchQuery, statusFilter, sortField, sortDirection, groupFilter, typeFilter, oilFilter, issuesFilter, docsFilter, hiddenVehicles])
+  }, [vehicles, searchQuery, territoryFilter, statusFilter, sortField, sortDirection, groupFilter, typeFilter, oilFilter, issuesFilter, docsFilter, hiddenVehicles])
 
   // Close filter menu when clicking outside
   useEffect(() => {
@@ -178,16 +182,16 @@ export default function DashboardClient() {
 
   const loadVehicles = async () => {
     try {
-      // Fetch vehicles
-      const { data: vehiclesData, error: vehiclesError } = await supabase
-        .from('vehicles')
-        .select('*')
-        .order('code', { ascending: true })
-
+      // Fetch vehicles (scoped by company when multi-tenant)
+      let vehiclesQuery = supabase.from('vehicles').select('*').order('code', { ascending: true })
+      if (companyId) vehiclesQuery = vehiclesQuery.eq('company_id', companyId)
+      const { data: vehiclesData, error: vehiclesError } = await vehiclesQuery
       if (vehiclesError) throw vehiclesError
 
-      // Fetch drivers
-      const { data: driversData } = await supabase.from('drivers').select('id, first_name, last_name')
+      // Fetch drivers (scoped by company when multi-tenant)
+      let driversQuery = supabase.from('drivers').select('id, first_name, last_name')
+      if (companyId) driversQuery = driversQuery.eq('company_id', companyId)
+      const { data: driversData } = await driversQuery
 
       // Fetch issues count for each vehicle
       const { data: issuesData, error: issuesError } = await supabase
@@ -261,6 +265,13 @@ export default function DashboardClient() {
     }
   }
 
+  const getTerritory = (vehicle: VehicleWithStats): TerritoryFilterValue => {
+    const fromMap = territoryMap[vehicle.code.toLowerCase()]
+    if (fromMap === 'New York' || fromMap === 'DMV' || fromMap === 'Other') return fromMap
+    if (vehicle.group_name === 'New York' || vehicle.group_name === 'DMV') return vehicle.group_name
+    return 'Other'
+  }
+
   const filterAndSortVehicles = () => {
     let filtered = [...vehicles]
 
@@ -269,6 +280,11 @@ export default function DashboardClient() {
       filtered = filtered.filter((vehicle) =>
         vehicle.code.toLowerCase().includes(searchQuery.toLowerCase())
       )
+    }
+
+    // Apply territory filter (All / New York / DMV / Other)
+    if (territoryFilter !== 'all') {
+      filtered = filtered.filter((vehicle) => getTerritory(vehicle) === territoryFilter)
     }
 
     // Apply status filter
@@ -394,6 +410,7 @@ export default function DashboardClient() {
                            row['State Plate'] || row['STATE PLATE'] || null,
             vin: row.vin || row.VIN || null,
             notes: row.notes || row.Notes || row.NOTES || null,
+            ...(companyId && { company_id: companyId }),
           }))
 
           // Use upsert to update existing vehicles by code, or insert new ones
@@ -636,53 +653,71 @@ export default function DashboardClient() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Premium Header Section */}
-        <div className="mb-8 relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 via-purple-600/10 to-indigo-600/10 dark:from-indigo-600/20 dark:via-purple-600/20 dark:to-indigo-600/20 rounded-2xl blur-3xl"></div>
-          <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl p-6 sm:p-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent dark:from-indigo-400 dark:to-purple-400">
-                  Fleet Dashboard
-                </h1>
-                <p className="mt-1.5 text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-normal">
-                  Manage your fleet of <span className="font-medium text-indigo-600 dark:text-indigo-400">{vehicles.length}</span> vehicles
-                </p>
-                <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                  Tier: <span className="font-medium capitalize">{tier}</span> • Limit {TIER_CONFIG[tier].maxVehicles} vehicles
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={() => setShowImportModal(true)}
-                  disabled={!TIER_CONFIG[tier].features.csvImport}
-                  className="px-3.5 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  Import CSV
-                </button>
-                {canAddVehicle ? (
-                  <Link
-                    href="/dashboard/vehicles/new"
-                    className="px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-xs font-medium tracking-wide transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    + Add Vehicle
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      showToast(
-                        'Vehicle limit reached',
-                        `Your ${tier} tier supports up to ${TIER_CONFIG[tier].maxVehicles} vehicles.`
-                      )
-                    }
-                    className="px-3.5 py-2 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-medium tracking-wide"
-                  >
-                    + Add Vehicle
-                  </button>
+        {/* Fleet header - compact single row */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 py-3 px-4 rounded-xl border border-gray-200/80 dark:border-gray-700/80 bg-white/95 dark:bg-gray-800/95 shadow-sm">
+          <div className="flex flex-wrap items-baseline gap-3 sm:gap-4">
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white tracking-tight">
+              Fleet Dashboard
+            </h1>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="font-medium text-indigo-600 dark:text-indigo-400">{vehicles.length}</span> vehicles
+              <span className="mx-2 text-gray-300 dark:text-gray-600">·</span>
+              <span className="text-gray-500 dark:text-gray-500 capitalize">{tier}</span>
+              <span className="text-gray-400 dark:text-gray-500"> (limit {TIER_CONFIG[tier].maxVehicles})</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowImportModal(true)}
+              disabled={!TIER_CONFIG[tier].features.csvImport}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+            >
+              Import CSV
+            </button>
+            {canAddVehicle ? (
+              <Link
+                href="/dashboard/vehicles/new"
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
+              >
+                + Add Vehicle
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() =>
+                  showToast(
+                    'Vehicle limit reached',
+                    `Your ${tier} tier supports up to ${TIER_CONFIG[tier].maxVehicles} vehicles.`
+                  )
+                }
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-400"
+              >
+                + Add Vehicle
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Territory Toggle - All / New York / DMV / Other */}
+        <div className="mb-4">
+          <div className="inline-flex gap-1 p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/60 dark:border-gray-700/60">
+            {(['all', 'New York', 'DMV', 'Other'] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setTerritoryFilter(value)}
+                className={`relative px-4 py-2.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
+                  territoryFilter === value
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30 scale-[1.02]'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60'
+                }`}
+              >
+                <span className="relative z-10">{value === 'all' ? 'All' : value}</span>
+                {territoryFilter === value && (
+                  <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 animate-pulse opacity-20" aria-hidden />
                 )}
-              </div>
-            </div>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -1116,10 +1151,12 @@ export default function DashboardClient() {
                           </button>
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className="text-xs text-gray-700 dark:text-gray-300 font-mono">{vehicle.license_plate || '—'}</span>
+                          <span className="text-xs text-gray-700 dark:text-gray-300 font-mono whitespace-normal break-words max-w-[140px] inline-block" title={(plateMap[vehicle.code.toLowerCase()] ?? vehicle.license_plate) || undefined}>
+                            {(plateMap[vehicle.code.toLowerCase()] ?? vehicle.license_plate) || '—'}
+                          </span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className="text-xs text-gray-700 dark:text-gray-300">{vehicle.group_name}</span>
+                          <span className="text-xs text-gray-700 dark:text-gray-300">{getTerritory(vehicle)}</span>
                         </td>
                         <td className="px-5 py-3.5">
                           <span className="text-[11px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">{vehicle.vehicle_type}</span>
@@ -1233,8 +1270,13 @@ export default function DashboardClient() {
                         </p>
                       )}
                       <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                        {vehicle.group_name} • {vehicle.vehicle_type.toUpperCase()}
+                        {getTerritory(vehicle)} • {vehicle.vehicle_type.toUpperCase()}
                       </p>
+                      {((plateMap[vehicle.code.toLowerCase()] ?? vehicle.license_plate) || '').trim() && (
+                        <p className="text-[11px] text-gray-600 dark:text-gray-300 font-mono mt-1">
+                          {(plateMap[vehicle.code.toLowerCase()] ?? vehicle.license_plate)?.trim()}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-1.5 items-end">
                       <div className="flex gap-1">

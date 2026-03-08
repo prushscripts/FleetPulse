@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { normalizeTier, TIER_CONFIG } from '@/lib/tiers'
 
-export default function NewVehicleClient() {
+export default function NewVehicleClient({ companyId }: { companyId?: string }) {
   const [loading, setLoading] = useState(false)
   const supabase = createClient()
   const router = useRouter()
@@ -26,6 +26,7 @@ export default function NewVehicleClient() {
       license_plate: formData.get('license_plate') as string || null,
       vin: formData.get('vin') as string || null,
       notes: formData.get('notes') as string || null,
+      ...(companyId && { company_id: companyId }),
     }
 
     try {
@@ -33,9 +34,9 @@ export default function NewVehicleClient() {
         data: { user },
       } = await supabase.auth.getUser()
       const tier = normalizeTier(user?.user_metadata?.subscription_tier)
-      const { count, error: countError } = await supabase
-        .from('vehicles')
-        .select('*', { count: 'exact', head: true })
+      let countQuery = supabase.from('vehicles').select('*', { count: 'exact', head: true })
+      if (companyId) countQuery = countQuery.eq('company_id', companyId)
+      const { count, error: countError } = await countQuery
       if (countError) throw countError
       if ((count || 0) >= TIER_CONFIG[tier].maxVehicles) {
         throw new Error(

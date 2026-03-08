@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import SettingsClient from './SettingsClient'
+import TabSlideTransition from '@/components/TabSlideTransition'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -16,7 +17,9 @@ export default async function SettingsPage() {
   return (
     <>
       <Navbar />
-      <SettingsClient user={user} />
+      <TabSlideTransition>
+        <SettingsClient user={user} />
+      </TabSlideTransition>
     </>
   )
 }
