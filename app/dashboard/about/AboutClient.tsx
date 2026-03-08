@@ -68,14 +68,25 @@ export default function AboutClient({ displayName }: { displayName: string }) {
     },
   ]
 
-  const tiers = [
+  const tiers: Array<{
+    name: string
+    tagline: string
+    price: string
+    period: string
+    billingNote: string
+    maxVehicles: number
+    features: string[]
+    color: string
+    popular?: boolean
+  }> = [
     {
       name: 'Starter',
+      tagline: 'For smaller fleets to organize vehicle inventory & manage inspections',
       price: '$3',
-      period: '/vehicle/month',
+      period: 'per vehicle, per month',
+      billingNote: 'Billed annually or $4 billed monthly',
       maxVehicles: 25,
       features: [
-        'Up to 25 vehicles',
         'Basic vehicle tracking',
         'Service records',
         'Issue tracking',
@@ -85,11 +96,12 @@ export default function AboutClient({ displayName }: { displayName: string }) {
     },
     {
       name: 'Professional',
+      tagline: 'For growing fleets to improve service tracking, communication & reporting',
       price: '$6',
-      period: '/vehicle/month',
+      period: 'per vehicle, per month',
+      billingNote: 'Billed annually only',
       maxVehicles: 100,
       features: [
-        'Up to 100 vehicles',
         'Everything in Starter',
         'Driver management',
         'Digital inspections',
@@ -102,11 +114,12 @@ export default function AboutClient({ displayName }: { displayName: string }) {
     },
     {
       name: 'Premium',
+      tagline: 'For advanced fleets to integrate fleet systems & customize workflows',
       price: '$9',
-      period: '/vehicle/month',
+      period: 'per vehicle, per month',
+      billingNote: 'Billed annually only',
       maxVehicles: Infinity,
       features: [
-        'Unlimited vehicles',
         'Everything in Professional',
         'Advanced analytics',
         'API access',
@@ -259,7 +272,7 @@ export default function AboutClient({ displayName }: { displayName: string }) {
                 <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
                   Simple, transparent pricing
                 </h2>
-                <p className="text-lg text-gray-600 dark:text-gray-400">Choose the plan that fits your fleet size</p>
+                <p className="text-lg text-gray-600 dark:text-gray-400">Per-vehicle pricing that scales with your operation</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {tiers.map((tier, idx) => (
@@ -272,16 +285,20 @@ export default function AboutClient({ displayName }: { displayName: string }) {
                     }`}
                   >
                     {tier.popular && (
-                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg">
+                      <div className="absolute -top-px left-0 right-0 bg-indigo-600 text-white text-center py-1.5 rounded-t-2xl text-xs font-bold">
                         MOST POPULAR
                       </div>
                     )}
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{tier.name}</h3>
-                    <div className="mb-6">
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1 pt-2">{tier.name}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{tier.tagline}</p>
+                    <div className="mb-2">
                       <span className="text-4xl font-bold text-gray-900 dark:text-white">{tier.price}</span>
                       <span className="text-gray-600 dark:text-gray-400 text-sm ml-2">{tier.period}</span>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-8">*Billed annually</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{tier.billingNote}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
+                      {tier.maxVehicles === Infinity ? 'Unlimited vehicles' : `Up to ${tier.maxVehicles} vehicles`}
+                    </p>
                     <ul className="space-y-4 mb-8">
                       {tier.features.map((feature, fIdx) => (
                         <li key={fIdx} className="flex items-start text-sm">
