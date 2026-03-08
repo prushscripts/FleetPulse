@@ -94,9 +94,9 @@ export default function SignupPage() {
             <Image
               src="/images/banner1.png"
               alt="FleetPulse"
-              width={480}
-              height={180}
-              className="h-24 sm:h-28 md:h-32 w-auto max-w-[420px] sm:max-w-[480px] object-contain mx-auto"
+              width={520}
+              height={200}
+              className="h-28 sm:h-32 md:h-36 w-auto max-w-[480px] sm:max-w-[520px] object-contain mx-auto"
               priority
               unoptimized
             />

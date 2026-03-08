@@ -27,8 +27,17 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   const [addCompanyKey, setAddCompanyKey] = useState('')
   const [addCompanyLoading, setAddCompanyLoading] = useState(false)
   const [addCompanyError, setAddCompanyError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'account' | 'companies' | 'profile' | 'billing' | 'security'>('account')
   const supabase = createClient()
   const router = useRouter()
+
+  const tabs = [
+    { id: 'account' as const, label: 'Account', icon: '👤' },
+    { id: 'companies' as const, label: 'Companies', icon: '🏢' },
+    { id: 'profile' as const, label: 'Profile', icon: '✨' },
+    { id: 'billing' as const, label: 'Billing', icon: '📋' },
+    { id: 'security' as const, label: 'Security', icon: '🔒' },
+  ]
 
   useEffect(() => {
     // Load user metadata
@@ -234,253 +243,224 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Account Settings</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Manage your account preferences and security settings
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">Settings</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Manage your account, companies, and security
           </p>
         </div>
 
-        {/* Message Alert */}
         {message && (
-          <div className={`mb-6 p-4 rounded-lg ${
+          <div className={`mb-6 p-4 rounded-xl text-sm ${
             message.type === 'success'
-              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400'
-              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400'
+              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
+              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
           }`}>
             {message.text}
           </div>
         )}
 
-        {/* Account Information */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Account Information</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={user.email || ''}
-                disabled
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-              />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Email cannot be changed</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                User ID
-              </label>
-              <input
-                type="text"
-                value={user.id}
-                disabled
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed font-mono text-xs"
-              />
-            </div>
-          </div>
+        {/* Tab bar */}
+        <div className="flex flex-wrap gap-1 p-1 rounded-xl bg-white dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 shadow-sm mb-6">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/80 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <span aria-hidden>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
         </div>
 
-        {/* My Companies */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">My Companies</h2>
-          {companies.length === 0 ? (
-            <form onSubmit={handleCompanyActivate} className="space-y-3">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                Enter your company authentication key to access your fleet data.
-              </p>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Company authentication key
-                <span
-                  className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-gray-400 dark:border-gray-500 text-gray-500 dark:text-gray-400 cursor-help text-xs font-bold"
-                  title="If you don't have an ID, contact your company administration to acquire one."
-                >
-                  ?
-                </span>
-              </label>
-              <input
-                type="text"
-                value={companyKeyInput}
-                onChange={(e) => setCompanyKeyInput(e.target.value)}
-                placeholder=""
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              {companyError && <p className="text-sm text-red-600 dark:text-red-400">{companyError}</p>}
-              <button
-                type="submit"
-                disabled={companyActivating}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
-              >
-                {companyActivating ? 'Activating…' : 'Activate'}
-              </button>
-            </form>
-          ) : (
-            <>
-              <ul className="space-y-2 mb-6">
-                {companies.map((c) => (
-                  <li
-                    key={c.id}
-                    className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700"
-                  >
-                    <span className="font-medium text-gray-900 dark:text-white">{c.name}</span>
-                    {companyId === c.id && (
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
-                        Current
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Add another company</p>
-                <form onSubmit={handleAddCompany} className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex-1">
-                    <label className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                      Company invite code
-                      <span
-                        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-gray-400 dark:border-gray-500 text-gray-500 cursor-help text-[10px] font-bold"
-                        title="If you don't have an ID, contact your company administration to acquire one."
-                      >
-                        ?
-                      </span>
-                    </label>
-                    <input
-                      type="text"
-                      value={addCompanyKey}
-                      onChange={(e) => setAddCompanyKey(e.target.value)}
-                      placeholder=""
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <button
-                      type="submit"
-                      disabled={addCompanyLoading}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium whitespace-nowrap"
-                    >
-                      {addCompanyLoading ? 'Adding…' : 'Add company'}
-                    </button>
-                  </div>
-                </form>
-                {addCompanyError && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{addCompanyError}</p>}
+        {/* Tab content - single card */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          {activeTab === 'account' && (
+            <div className="p-6 sm:p-8">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Account Information</h2>
+              <div className="space-y-4 max-w-md">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Email</label>
+                  <input
+                    type="email"
+                    value={user.email || ''}
+                    disabled
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Email cannot be changed</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">User ID</label>
+                  <input
+                    type="text"
+                    value={user.id}
+                    disabled
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed font-mono text-xs"
+                  />
+                </div>
               </div>
-            </>
+            </div>
           )}
-        </div>
 
-        {/* Nickname Settings */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Display Name</h2>
-          <form onSubmit={handleUpdateNickname}>
-            <div className="mb-4">
-              <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Nickname
-              </label>
-              <input
-                id="nickname"
-                type="text"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                placeholder="Enter your preferred display name"
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">This name will be displayed throughout the application</p>
+          {activeTab === 'companies' && (
+            <div className="p-6 sm:p-8">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">My Companies</h2>
+              {companies.length === 0 ? (
+                <form onSubmit={handleCompanyActivate} className="space-y-4 max-w-md">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Enter your company authentication key to access your fleet data.
+                  </p>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Company authentication key
+                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-gray-400 text-gray-500 cursor-help text-xs font-bold" title="If you don't have an ID, contact your company administration to acquire one.">?</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={companyKeyInput}
+                    onChange={(e) => setCompanyKeyInput(e.target.value)}
+                    placeholder=""
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  {companyError && <p className="text-sm text-red-600 dark:text-red-400">{companyError}</p>}
+                  <button type="submit" disabled={companyActivating} className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium">
+                    {companyActivating ? 'Activating…' : 'Activate'}
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <ul className="space-y-2 mb-6">
+                    {companies.map((c) => (
+                      <li key={c.id} className="flex items-center justify-between py-2.5 px-4 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
+                        <span className="font-medium text-gray-900 dark:text-white">{c.name}</span>
+                        {companyId === c.id && (
+                          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">Current</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Add another company</p>
+                    <form onSubmit={handleAddCompany} className="flex flex-col sm:flex-row gap-3">
+                      <div className="flex-1">
+                        <label className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Company invite code
+                          <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-gray-400 text-gray-500 cursor-help text-[10px] font-bold" title="If you don't have an ID, contact your company administration to acquire one.">?</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={addCompanyKey}
+                          onChange={(e) => setAddCompanyKey(e.target.value)}
+                          placeholder=""
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <button type="submit" disabled={addCompanyLoading} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium whitespace-nowrap">
+                          {addCompanyLoading ? 'Adding…' : 'Add company'}
+                        </button>
+                      </div>
+                    </form>
+                    {addCompanyError && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{addCompanyError}</p>}
+                  </div>
+                </>
+              )}
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Saving...' : 'Save Nickname'}
-            </button>
-          </form>
-        </div>
+          )}
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Subscription Tier</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-            Internal setting for feature limits and per-vehicle pricing simulation.
-          </p>
-          <form onSubmit={handleUpdateTier} className="space-y-3">
-            <select
-              value={tier}
-              onChange={(e) => setTier(normalizeTier(e.target.value))}
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-            >
-              <option value="starter">Starter (${TIER_CONFIG.starter.pricePerVehicleMonthly}/vehicle)</option>
-              <option value="professional">
-                Professional (${TIER_CONFIG.professional.pricePerVehicleMonthly}/vehicle)
-              </option>
-              <option value="premium">Premium (${TIER_CONFIG.premium.pricePerVehicleMonthly}/vehicle)</option>
-            </select>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Max vehicles on this tier: {TIER_CONFIG[tier].maxVehicles}
-            </p>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
-            >
-              Save Tier
-            </button>
-          </form>
-        </div>
-
-        {/* Password Change */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Change Password</h2>
-          <form onSubmit={handleChangePassword}>
-            <div className="space-y-4 mb-6">
-              <div>
-                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Current Password
-                </label>
-                <input
-                  id="currentPassword"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter your current password"
-                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
-              </div>
-              <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  New Password
-                </label>
-                <input
-                  id="newPassword"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter your new password"
-                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Must be at least 6 characters</p>
-              </div>
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Confirm New Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm your new password"
-                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
-              </div>
+          {activeTab === 'profile' && (
+            <div className="p-6 sm:p-8">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Display Name</h2>
+              <form onSubmit={handleUpdateNickname} className="max-w-md space-y-4">
+                <div>
+                  <label htmlFor="nickname" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Nickname</label>
+                  <input
+                    id="nickname"
+                    type="text"
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    placeholder="Enter your preferred display name"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Shown throughout the app</p>
+                </div>
+                <button type="submit" disabled={loading} className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-sm font-medium shadow-md hover:shadow-lg disabled:opacity-50">
+                  {loading ? 'Saving...' : 'Save'}
+                </button>
+              </form>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Changing Password...' : 'Change Password'}
-            </button>
-          </form>
+          )}
+
+          {activeTab === 'billing' && (
+            <div className="p-6 sm:p-8">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Subscription Tier</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Feature limits and per-vehicle pricing.</p>
+              <form onSubmit={handleUpdateTier} className="max-w-md space-y-4">
+                <select
+                  value={tier}
+                  onChange={(e) => setTier(normalizeTier(e.target.value))}
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                >
+                  <option value="starter">Starter (${TIER_CONFIG.starter.pricePerVehicleMonthly}/vehicle)</option>
+                  <option value="professional">Professional (${TIER_CONFIG.professional.pricePerVehicleMonthly}/vehicle)</option>
+                  <option value="premium">Premium (${TIER_CONFIG.premium.pricePerVehicleMonthly}/vehicle)</option>
+                </select>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Max vehicles: {TIER_CONFIG[tier].maxVehicles}</p>
+                <button type="submit" disabled={loading} className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+                  Save Tier
+                </button>
+              </form>
+            </div>
+          )}
+
+          {activeTab === 'security' && (
+            <div className="p-6 sm:p-8">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Change Password</h2>
+              <form onSubmit={handleChangePassword} className="max-w-md space-y-4">
+                <div>
+                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Current password</label>
+                  <input
+                    id="currentPassword"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">New password</label>
+                  <input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Confirm new password</label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <button type="submit" disabled={loading} className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-sm font-medium shadow-md hover:shadow-lg disabled:opacity-50">
+                  {loading ? 'Changing...' : 'Change Password'}
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </div>
