@@ -2,7 +2,8 @@ import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
 export const alt = 'FleetPulse – Modern Fleet Management'
-export const size = { width: 1200, height: 630 }
+// 1200x630 is standard; 2400x1256 helps iMessage and others show full card instead of small icon
+export const size = { width: 2400, height: 1256 }
 export const contentType = 'image/png'
 
 export default async function Image() {
@@ -56,7 +57,7 @@ export default async function Image() {
         >
           <div
             style={{
-              fontSize: 72,
+              fontSize: 140,
               fontWeight: 800,
               color: 'white',
               letterSpacing: '-0.02em',
@@ -67,10 +68,10 @@ export default async function Image() {
           </div>
           <div
             style={{
-              fontSize: 28,
+              fontSize: 52,
               color: 'rgba(255,255,255,0.9)',
               fontWeight: 500,
-              maxWidth: 700,
+              maxWidth: 1000,
               textAlign: 'center',
             }}
           >
@@ -78,14 +79,14 @@ export default async function Image() {
           </div>
           <div
             style={{
-              marginTop: 12,
+              marginTop: 24,
               display: 'flex',
               alignItems: 'center',
               gap: 8,
-              padding: '12px 24px',
+              padding: '20px 40px',
               background: 'rgba(255,255,255,0.15)',
               borderRadius: 9999,
-              fontSize: 20,
+              fontSize: 36,
               color: 'white',
               fontWeight: 600,
             }}

@@ -11,6 +11,8 @@ const inter = Inter({
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://FleetPulseHQ.com'
+// Absolute URL so messaging apps and crawlers always fetch the full preview image
+const ogImageUrl = `${siteUrl}/opengraph-image`
 
 export const metadata: Metadata = {
   title: 'FleetPulse - Fleet Management System',
@@ -25,9 +27,9 @@ export const metadata: Metadata = {
     siteName: 'FleetPulse',
     images: [
       {
-        url: '/opengraph-image',
-        width: 1200,
-        height: 630,
+        url: ogImageUrl,
+        width: 2400,
+        height: 1256,
         alt: 'FleetPulse – Modern Fleet Management',
       },
     ],
@@ -36,7 +38,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'FleetPulse – Modern Fleet Management',
     description: 'Track vehicles, manage maintenance, and keep your fleet running smoothly.',
-    images: ['/opengraph-image'],
+    images: [ogImageUrl],
   },
   icons: {
     icon: '/fpfavicon.png',
