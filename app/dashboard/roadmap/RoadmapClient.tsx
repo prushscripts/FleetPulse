@@ -54,7 +54,7 @@ export default function RoadmapClient() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Profit Roadmap</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -74,9 +74,9 @@ export default function RoadmapClient() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg bg-white dark:bg-gray-800 mb-8">
-          <table className="w-full text-sm min-w-[900px]">
+        {/* Table - full width, no horizontal scroll */}
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg bg-white dark:bg-gray-800 mb-8 overflow-hidden">
+          <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-100 dark:bg-gray-700/80 border-b border-gray-200 dark:border-gray-600">
                 <th className="text-left py-3 px-4 font-bold text-gray-900 dark:text-white">Trucks</th>
@@ -84,10 +84,10 @@ export default function RoadmapClient() {
                 <th className="text-right py-3 px-2 font-bold text-gray-900 dark:text-white">Revenue/Week</th>
                 <th className="text-right py-3 px-2 font-bold text-gray-900 dark:text-white">Revenue/Month</th>
                 <th className="text-right py-3 px-2 font-bold text-gray-900 dark:text-white">Revenue/Year</th>
-                <th className="text-right py-3 px-2 font-bold text-gray-900 dark:text-white">Expenses/Day</th>
-                <th className="text-right py-3 px-2 font-bold text-gray-900 dark:text-white">Expenses/Week</th>
-                <th className="text-right py-3 px-2 font-bold text-gray-900 dark:text-white">Expenses/Month</th>
-                <th className="text-right py-3 px-2 font-bold text-gray-900 dark:text-white">Expenses/Year</th>
+                <th className="text-right py-3 px-2 font-bold text-red-600 dark:text-red-400">Expenses/Day</th>
+                <th className="text-right py-3 px-2 font-bold text-red-600 dark:text-red-400">Expenses/Week</th>
+                <th className="text-right py-3 px-2 font-bold text-red-600 dark:text-red-400">Expenses/Month</th>
+                <th className="text-right py-3 px-2 font-bold text-red-600 dark:text-red-400">Expenses/Year</th>
                 <th className="text-right py-3 px-2 font-bold text-gray-900 dark:text-white">Net Profit/Day</th>
                 <th className="text-right py-3 px-2 font-bold text-gray-900 dark:text-white">Net Profit/Week</th>
                 <th className="text-right py-3 px-2 font-bold text-gray-900 dark:text-white">Net Profit/Month</th>
@@ -107,10 +107,10 @@ export default function RoadmapClient() {
                   <td className="text-right py-2.5 px-2 text-gray-700 dark:text-gray-300">{formatCurrency(r.revWeek)}</td>
                   <td className="text-right py-2.5 px-2 text-gray-700 dark:text-gray-300">{formatCurrency(r.revMonth)}</td>
                   <td className="text-right py-2.5 px-2 text-gray-700 dark:text-gray-300">{formatCurrency(r.revYear)}</td>
-                  <td className="text-right py-2.5 px-2 text-gray-600 dark:text-gray-400">{formatCurrency(r.expDay)}</td>
-                  <td className="text-right py-2.5 px-2 text-gray-600 dark:text-gray-400">{formatCurrency(r.expWeek)}</td>
-                  <td className="text-right py-2.5 px-2 text-gray-600 dark:text-gray-400">{formatCurrency(r.expMonth)}</td>
-                  <td className="text-right py-2.5 px-2 text-gray-600 dark:text-gray-400">{formatCurrency(r.expYear)}</td>
+                  <td className="text-right py-2.5 px-2 text-red-600 dark:text-red-400">{formatCurrency(r.expDay)}</td>
+                  <td className="text-right py-2.5 px-2 text-red-600 dark:text-red-400">{formatCurrency(r.expWeek)}</td>
+                  <td className="text-right py-2.5 px-2 text-red-600 dark:text-red-400">{formatCurrency(r.expMonth)}</td>
+                  <td className="text-right py-2.5 px-2 text-red-600 dark:text-red-400">{formatCurrency(r.expYear)}</td>
                   <td className="text-right py-2.5 px-2 font-medium text-green-700 dark:text-green-400">{formatCurrency(r.netDay)}</td>
                   <td className="text-right py-2.5 px-2 font-medium text-green-700 dark:text-green-400">{formatCurrency(r.netWeek)}</td>
                   <td className="text-right py-2.5 px-2 font-medium text-green-700 dark:text-green-400">{formatCurrency(r.netMonth)}</td>
@@ -121,14 +121,14 @@ export default function RoadmapClient() {
             <tfoot>
               <tr className="bg-indigo-50 dark:bg-indigo-900/30 border-t-2 border-indigo-200 dark:border-indigo-800">
                 <td className="py-3 px-4 font-bold text-gray-900 dark:text-white">Summary (25 trucks)</td>
-                <td className="text-right py-3 px-2 font-medium">{formatCurrency(rows[rows.length - 1].revDay)}</td>
-                <td className="text-right py-3 px-2 font-medium">{formatCurrency(rows[rows.length - 1].revWeek)}</td>
-                <td className="text-right py-3 px-2 font-medium">{formatCurrency(rows[rows.length - 1].revMonth)}</td>
-                <td className="text-right py-3 px-2 font-medium">{formatCurrency(rows[rows.length - 1].revYear)}</td>
-                <td className="text-right py-3 px-2">{formatCurrency(rows[rows.length - 1].expDay)}</td>
-                <td className="text-right py-3 px-2">{formatCurrency(rows[rows.length - 1].expWeek)}</td>
-                <td className="text-right py-3 px-2">{formatCurrency(rows[rows.length - 1].expMonth)}</td>
-                <td className="text-right py-3 px-2">{formatCurrency(rows[rows.length - 1].expYear)}</td>
+                <td className="text-right py-3 px-2 font-medium text-gray-900 dark:text-white">{formatCurrency(rows[rows.length - 1].revDay)}</td>
+                <td className="text-right py-3 px-2 font-medium text-gray-900 dark:text-white">{formatCurrency(rows[rows.length - 1].revWeek)}</td>
+                <td className="text-right py-3 px-2 font-medium text-gray-900 dark:text-white">{formatCurrency(rows[rows.length - 1].revMonth)}</td>
+                <td className="text-right py-3 px-2 font-medium text-gray-900 dark:text-white">{formatCurrency(rows[rows.length - 1].revYear)}</td>
+                <td className="text-right py-3 px-2 font-medium text-red-600 dark:text-red-400">{formatCurrency(rows[rows.length - 1].expDay)}</td>
+                <td className="text-right py-3 px-2 font-medium text-red-600 dark:text-red-400">{formatCurrency(rows[rows.length - 1].expWeek)}</td>
+                <td className="text-right py-3 px-2 font-medium text-red-600 dark:text-red-400">{formatCurrency(rows[rows.length - 1].expMonth)}</td>
+                <td className="text-right py-3 px-2 font-medium text-red-600 dark:text-red-400">{formatCurrency(rows[rows.length - 1].expYear)}</td>
                 <td className="text-right py-3 px-2 font-bold text-green-700 dark:text-green-400">{formatCurrency(rows[rows.length - 1].netDay)}</td>
                 <td className="text-right py-3 px-2 font-bold text-green-700 dark:text-green-400">{formatCurrency(rows[rows.length - 1].netWeek)}</td>
                 <td className="text-right py-3 px-2 font-bold text-green-700 dark:text-green-400">{formatCurrency(rows[rows.length - 1].netMonth)}</td>
