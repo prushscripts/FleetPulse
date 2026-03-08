@@ -258,121 +258,126 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           </div>
         )}
 
-        {/* Tab bar - premium pill style */}
-        <div className="flex flex-wrap gap-0.5 p-1.5 rounded-2xl bg-gray-100/80 dark:bg-gray-800/80 border border-gray-200/80 dark:border-gray-700/80 shadow-inner mb-8">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                activeTab === tab.id
-                  ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-md border border-gray-200/80 dark:border-gray-600'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50'
-              }`}
-            >
-              <span aria-hidden>{tab.icon}</span>
-              <span>{tab.label}</span>
-            </button>
-          ))}
+        {/* Tab bar - compact, only as wide as tabs */}
+        <div className="flex justify-start mb-6">
+          <div className="inline-flex gap-0.5 p-1.5 rounded-2xl bg-gray-100/80 dark:bg-gray-800/80 border border-gray-200/80 dark:border-gray-700/80 shadow-inner">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  activeTab === tab.id
+                    ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow border border-gray-200/80 dark:border-gray-600'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                <span aria-hidden>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Tab content - single card, premium look */}
+        {/* Tab content - two columns on desktop so no scroll */}
         <div className="bg-gradient-to-b from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-800/80 rounded-2xl shadow-xl border border-gray-200/80 dark:border-gray-700/80 overflow-hidden">
           {activeTab === 'account' && (
-            <div className="p-6 sm:p-8 space-y-8">
-              <section>
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Account info</h2>
-                <div className="space-y-4 max-w-md">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Email</label>
-                    <input
-                      type="email"
-                      value={user.email || ''}
-                      disabled
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 cursor-not-allowed text-sm"
-                    />
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Email cannot be changed</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">User ID</label>
-                    <input
-                      type="text"
-                      value={user.id}
-                      disabled
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 cursor-not-allowed font-mono text-xs"
-                    />
-                  </div>
+            <div className="p-5 sm:p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+                {/* Left: Account info + Display name */}
+                <div className="space-y-5">
+                  <section>
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Account info</h2>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={user.email || ''}
+                          disabled
+                          className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 cursor-not-allowed text-sm"
+                        />
+                        <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">Cannot be changed</p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">User ID</label>
+                        <input
+                          type="text"
+                          value={user.id}
+                          disabled
+                          className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 cursor-not-allowed font-mono text-[11px]"
+                        />
+                      </div>
+                    </div>
+                  </section>
+                  <section>
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Display name</h2>
+                    <form onSubmit={handleUpdateNickname} className="space-y-2">
+                      <input
+                        id="nickname"
+                        type="text"
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value)}
+                        placeholder="Shown in app"
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
+                      />
+                      <button type="submit" disabled={loading} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+                        {loading ? 'Saving...' : 'Save'}
+                      </button>
+                    </form>
+                  </section>
                 </div>
-              </section>
-              <div className="border-t border-gray-200 dark:border-gray-700/80" />
-              <section>
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Display name</h2>
-                <form onSubmit={handleUpdateNickname} className="max-w-md space-y-4">
-                  <div>
-                    <label htmlFor="nickname" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Nickname</label>
-                    <input
-                      id="nickname"
-                      type="text"
-                      value={nickname}
-                      onChange={(e) => setNickname(e.target.value)}
-                      placeholder="Shown throughout the app"
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-sm"
-                    />
-                  </div>
-                  <button type="submit" disabled={loading} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium shadow-sm hover:shadow disabled:opacity-50">
-                    {loading ? 'Saving...' : 'Save'}
-                  </button>
-                </form>
-              </section>
-              <div className="border-t border-gray-200 dark:border-gray-700/80" />
-              <section>
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Password</h2>
-                <form onSubmit={handleChangePassword} className="max-w-md space-y-4">
-                  <div>
-                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Current password</label>
-                    <input
-                      id="currentPassword"
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Enter current password"
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">New password</label>
-                    <input
-                      id="newPassword"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="At least 6 characters"
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1.5">Confirm new password</label>
-                    <input
-                      id="confirmPassword"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm new password"
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
-                    />
-                  </div>
-                  <button type="submit" disabled={loading} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium shadow-sm hover:shadow disabled:opacity-50">
-                    {loading ? 'Changing...' : 'Change Password'}
-                  </button>
-                </form>
-              </section>
+                {/* Right: Password */}
+                <div>
+                  <section>
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Password</h2>
+                    <form onSubmit={handleChangePassword} className="space-y-3">
+                      <div>
+                        <label htmlFor="currentPassword" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Current</label>
+                        <input
+                          id="currentPassword"
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          placeholder="Current password"
+                          className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="newPassword" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">New</label>
+                        <input
+                          id="newPassword"
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Min 6 characters"
+                          className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Confirm</label>
+                        <input
+                          id="confirmPassword"
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Confirm new password"
+                          className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
+                        />
+                      </div>
+                      <button type="submit" disabled={loading} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+                        {loading ? 'Changing...' : 'Change Password'}
+                      </button>
+                    </form>
+                  </section>
+                </div>
+              </div>
             </div>
           )}
 
           {activeTab === 'companies' && (
-            <div className="p-6 sm:p-8">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">My Companies</h2>
+            <div className="p-5 sm:p-6">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">My Companies</h2>
               {companies.length === 0 ? (
                 <form onSubmit={handleCompanyActivate} className="space-y-4 max-w-md">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -436,8 +441,8 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           )}
 
           {activeTab === 'billing' && (
-            <div className="p-6 sm:p-8">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Subscription Tier</h2>
+            <div className="p-5 sm:p-6">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Subscription Tier</h2>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Feature limits and per-vehicle pricing.</p>
               <form onSubmit={handleUpdateTier} className="max-w-md space-y-4">
                 <select

@@ -74,7 +74,7 @@ export default function LoginPage() {
         style={{
           backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(139, 92, 246, 0.06) 40px, rgba(139, 92, 246, 0.06) 41px), repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(99, 102, 241, 0.06) 40px, rgba(99, 102, 241, 0.06) 41px)',
           backgroundSize: '100% 100%',
-          animationDuration: '35s',
+          animationDuration: '22s',
         }}
       />
       {/* Pulsing orbs */}
