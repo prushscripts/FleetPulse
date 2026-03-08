@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { format } from 'date-fns'
+
+type TerritoryFilterValue = 'all' | 'New York' | 'DMV'
 
 interface FleetStats {
   totalVehicles: number
@@ -22,109 +23,120 @@ interface FleetStats {
   pendingInspections: number
 }
 
-export default function HomeDashboardClient() {
-  const [stats, setStats] = useState<FleetStats | null>(null)
+interface VehicleRow {
+  id: string
+  code?: string | null
+  status?: string | null
+  current_mileage?: number | null
+  oil_change_due_mileage?: number | null
+}
+
+export default function HomeDashboardClient({
+  territoryMap = {},
+}: {
+  territoryMap?: Record<string, string>
+}) {
+  const [vehicles, setVehicles] = useState<VehicleRow[]>([])
+  const [issues, setIssues] = useState<Array<{ vehicle_id: string; status: string; priority?: string }>>([])
+  const [documents, setDocuments] = useState<Array<{ vehicle_id: string; expiration_date: string | null }>>([])
+  const [inspections, setInspections] = useState<Array<{ vehicle_id: string; status: string }>>([])
+  const [territoryFilter, setTerritoryFilter] = useState<TerritoryFilterValue>('all')
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
+  const getTerritory = (vehicle: VehicleRow): string => {
+    const code = vehicle.code?.toLowerCase()
+    if (!code) return 'Other'
+    return territoryMap[code] ?? 'Other'
+  }
+
   useEffect(() => {
-    loadStats()
+    loadData()
   }, [])
 
-  const loadStats = async () => {
+  const loadData = async () => {
     try {
-      // Load all vehicles
-      const { data: vehicles } = await supabase.from('vehicles').select('*')
-      
-      // Load issues
-      const { data: issues } = await supabase
-        .from('issues')
-        .select('status, priority')
-        .neq('status', 'resolved')
+      const [
+        { data: vehiclesData },
+        { data: issuesData },
+        { data: documentsData },
+        { data: inspectionsData },
+      ] = await Promise.all([
+        supabase.from('vehicles').select('id, code, status, current_mileage, oil_change_due_mileage'),
+        supabase.from('issues').select('vehicle_id, status, priority').neq('status', 'resolved'),
+        supabase.from('documents').select('vehicle_id, expiration_date'),
+        supabase.from('inspections').select('vehicle_id, status'),
+      ])
 
-      // Load documents
-      const { data: documents } = await supabase
-        .from('documents')
-        .select('expiration_date')
-
-      // Load inspections
-      const { data: inspections } = await supabase
-        .from('inspections')
-        .select('status')
-
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-
-      const vehicleList = vehicles || []
-      const totalVehicles = vehicleList.length
-      const activeVehicles = vehicleList.filter(v => v.status === 'active' || !v.status).length
-      const outOfServiceVehicles = vehicleList.filter(v => v.status === 'out_of_service').length
-      const inShopVehicles = vehicleList.filter(v => v.status === 'in_shop').length
-
-      // Calculate oil change stats
-      let vehiclesOverdueOil = 0
-      let vehiclesDueSoonOil = 0
-      let vehiclesOkOil = 0
-
-      vehicleList.forEach((vehicle) => {
-        const currentMileage = vehicle.current_mileage || 0
-        const oilDueMileage = vehicle.oil_change_due_mileage || 0
-        const milesUntilDue = oilDueMileage - currentMileage
-
-        if (currentMileage >= oilDueMileage) {
-          vehiclesOverdueOil++
-        } else if (milesUntilDue <= 1000) {
-          vehiclesDueSoonOil++
-        } else {
-          vehiclesOkOil++
-        }
-      })
-
-      const oilChangePercentage = totalVehicles > 0 
-        ? Math.round(((vehiclesOkOil + vehiclesDueSoonOil) / totalVehicles) * 100)
-        : 0
-
-      const issueList = issues || []
-      const totalOpenIssues = issueList.length
-      const criticalIssues = issueList.filter(i => i.priority === 'critical').length
-
-      const documentList = documents || []
-      const expiredDocuments = documentList.filter(
-        (doc) => doc.expiration_date && new Date(doc.expiration_date) < today
-      ).length
-
-      const inspectionList = inspections || []
-      const totalInspections = inspectionList.length
-      const passedInspections = inspectionList.filter(i => i.status === 'passed').length
-      const failedInspections = inspectionList.filter(i => i.status === 'failed').length
-      const pendingInspections = inspectionList.filter(i => i.status === 'pending').length
-
-      const inspectionPassRate = totalInspections > 0
-        ? Math.round((passedInspections / totalInspections) * 100)
-        : 0
-
-      setStats({
-        totalVehicles,
-        activeVehicles,
-        outOfServiceVehicles,
-        inShopVehicles,
-        vehiclesOverdueOil,
-        vehiclesDueSoonOil,
-        vehiclesOkOil,
-        totalOpenIssues,
-        criticalIssues,
-        expiredDocuments,
-        totalInspections,
-        passedInspections,
-        failedInspections,
-        pendingInspections,
-      })
+      setVehicles(vehiclesData || [])
+      setIssues(issuesData || [])
+      setDocuments(documentsData || [])
+      setInspections(inspectionsData || [])
     } catch (error) {
-      console.error('Error loading stats:', error)
+      console.error('Error loading home data:', error)
     } finally {
       setLoading(false)
     }
   }
+
+  const stats = useMemo((): FleetStats | null => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    let vehicleList = vehicles
+    if (territoryFilter !== 'all') {
+      vehicleList = vehicles.filter((v) => getTerritory(v) === territoryFilter)
+    }
+    const vehicleIds = new Set(vehicleList.map((v) => v.id))
+
+    const issueList = issues.filter((i) => vehicleIds.has(i.vehicle_id))
+    const documentList = documents.filter((d) => vehicleIds.has(d.vehicle_id))
+    const inspectionList = inspections.filter((i) => vehicleIds.has(i.vehicle_id))
+
+    const totalVehicles = vehicleList.length
+    const activeVehicles = vehicleList.filter((v) => v.status === 'active' || !v.status).length
+    const outOfServiceVehicles = vehicleList.filter((v) => v.status === 'out_of_service').length
+    const inShopVehicles = vehicleList.filter((v) => v.status === 'in_shop').length
+
+    let vehiclesOverdueOil = 0
+    let vehiclesDueSoonOil = 0
+    let vehiclesOkOil = 0
+    vehicleList.forEach((vehicle) => {
+      const currentMileage = vehicle.current_mileage || 0
+      const oilDueMileage = vehicle.oil_change_due_mileage || 0
+      const milesUntilDue = oilDueMileage - currentMileage
+      if (currentMileage >= oilDueMileage) vehiclesOverdueOil++
+      else if (milesUntilDue <= 1000) vehiclesDueSoonOil++
+      else vehiclesOkOil++
+    })
+
+    const totalOpenIssues = issueList.length
+    const criticalIssues = issueList.filter((i) => i.priority === 'critical').length
+    const expiredDocuments = documentList.filter(
+      (doc) => doc.expiration_date && new Date(doc.expiration_date) < today
+    ).length
+    const totalInspections = inspectionList.length
+    const passedInspections = inspectionList.filter((i) => i.status === 'passed').length
+    const failedInspections = inspectionList.filter((i) => i.status === 'failed').length
+    const pendingInspections = inspectionList.filter((i) => i.status === 'pending').length
+
+    return {
+      totalVehicles,
+      activeVehicles,
+      outOfServiceVehicles,
+      inShopVehicles,
+      vehiclesOverdueOil,
+      vehiclesDueSoonOil,
+      vehiclesOkOil,
+      totalOpenIssues,
+      criticalIssues,
+      expiredDocuments,
+      totalInspections,
+      passedInspections,
+      failedInspections,
+      pendingInspections,
+    }
+  }, [vehicles, issues, documents, inspections, territoryFilter, territoryMap])
 
   if (loading) {
     return (
@@ -150,6 +162,12 @@ export default function HomeDashboardClient() {
     ? Math.round((stats.passedInspections / stats.totalInspections) * 100)
     : 0
 
+  const territoryTabs: { value: TerritoryFilterValue; label: string }[] = [
+    { value: 'all', label: 'Full fleet' },
+    { value: 'New York', label: 'New York' },
+    { value: 'DMV', label: 'DMV' },
+  ]
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -160,6 +178,29 @@ export default function HomeDashboardClient() {
           <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 font-normal">
             Overview of operational health, inspections, and risk indicators
           </p>
+        </div>
+
+        {/* Territory tabs: Full fleet | New York | DMV */}
+        <div className="mb-6">
+          <div className="inline-flex gap-1 p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/60 dark:border-gray-700/60">
+            {territoryTabs.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setTerritoryFilter(value)}
+                className={`relative px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                  territoryFilter === value
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30 scale-[1.02]'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60'
+                }`}
+              >
+                <span className="relative z-10">{label}</span>
+                {territoryFilter === value && (
+                  <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 animate-pulse opacity-20" aria-hidden />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Key Metrics */}

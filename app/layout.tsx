@@ -10,15 +10,33 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://FleetPulseHQ.com'
+
 export const metadata: Metadata = {
   title: 'FleetPulse - Fleet Management System',
   description: 'Modern fleet management platform for vehicle tracking and maintenance',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://FleetPulseHQ.com'),
+  metadataBase: new URL(siteUrl),
   openGraph: {
-    title: 'FleetPulse - Fleet Management System',
-    description: 'Modern fleet management platform for vehicle tracking and maintenance',
-    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://FleetPulseHQ.com',
+    type: 'website',
+    locale: 'en_US',
+    title: 'FleetPulse – Modern Fleet Management',
+    description: 'Track vehicles, manage maintenance, and keep your fleet running smoothly. All in one powerful platform.',
+    url: siteUrl,
     siteName: 'FleetPulse',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'FleetPulse – Modern Fleet Management',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'FleetPulse – Modern Fleet Management',
+    description: 'Track vehicles, manage maintenance, and keep your fleet running smoothly.',
+    images: ['/opengraph-image'],
   },
   icons: {
     icon: '/fpfavicon.png',

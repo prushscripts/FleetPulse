@@ -40,9 +40,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const prevTabIndexRef = useRef<number>(-1)
   const isInitialMount = useRef(true)
 
-  // Redirect unassigned users to activation (except when already on activate or settings)
+  // Redirect unassigned users to welcome (except when on activate, settings, welcome, or about)
   useEffect(() => {
-    if (pathname === '/dashboard/activate' || pathname === '/dashboard/settings' || pathname === '/dashboard/welcome') {
+    if (pathname === '/dashboard/activate' || pathname === '/dashboard/settings' || pathname === '/dashboard/welcome' || pathname === '/dashboard/about') {
       setActivationChecked(true)
       return
     }
@@ -97,7 +97,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   // Avoid flash of dashboard content before activation redirect
-  if (!activationChecked && pathname !== '/dashboard/activate' && pathname !== '/dashboard/welcome') {
+  if (!activationChecked && pathname !== '/dashboard/activate' && pathname !== '/dashboard/welcome' && pathname !== '/dashboard/about') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-gray-500 dark:text-gray-400 text-sm">Loading…</div>

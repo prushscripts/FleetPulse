@@ -277,45 +277,47 @@ export default function AboutClient({ displayName }: { displayName: string }) {
               </div>
               {/* Extra padding so hover scale doesn't clip card edges */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-2 py-4 overflow-visible">
-                {tiers.map((tier, idx) => (
-                  <div
-                    key={idx}
-                    className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 p-8 transition-all duration-300 hover:scale-105 overflow-visible ${
-                      tier.popular
-                        ? 'border-indigo-500 shadow-2xl shadow-indigo-500/30 scale-105'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'
-                    }`}
-                  >
-                    {tier.popular && (
-                      <div className="absolute -top-px left-0 right-0 bg-indigo-600 text-white text-center py-1.5 rounded-t-2xl text-xs font-bold">
-                        MOST POPULAR
+                {tiers.map((tier, idx) => {
+                  const isPopular = !!tier.popular
+                  const isPremium = tier.name === 'Premium'
+                  const cardWrapperClass = isPopular
+                    ? 'relative bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-xl border-2 border-indigo-500 p-8 transform scale-105 hover:scale-110 hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 overflow-visible'
+                    : `relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 p-8 transition-all duration-300 overflow-visible hover:scale-105 hover:-translate-y-2 hover:shadow-xl ${
+                        isPremium ? 'border-gray-200 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-600' : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'
+                      }`
+                  return (
+                    <div key={idx} className={cardWrapperClass}>
+                      {isPopular ? (
+                        <div className="absolute -top-3 right-4 bg-yellow-400 text-indigo-900 px-3 py-1 rounded-full text-xs font-bold animate-float">
+                          MOST POPULAR
+                        </div>
+                      ) : null}
+                      <h3 className={`text-2xl font-bold mb-1 ${isPopular ? 'text-white pt-0' : 'text-gray-900 dark:text-white'}`}>{tier.name}</h3>
+                      <p className={`text-sm mb-4 ${isPopular ? 'text-indigo-200' : 'text-gray-600 dark:text-gray-400'}`}>{tier.tagline}</p>
+                      <div className="mb-2">
+                        <span className={`text-4xl font-bold ${isPopular ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{tier.price}</span>
+                        <span className={`text-sm ml-2 ${isPopular ? 'text-indigo-200' : 'text-gray-600 dark:text-gray-400'}`}>{tier.period}</span>
                       </div>
-                    )}
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1 pt-2">{tier.name}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{tier.tagline}</p>
-                    <div className="mb-2">
-                      <span className="text-4xl font-bold text-gray-900 dark:text-white">{tier.price}</span>
-                      <span className="text-gray-600 dark:text-gray-400 text-sm ml-2">{tier.period}</span>
+                      <p className={`text-xs mb-2 ${isPopular ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-400'}`}>{tier.billingNote}</p>
+                      <p className={`text-xs mb-6 ${isPopular ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {tier.maxVehicles === Infinity ? 'Unlimited vehicles' : `Up to ${tier.maxVehicles} vehicles`}
+                      </p>
+                      <ul className="space-y-4 mb-8">
+                        {tier.features.map((feature, fIdx) => (
+                          <li key={fIdx} className="flex items-start text-sm">
+                            <span className={`mr-3 mt-0.5 text-lg ${isPopular ? 'text-white' : 'text-green-500'}`}>✓</span>
+                            <span className={isPopular ? 'text-indigo-100' : 'text-gray-700 dark:text-gray-300'}>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className={`text-center pt-4 border-t ${isPopular ? 'border-indigo-400/50' : 'border-gray-200 dark:border-gray-700'}`}>
+                        <span className={`text-sm font-medium ${isPopular ? 'text-white' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                          {userTier === tier.name.toLowerCase() ? '✓ Your current tier' : ''}
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{tier.billingNote}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
-                      {tier.maxVehicles === Infinity ? 'Unlimited vehicles' : `Up to ${tier.maxVehicles} vehicles`}
-                    </p>
-                    <ul className="space-y-4 mb-8">
-                      {tier.features.map((feature, fIdx) => (
-                        <li key={fIdx} className="flex items-start text-sm">
-                          <span className="text-green-500 mr-3 mt-0.5 text-lg">✓</span>
-                          <span className="text-gray-700 dark:text-gray-300">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-                        {userTier === tier.name.toLowerCase() ? '✓ Your current tier' : ''}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </div>
