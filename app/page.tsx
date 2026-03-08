@@ -74,9 +74,9 @@ export default async function Home() {
                   <Image
                     src="/images/banner1.png"
                     alt="FleetPulse"
-                    width={360}
-                    height={140}
-                    className="h-14 sm:h-16 md:h-20 w-auto max-w-[320px] sm:max-w-[360px] object-contain drop-shadow-2xl select-none"
+                    width={520}
+                    height={200}
+                    className="h-20 sm:h-24 md:h-28 lg:h-32 w-auto max-w-[400px] sm:max-w-[480px] md:max-w-[520px] object-contain drop-shadow-2xl select-none"
                     priority
                     unoptimized
                   />
@@ -437,9 +437,9 @@ export default async function Home() {
                   <Image
                     src="/images/banner1.png"
                     alt="FleetPulse"
-                    width={280}
-                    height={100}
-                    className="h-12 sm:h-14 w-auto max-w-[260px] object-contain mx-auto drop-shadow-xl select-none"
+                    width={380}
+                    height={140}
+                    className="h-16 sm:h-20 md:h-24 w-auto max-w-[340px] sm:max-w-[380px] object-contain mx-auto drop-shadow-xl select-none"
                     unoptimized
                   />
                 </div>

@@ -68,9 +68,9 @@ export default function LoginPage() {
             <Image
               src="/images/banner1.png"
               alt="FleetPulse"
-              width={380}
-              height={140}
-              className="h-16 sm:h-20 w-auto max-w-[320px] object-contain mx-auto"
+              width={480}
+              height={180}
+              className="h-24 sm:h-28 md:h-32 w-auto max-w-[420px] sm:max-w-[480px] object-contain mx-auto"
               priority
               unoptimized
             />
