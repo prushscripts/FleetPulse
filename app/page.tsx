@@ -70,6 +70,19 @@ export default async function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
             <div className="max-w-3xl lg:max-w-4xl">
               <ScrollReveal delay={0}>
+                <div className="flex justify-center mb-6 sm:mb-8">
+                  <Image
+                    src="/images/banner1new.png"
+                    alt="FleetPulse"
+                    width={360}
+                    height={140}
+                    className="h-14 sm:h-16 md:h-20 w-auto max-w-[320px] sm:max-w-[360px] object-contain drop-shadow-2xl select-none"
+                    priority
+                    unoptimized
+                  />
+                </div>
+              </ScrollReveal>
+              <ScrollReveal delay={100}>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight leading-tight drop-shadow-2xl select-none cursor-default">
                 Modern Fleet Management
               </h1>
@@ -420,6 +433,16 @@ export default async function Home() {
             
             <ScrollReveal delay={0}>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 py-8">
+                <div className="flex justify-center mb-6">
+                  <Image
+                    src="/images/banner1new.png"
+                    alt="FleetPulse"
+                    width={280}
+                    height={100}
+                    className="h-12 sm:h-14 w-auto max-w-[260px] object-contain mx-auto drop-shadow-xl select-none"
+                    unoptimized
+                  />
+                </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 drop-shadow-lg select-none cursor-default">
                   Ready to streamline your fleet management?
                 </h2>
