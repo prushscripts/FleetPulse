@@ -31,7 +31,7 @@ export default function EntryAnimation() {
             className="w-auto object-contain"
             style={{ height: '100px', borderRadius: '12px', boxShadow: '0 0 24px rgba(99, 102, 241, 0.4)' }}
           >
-            <source src="/assets/fleetpulse_navbar.mp4" type="video/mp4" />
+            <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
           </video>
         </div>
         <p className="mt-6 text-indigo-300/90 text-sm font-medium tracking-[0.3em] uppercase animate-entry-text">

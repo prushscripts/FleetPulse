@@ -139,10 +139,10 @@ export default function SignupPage() {
               loop
               playsInline
               aria-label="FleetPulse"
-              className="w-auto object-contain"
+              className="w-auto object-contain mx-auto"
               style={{ height: '160px', borderRadius: '14px', boxShadow: '0 0 30px rgba(99, 102, 241, 0.4)' }}
             >
-              <source src="/assets/fleetpulse_navbar.mp4" type="video/mp4" />
+              <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
             </video>
           </div>
           <h2 className="text-2xl font-bold text-white mb-1">
