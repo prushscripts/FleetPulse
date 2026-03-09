@@ -197,18 +197,18 @@ export default function Navbar() {
     <nav className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-sm border-b border-gray-200/80 dark:border-gray-700/80 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center min-h-[4rem] sm:min-h-[5rem] py-1">
-          {/* Logo: screen-blend WebM so black background disappears and blends with navbar. */}
-          <div className="flex items-center justify-start flex-shrink-0 w-[180px] sm:w-[220px]">
-            <Link href="/home" className="flex items-center h-full min-h-[40px] sm:min-h-[48px] group block">
+          {/* Logo: final MP4 for readability at navbar size (dark bg matches nav). */}
+          <div className="flex items-center justify-start flex-shrink-0 w-[200px] sm:w-[240px]">
+            <Link href="/home" className="flex items-center h-full min-h-[44px] sm:min-h-[52px] group block">
               <video
                 autoPlay
                 muted
                 loop
                 playsInline
                 aria-label="FleetPulse"
-                className="logo-video h-10 sm:h-12 w-auto max-w-full transition-transform duration-200 group-hover:scale-[1.02] object-contain object-left"
+                className="h-12 sm:h-14 w-auto max-w-full transition-transform duration-200 group-hover:scale-[1.02] object-contain object-left"
               >
-                <source src="/assets/fleetpulse_screenbend.webm" type="video/webm" />
+                <source src="/assets/fleetpulse_final.mp4" type="video/mp4" />
               </video>
             </Link>
           </div>

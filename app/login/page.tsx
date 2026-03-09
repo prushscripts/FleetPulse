@@ -148,15 +148,9 @@ export default function LoginPage() {
         {/* Logo and Header */}
         <div className="text-center mb-6">
           <div className="flex justify-center mb-5">
-            <video
-              src="/Animations/possibleLogoLoop.mp4"
-              autoPlay
-              muted
-              loop
-              playsInline
-              aria-label="FleetPulse"
-              className="h-36 sm:h-44 md:h-52 w-auto max-w-[560px] sm:max-w-[640px] object-contain mx-auto"
-            />
+            <video autoPlay muted loop playsInline aria-label="FleetPulse" className="h-36 sm:h-44 md:h-52 w-auto max-w-[560px] sm:max-w-[640px] object-contain mx-auto">
+              <source src="/assets/fleetpulse_final.mp4" type="video/mp4" />
+            </video>
           </div>
           <h2 className="text-2xl font-bold text-white mb-1">
             Welcome Back

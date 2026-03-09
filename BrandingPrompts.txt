@@ -1,0 +1,61 @@
+Here are your enhanced prompts, one by one:
+
+1. Favicon / App Icon
+
+Minimal square app icon, dark blue-grey background (#0D1B2A), single ECG/heartbeat pulse line in vivid electric purple with soft white-core glow, centered horizontally across the icon with one sharp peak in the middle third. Perfectly readable at 32×32px. No text, no gradients, no shadow. Flat-to-slightly-raised design. Geometric, clean, premium SaaS icon style. 1:1 aspect ratio.
+
+Negative: text, letterforms, multiple elements, busy detail, gradient background, rounded corners, drop shadow, clip art
+
+2. Logo Mark (icon + wordmark, no tagline)
+
+Vector-style logo on transparent background. Bold sans-serif wordmark "FleetPulse" in crisp white, slightly tracked out, with a single horizontal ECG pulse line running beneath the text — the line glows purple with a soft white core, featuring one clean heartbeat spike beneath the "P" in Pulse. No tagline. High contrast, works on both dark navy and white backgrounds. Premium SaaS brand, broadcast-quality sharpness. 3:1 wide format.
+
+Negative: tagline, subtitle, drop shadow, beveling, gradients on text, busy background, extra icons, clip art, generic font
+
+3. Logo Lockup (logo + tagline)
+
+Full brand lockup on transparent or dark blue-grey (#0D1B2A) background. "FleetPulse" in large bold white sans-serif, tracked slightly. Below it, "Modern fleet management" in smaller weight, cool light grey, same typeface family. A glowing purple ECG pulse line sits beneath both lines of text, spanning the full width of the wordmark, with one precise heartbeat peak. Layout is vertically centered and balanced. Broadcast-ready, premium SaaS, sharp edges, no decorative flourishes. 3:1 format.
+
+Negative: extra text, icons, busy background, gradient text, bevel, emboss, glow on text itself, clip art
+
+4. Hero / Homepage Banner
+
+Ultra-wide cinematic hero banner (16:9), dark navy background with a subtle perspective grid receding into the distance. The FleetPulse wordmark and tagline "Modern fleet management" are centered, crisp white and light grey. A glowing purple-to-blue ECG pulse line stretches horizontally across the full width of the frame, with a single sharp heartbeat spike near center-left. Soft volumetric blue light rays emanate from upper corners. Deep shadow vignette at edges. No people, no vehicles, no stock photography. Pure brand atmosphere — premium, confident, slightly futuristic tech SaaS.
+
+Negative: people, vehicles, photos, stock imagery, busy elements, warm tones, grain, lens flare, generic tech background, clip art, crowded layout
+
+5. Open Graph / Social Share Image
+
+1.91:1 horizontal image (1200×630px). Dark navy background, subtle faint grid lines. FleetPulse wordmark in bold white centered slightly left of middle. "Modern fleet management" in cool grey below it. Glowing purple ECG pulse line beneath the text block, full width, one clean heartbeat spike. Right side has a soft blue radial glow for depth. Text is large and fully legible at thumbnail size. No tiny copy, no decorative elements. Professional SaaS brand share card.
+
+Negative: small text, busy layout, extra icons, warm colors, grain, overlapping elements, dark text on dark background
+
+6. Email Header Banner
+
+Horizontal email banner, 600px wide, approximately 150px tall (4:1 ratio). Very dark navy background. FleetPulse wordmark in white, centered, clean bold sans-serif. Thin glowing purple ECG pulse line beneath the wordmark with one subtle heartbeat spike. Absolutely no complex gradients, no particle effects, no fine detail — renders cleanly in Gmail and Outlook at 72dpi. Flat, minimal, high contrast. Plenty of breathing room above and below the logo.
+
+Negative: complex gradients, particle effects, tiny detail, busy background, multiple elements, grid overlay, shadows
+
+7. Loading / Transition Loop (video — Pika)
+
+Seamless 3–5 second loop video. Pure dark navy or transparent-ready background. FleetPulse wordmark in soft white, stationary and centered. A single purple ECG pulse line with a glowing white-core tracer dot moves smoothly left to right across the bottom of the wordmark, looping continuously with one clean heartbeat spike each pass. The glow pulses gently — subtle, calm, hypnotic. No flash, no impact, no splash. Minimal motion only. Broadcast-quality smooth animation, premium SaaS loading state.
+
+Negative: flash, explosion, water, impact, bright burst, camera movement, text animation, particle effects, watermark, extra elements
+
+8. Empty State Illustration
+
+Clean editorial illustration, soft dark blue-grey background. Center composition: a single minimalist vehicle icon (top-down or side silhouette, purely geometric — not clip art) rendered as a thin-line outline in purple with a subtle white glow. Below it, a faint road or route line trails off into a soft fade. One small map-pin or pulse dot in white. Plenty of negative space. Illustration feels hand-crafted but precise, like high-end SaaS product design (Notion/Linear aesthetic). Purple, white, and cool blue-grey only.
+
+Negative: characters, people, faces, photorealistic, clip art, cartoon style, warm colors, stock illustration look, busy background, multiple vehicles
+
+9. Error / 404 Illustration
+
+Editorial-style illustration on soft dark blue-grey. A single clean geometric road or path curves off-screen and ends abruptly — the ECG pulse line fades to a flat line at the end of the road, subtly suggesting "lost signal." One floating map pin tilted slightly, glowing faint purple. Mood is calm and slightly wry — not alarming, not cartoonish. Premium SaaS design language, thin-line style, generous negative space. Purple, white, and cool blue-grey palette only.
+
+Negative: skull, danger, red, scary, cartoon, clip art, people, chaos, broken elements, warm tones, photorealistic, stock illustration
+
+10. Social / Blog Banner
+
+Ultra-wide banner (16:9 or 4:1 for LinkedIn/YouTube). Dark navy left side fading to slightly lighter navy-blue on the right. FleetPulse wordmark in white, left-aligned with generous padding, tagline in cool grey directly below. A long glowing purple ECG pulse line runs horizontally across the full width of the banner at mid-height, with one clean spike near the logo. Right two-thirds of the frame is open, dark, and atmospheric — suitable for overlaying a blog title or leaving as clean brand space. Subtle grid lines in the background at very low opacity.
+
+Negative: busy right side, extra text, stock photo, people, vehicles, warm tones, cluttered layout, multiple focal points, grain
