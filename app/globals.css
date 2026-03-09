@@ -216,6 +216,52 @@
   .animate-auth-scan {
     animation: authScan 7s linear infinite;
   }
+
+  /* Entry / login success: sonar pulse + portal */
+  @keyframes entrySonar {
+    0% { transform: scale(0.3); opacity: 0.8; }
+    100% { transform: scale(2.5); opacity: 0; }
+  }
+  @keyframes entryLogo {
+    0% { transform: scale(0.6); opacity: 0; }
+    50% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes entryGlow {
+    0%, 100% { opacity: 0.4; filter: blur(40px); }
+    50% { opacity: 0.8; filter: blur(60px); }
+  }
+  @keyframes entryText {
+    0% { opacity: 0; transform: translateY(8px); }
+    40% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes entryGridIn {
+    0% { opacity: 0; background-size: 120% 120%; }
+    100% { opacity: 0.15; background-size: 100% 100%; }
+  }
+  .animate-entry-sonar {
+    animation: entrySonar 1.8s ease-out infinite;
+  }
+  .animate-entry-sonar-2 {
+    animation: entrySonar 1.8s ease-out 0.3s infinite;
+  }
+  .animate-entry-sonar-3 {
+    animation: entrySonar 1.8s ease-out 0.6s infinite;
+  }
+  .animate-entry-logo {
+    animation: entryLogo 0.8s ease-out forwards;
+  }
+  .animate-entry-glow {
+    animation: entryGlow 2s ease-in-out infinite;
+  }
+  .animate-entry-text {
+    animation: entryText 0.6s ease-out 0.4s forwards;
+    opacity: 0;
+  }
+  .animate-entry-grid {
+    animation: entryGridIn 1.2s ease-out forwards;
+  }
   
   .animate-fade-in {
     animation: fade-in 0.8s ease-out;
@@ -315,6 +361,39 @@ body {
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar: match light/dark theme */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: rgb(243 244 246);
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(209 213 219);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(156 163 175);
+}
+.dark ::-webkit-scrollbar-track {
+  background: rgb(31 41 55);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgb(75 85 99);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgb(107 114 128);
+}
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(209 213 219) rgb(243 244 246);
+}
+.dark * {
+  scrollbar-color: rgb(75 85 99) rgb(31 41 55);
 }
 
 @layer utilities {

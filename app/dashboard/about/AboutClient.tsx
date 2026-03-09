@@ -132,52 +132,40 @@ export default function AboutClient({ displayName }: { displayName: string }) {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      {/* Compact Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 py-8 sm:py-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/90 via-purple-600/90 to-indigo-800/90" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs text-white">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <span>Welcome back, {displayName.charAt(0).toUpperCase() + displayName.slice(1)}</span>
-            </div>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">FleetPulse</h1>
-          <p className="text-sm sm:text-base text-indigo-100 max-w-2xl">Modern fleet management platform</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Hero: corporate, minimal */}
+      <section className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-8 sm:py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+            Welcome, {displayName.charAt(0).toUpperCase() + displayName.slice(1)}
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white tracking-tight">FleetPulse</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Fleet management platform</p>
         </div>
       </section>
 
-      {/* Enhanced Tabs */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-        <div className="flex gap-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200/60 dark:border-gray-700/60 p-2 inline-flex">
+      {/* Tabs: clean, no scale/pulse */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
           <button
             onClick={() => setActiveTab('features')}
-            className={`relative px-8 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
+            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'features'
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/50 scale-105'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
-            <span className="relative z-10">Features</span>
-            {activeTab === 'features' && (
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl animate-pulse opacity-20" />
-            )}
+            Features
           </button>
           <button
             onClick={() => setActiveTab('pricing')}
-            className={`relative px-8 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
+            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'pricing'
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/50 scale-105'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
-            <span className="relative z-10">Pricing</span>
-            {activeTab === 'pricing' && (
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl animate-pulse opacity-20" />
-            )}
+            Pricing
           </button>
         </div>
       </div>
@@ -193,65 +181,32 @@ export default function AboutClient({ displayName }: { displayName: string }) {
                 : 'absolute inset-0 opacity-0 translate-x-[-100%] pointer-events-none overflow-hidden'
             }`}
           >
-            <div className="space-y-8 pb-16">
+              <div className="space-y-4 pb-16">
               <div className="text-center">
-                <div className="inline-block px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-full mb-4">
-                  <span className="text-sm font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                    Comprehensive Features
-                  </span>
-                </div>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-                  Everything you need to manage your fleet
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+                  Fleet management features
                 </h2>
-                <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                  Powerful features at a fraction of the cost
+                <p className="text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                  Vehicle tracking, drivers, inspections, and reporting.
                 </p>
               </div>
-              {/* Scrollable features list so all 9 are visible */}
-              <div className="max-h-[calc(100vh-320px)] overflow-y-auto overflow-x-hidden overscroll-behavior-smooth rounded-2xl pr-1 -mr-1">
-              <div className="space-y-8">
+              <div className="max-h-[calc(100vh-320px)] overflow-y-auto overflow-x-hidden overscroll-behavior-smooth rounded-lg pr-1 -mr-1">
+              <div className="space-y-4">
                 {features.map((feature, idx) => (
                   <div
                     key={idx}
-                    className={`group relative overflow-hidden rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 transition-all duration-500 hover:shadow-2xl ${
-                      idx % 2 === 0
-                        ? 'bg-gradient-to-r from-white to-indigo-50/50 dark:from-gray-800 dark:to-indigo-900/20'
-                        : 'bg-gradient-to-r from-purple-50/50 to-white dark:from-purple-900/20 dark:to-gray-800'
-                    }`}
+                    className="flex items-start gap-4 p-5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
                   >
-                    {/* Decorative gradient overlay */}
-                    <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${
-                      idx % 2 === 0
-                        ? 'bg-gradient-to-r from-indigo-500/10 to-transparent'
-                        : 'bg-gradient-to-r from-transparent to-purple-500/10'
-                    }`} />
-                    
-                    <div className={`relative p-8 flex flex-col ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} items-center gap-8`}>
-                      {/* Icon Section */}
-                      <div className={`flex-shrink-0 ${idx % 2 === 0 ? 'md:order-1' : 'md:order-2'}`}>
-                        <div className="relative">
-                          <div className={`absolute inset-0 rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity ${
-                            idx % 2 === 0 ? 'bg-indigo-500' : 'bg-purple-500'
-                          }`} />
-                          <div className={`relative w-24 h-24 rounded-2xl flex items-center justify-center text-5xl transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 ${
-                            idx % 2 === 0 
-                              ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/50'
-                              : 'bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/50'
-                          }`}>
-                            {feature.icon}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Content Section */}
-                      <div className={`flex-1 ${idx % 2 === 0 ? 'md:order-2' : 'md:order-1'} text-center md:text-left`}>
-                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                          {feature.title}
-                        </h3>
-                        <p className="text-base text-gray-600 dark:text-gray-400 leading-relaxed max-w-2xl">
-                          {feature.description}
-                        </p>
-                      </div>
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-lg">
+                      {feature.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                        {feature.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                        {feature.description}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -269,27 +224,24 @@ export default function AboutClient({ displayName }: { displayName: string }) {
             }`}
           >
             <div className="space-y-10">
-              <div className="text-center">
-                <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
-                  Simple, transparent pricing
-                </h2>
-                <p className="text-lg text-gray-600 dark:text-gray-400">Per-vehicle pricing that scales with your operation</p>
+              <div className="text-center mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">Pricing</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Per-vehicle pricing</p>
               </div>
-              {/* Extra padding so hover scale doesn't clip card edges */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-2 py-4 overflow-visible">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {tiers.map((tier, idx) => {
                   const isPopular = !!tier.popular
                   const isPremium = tier.name === 'Premium'
                   const cardWrapperClass = isPopular
-                    ? 'relative bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-xl border-2 border-indigo-500 p-8 transform scale-105 hover:scale-110 hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 overflow-visible'
-                    : `relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 p-8 transition-all duration-300 overflow-visible hover:scale-105 hover:-translate-y-2 hover:shadow-xl ${
-                        isPremium ? 'border-gray-200 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-600' : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'
+                    ? 'relative bg-indigo-600 dark:bg-indigo-700 rounded-lg border border-indigo-500 dark:border-indigo-600 p-6'
+                    : `relative bg-white dark:bg-gray-800 rounded-lg border p-6 ${
+                        isPremium ? 'border-gray-200 dark:border-gray-700' : 'border-gray-200 dark:border-gray-700'
                       }`
                   return (
                     <div key={idx} className={cardWrapperClass}>
                       {isPopular ? (
-                        <div className="absolute -top-3 right-4 bg-yellow-400 text-indigo-900 px-3 py-1 rounded-full text-xs font-bold animate-float">
-                          MOST POPULAR
+                        <div className="absolute top-4 right-4 text-xs font-medium text-indigo-200">
+                          Popular
                         </div>
                       ) : null}
                       <h3 className={`text-2xl font-bold mb-1 ${isPopular ? 'text-white pt-0' : 'text-gray-900 dark:text-white'}`}>{tier.name}</h3>
@@ -325,22 +277,22 @@ export default function AboutClient({ displayName }: { displayName: string }) {
       </div>
 
       {/* CTA */}
-      <section className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 py-12 mt-12">
+      <section className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-10 mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl font-bold text-white mb-3">Ready to streamline your fleet management?</h2>
-          <p className="text-indigo-100 mb-6">You're already set up and ready to go!</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Fleet management</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">Go to dashboard or contact support.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/dashboard"
-              className="inline-block px-8 py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50 transition-all shadow-xl hover:shadow-2xl hover:scale-105"
+              className="inline-block px-6 py-2.5 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors"
             >
-              Go to Dashboard
+              Dashboard
             </Link>
             <a
               href="mailto:fleetpulse@fastmail.com"
-              className="inline-block px-8 py-3 bg-indigo-700/90 text-white rounded-lg font-semibold hover:bg-indigo-800 transition-all border-2 border-white/40 hover:border-white/60 shadow-xl hover:shadow-2xl hover:scale-105"
+              className="inline-block px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
-              Contact Us
+              Contact
             </a>
           </div>
         </div>

@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import Image from 'next/image'
+import EntryAnimation from '@/components/EntryAnimation'
+
+const ENTRY_DURATION_MS = 2200
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -13,6 +16,7 @@ export default function SignupPage() {
   const [companyKey, setCompanyKey] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showEntry, setShowEntry] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -55,11 +59,14 @@ export default function SignupPage() {
 
       const key = companyKey.trim()
       if (key) {
-        const { data: company } = await supabase
-          .from('companies')
-          .select('id, name')
-          .eq('auth_key', key)
-          .maybeSingle()
+        let company: { id: string; name: string } | null = null
+        const { data: rpcRows, error: rpcErr } = await supabase.rpc('get_company_by_invite_code', { invite_code: key })
+        if (!rpcErr && Array.isArray(rpcRows) && rpcRows.length) company = rpcRows[0] as { id: string; name: string }
+        if (!company) {
+          const { data: d1 } = await supabase.from('companies').select('id, name').eq('auth_key', key).maybeSingle()
+          const { data: d2 } = await supabase.from('companies').select('id, name').eq('auth_key', key.toLowerCase()).maybeSingle()
+          company = d1 || d2 || null
+        }
         if (company) {
           await supabase.auth.updateUser({
             data: {
@@ -68,15 +75,23 @@ export default function SignupPage() {
               companies: [{ id: company.id, name: company.name }],
             },
           })
-          router.push('/dashboard')
-          setTimeout(() => { window.location.href = '/dashboard' }, 100)
+          setShowEntry(true)
+          setTimeout(() => {
+            window.location.href = '/home'
+          }, ENTRY_DURATION_MS)
         } else {
-          router.push('/dashboard/welcome')
-          setTimeout(() => { window.location.href = '/dashboard/welcome' }, 100)
+          setShowEntry(true)
+          setTimeout(() => {
+            router.push('/dashboard/welcome')
+            window.location.href = '/dashboard/welcome'
+          }, ENTRY_DURATION_MS)
         }
       } else {
-        router.push('/dashboard/welcome')
-        setTimeout(() => { window.location.href = '/dashboard/welcome' }, 100)
+        setShowEntry(true)
+        setTimeout(() => {
+          router.push('/dashboard/welcome')
+          window.location.href = '/dashboard/welcome'
+        }, ENTRY_DURATION_MS)
       }
       setLoading(false)
     } catch (err: any) {
@@ -86,6 +101,8 @@ export default function SignupPage() {
   }
 
   return (
+    <>
+      {showEntry && <EntryAnimation />}
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-indigo-950/95 via-gray-900 to-purple-950/95 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950/90">
       {/* Animated grid - stronger */}
       <div
@@ -279,5 +296,6 @@ export default function SignupPage() {
       </div>
       </div>
     </div>
+    </>
   )
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import type { CustomTemplate } from '@/lib/custom-template'
 
 type TerritoryFilterValue = 'all' | (string & {})
 
@@ -35,11 +36,18 @@ export default function HomeDashboardClient({
   territoryMap = {},
   companyId,
   territorySegmentLabels = [],
+  template = 'default',
+  customTemplate = null,
 }: {
   territoryMap?: Record<string, string>
   companyId?: string | null
   territorySegmentLabels?: string[]
+  template?: string
+  customTemplate?: CustomTemplate | null
 }) {
+  const isCompact = template === 'compact'
+  const isExecutive = template === 'executive'
+  const isCustom = template === 'custom' && customTemplate != null
   const [vehicles, setVehicles] = useState<VehicleRow[]>([])
   const [issues, setIssues] = useState<Array<{ vehicle_id: string; status: string; priority?: string }>>([])
   const [documents, setDocuments] = useState<Array<{ vehicle_id: string; expiration_date: string | null }>>([])
@@ -172,15 +180,206 @@ export default function HomeDashboardClient({
     ...territorySegmentLabels.map((label) => ({ value: label as TerritoryFilterValue, label })),
   ]
 
+  const cardSize = isCompact ? 'compact' : isExecutive ? 'executive' : 'default'
+  const gapClass = isCompact ? 'gap-3' : isExecutive ? 'gap-8' : 'gap-6'
+  const customGapClass = customTemplate?.spacing === 'compact' ? 'gap-3' : customTemplate?.spacing === 'spacious' ? 'gap-8' : 'gap-6'
+  const customColsClass = customTemplate?.columns === 2 ? 'lg:grid-cols-2' : customTemplate?.columns === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4'
+
+  if (isCustom && customTemplate) {
+    const sortedSections = [...customTemplate.sections].sort((a, b) => a.order - b.order)
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+        <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 ${customTemplate.spacing === 'compact' ? 'py-4' : ''}`}>
+          <div className="rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-white/70 dark:bg-gray-800/60 backdrop-blur-sm shadow-md mb-6 p-4 sm:p-5">
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
+              {customTemplate.headerTitle || 'Fleet Health Dashboard'}
+            </h1>
+            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+              {customTemplate.headerSubtitle || 'Overview of operational health, inspections, and risk indicators'}
+            </p>
+          </div>
+
+          {sortedSections.map((sec) => {
+            if (sec.type === 'territory_tabs') {
+              return (
+                <div key={sec.id} className="mb-6">
+                  <div className="inline-flex gap-1 p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/60 dark:border-gray-700/60">
+                    {territoryTabs.map(({ value, label }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setTerritoryFilter(value)}
+                        className={`relative px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                          territoryFilter === value
+                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/60'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+            if (sec.type === 'key_metrics') {
+              return (
+                <div key={sec.id} className={`grid grid-cols-1 md:grid-cols-2 ${customColsClass} mb-8 ${customGapClass}`}>
+                  <StatCard title="Total Vehicles" value={stats.totalVehicles} icon="fleet" color="blue" size={cardSize} />
+                  <StatCard title="Active Vehicles" value={stats.activeVehicles} icon="active" color="green" size={cardSize} />
+                  <StatCard title="Open Issues" value={stats.totalOpenIssues} icon="issues" color={stats.totalOpenIssues > 0 ? 'red' : 'green'} size={cardSize} />
+                  <StatCard title="Expired Documents" value={stats.expiredDocuments} icon="documents" color={stats.expiredDocuments > 0 ? 'red' : 'green'} size={cardSize} />
+                </div>
+              )
+            }
+            if (sec.type === 'oil_status') {
+              return (
+                <div key={sec.id} className="bg-white/80 dark:bg-gray-800/70 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 p-6 mb-8">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">Oil Change Status</h2>
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Overall Health</span>
+                      <span className="text-lg font-semibold text-gray-900 dark:text-white">{oilChangePercentage}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                      <div className={`h-3 rounded-full ${oilChangePercentage >= 80 ? 'bg-green-500' : oilChangePercentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${oilChangePercentage}%` }} />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">OK:</span><span className="font-medium text-green-600 dark:text-green-400">{stats.vehiclesOkOil}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">Due Soon:</span><span className="font-medium text-yellow-600 dark:text-yellow-400">{stats.vehiclesDueSoonOil}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">Overdue:</span><span className="font-medium text-red-600 dark:text-red-400">{stats.vehiclesOverdueOil}</span></div>
+                  </div>
+                </div>
+              )
+            }
+            if (sec.type === 'inspection_status') {
+              return (
+                <div key={sec.id} className="bg-white/80 dark:bg-gray-800/70 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 p-6 mb-8">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">Inspection Status</h2>
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs text-gray-600 dark:text-gray-400">Pass Rate</span>
+                      <span className="text-lg font-semibold text-gray-900 dark:text-white">{inspectionPassRate}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                      <div className={`h-3 rounded-full ${inspectionPassRate >= 90 ? 'bg-green-500' : inspectionPassRate >= 70 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${inspectionPassRate}%` }} />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">Passed:</span><span className="font-medium text-green-600 dark:text-green-400">{stats.passedInspections}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">Pending:</span><span className="font-medium text-yellow-600 dark:text-yellow-400">{stats.pendingInspections}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">Failed:</span><span className="font-medium text-red-600 dark:text-red-400">{stats.failedInspections}</span></div>
+                    <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700"><span className="text-gray-600 dark:text-gray-400">Total:</span><span className="font-medium text-gray-900 dark:text-white">{stats.totalInspections}</span></div>
+                  </div>
+                </div>
+              )
+            }
+            if (sec.type === 'vehicle_status_breakdown') {
+              return (
+                <div key={sec.id} className="bg-white/80 dark:bg-gray-800/70 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 p-6 mb-8">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">Vehicle Status Breakdown</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">{stats.activeVehicles}</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">Active</div>
+                    </div>
+                    <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                      <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">{stats.outOfServiceVehicles}</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">Out of Service</div>
+                    </div>
+                    <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                      <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">{stats.inShopVehicles}</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">In Shop</div>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div><div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Critical Issues</div><div className="text-lg font-semibold text-red-600 dark:text-red-400">{stats.criticalIssues}</div></div>
+                    <div><div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Due Soon Oil</div><div className="text-lg font-semibold text-yellow-600 dark:text-yellow-400">{stats.vehiclesDueSoonOil}</div></div>
+                    <div><div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Overdue Oil</div><div className="text-lg font-semibold text-red-600 dark:text-red-400">{stats.vehiclesOverdueOil}</div></div>
+                    <div><div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Inspections</div><div className="text-lg font-semibold text-gray-900 dark:text-white">{stats.totalInspections}</div></div>
+                  </div>
+                </div>
+              )
+            }
+            if (sec.type === 'quick_actions') {
+              return (
+                <div key={sec.id} className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8`}>
+                  <Link href="/dashboard" className="bg-white/85 dark:bg-gray-800/75 border border-gray-200/70 dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-all hover:-translate-y-0.5">
+                    <div className="w-9 h-9 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mb-2 text-indigo-600 dark:text-indigo-400"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13l1-3a2 2 0 011.9-1.37h12.2A2 2 0 0120 10l1 3m-1 0v5a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H7v1a1 1 0 01-1 1H5a1 1 0 01-1-1v-5m0 0h16M7 13h.01M17 13h.01" /></svg></div>
+                    <div className="font-semibold text-sm text-gray-900 dark:text-white">View All Vehicles</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Manage your fleet</div>
+                  </Link>
+                  <Link href="/dashboard/drivers" className="bg-white/85 dark:bg-gray-800/75 border border-gray-200/70 dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-all hover:-translate-y-0.5">
+                    <div className="w-9 h-9 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-2 text-purple-600 dark:text-purple-400"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM3 21a9 9 0 0118 0" /></svg></div>
+                    <div className="font-semibold text-sm text-gray-900 dark:text-white">Manage Drivers</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Add and assign drivers</div>
+                  </Link>
+                  <Link href="/dashboard/inspections" className="bg-white/85 dark:bg-gray-800/75 border border-gray-200/70 dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-all hover:-translate-y-0.5">
+                    <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-2 text-emerald-600 dark:text-emerald-400"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5h6m2 0h1a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h1m2 0a2 2 0 104 0m-4 0a2 2 0 104 0" /></svg></div>
+                    <div className="font-semibold text-sm text-gray-900 dark:text-white">View Inspections</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Inspection history</div>
+                  </Link>
+                  <Link href="/dashboard/vehicles/new" className="bg-white/85 dark:bg-gray-800/75 border border-gray-200/70 dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-all hover:-translate-y-0.5">
+                    <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-2 text-amber-600 dark:text-amber-400"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg></div>
+                    <div className="font-semibold text-sm text-gray-900 dark:text-white">Add Vehicle</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Register new vehicle</div>
+                  </Link>
+                </div>
+              )
+            }
+            if (sec.type === 'alerts') {
+              const filteredIssues = issues.filter((i) => {
+                const vehicleIds = territoryFilter === 'all' ? new Set(vehicles.map((v) => v.id)) : new Set(vehicles.filter((v) => getTerritory(v) === territoryFilter).map((v) => v.id))
+                return vehicleIds.has(i.vehicle_id)
+              })
+              return (
+                <div key={sec.id} className="bg-white/80 dark:bg-gray-800/70 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 p-6 mb-8">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">Open Issues & Alerts</h2>
+                  {filteredIssues.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No open issues.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {filteredIssues.slice(0, 10).map((issue) => (
+                        <li key={issue.vehicle_id + issue.status} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                          <span className="text-sm text-gray-700 dark:text-gray-300">Vehicle issue</span>
+                          <span className={`text-xs font-medium ${issue.priority === 'critical' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            {issue.priority === 'critical' ? 'Critical' : 'Open'}
+                          </span>
+                        </li>
+                      ))}
+                      {filteredIssues.length > 10 && <li className="text-xs text-gray-500 dark:text-gray-400 pt-2">+{filteredIssues.length - 10} more</li>}
+                    </ul>
+                  )}
+                </div>
+              )
+            }
+            if (sec.type === 'custom_text') {
+              const title = sec.config?.title || 'Notice'
+              const body = sec.config?.body || ''
+              return (
+                <div key={sec.id} className="bg-white/80 dark:bg-gray-800/70 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 p-6 mb-8">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2">{title}</h2>
+                  {body ? <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{body}</p> : null}
+                </div>
+              )
+            }
+            return null
+          })}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6 rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-white/70 dark:bg-gray-800/60 backdrop-blur-sm p-4 sm:p-5 shadow-md">
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
+    <div className={`min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 ${isCompact ? 'py-4' : ''}`}>
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${isCompact ? 'py-4' : 'py-8'}`}>
+        <div className={`rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-white/70 dark:bg-gray-800/60 backdrop-blur-sm shadow-md ${isCompact ? 'mb-4 p-3' : isExecutive ? 'mb-8 p-6' : 'mb-6 p-4 sm:p-5'}`}>
+          <h1 className={`font-semibold tracking-tight text-gray-900 dark:text-white ${isCompact ? 'text-lg' : isExecutive ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl'}`}>
             Fleet Health Dashboard
           </h1>
-          <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 font-normal">
-            Overview of operational health, inspections, and risk indicators
+          <p className={`mt-1 text-gray-600 dark:text-gray-400 font-normal ${isCompact ? 'text-[11px]' : 'text-xs'}`}>
+            {isExecutive ? 'Key metrics and fleet status' : 'Overview of operational health, inspections, and risk indicators'}
           </p>
         </div>
 
@@ -208,30 +407,34 @@ export default function HomeDashboardClient({
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-8 ${isCompact ? 'gap-3' : isExecutive ? 'gap-8' : 'gap-6'}`}>
           <StatCard
             title="Total Vehicles"
             value={stats.totalVehicles}
             icon="fleet"
             color="blue"
+            size={isCompact ? 'compact' : isExecutive ? 'executive' : 'default'}
           />
           <StatCard
             title="Active Vehicles"
             value={stats.activeVehicles}
             icon="active"
             color="green"
+            size={isCompact ? 'compact' : isExecutive ? 'executive' : 'default'}
           />
           <StatCard
             title="Open Issues"
             value={stats.totalOpenIssues}
             icon="issues"
             color={stats.totalOpenIssues > 0 ? 'red' : 'green'}
+            size={isCompact ? 'compact' : isExecutive ? 'executive' : 'default'}
           />
           <StatCard
             title="Expired Documents"
             value={stats.expiredDocuments}
             icon="documents"
             color={stats.expiredDocuments > 0 ? 'red' : 'green'}
+            size={isCompact ? 'compact' : isExecutive ? 'executive' : 'default'}
           />
         </div>
 
@@ -454,11 +657,13 @@ function StatCard({
   value,
   icon,
   color,
+  size = 'default',
 }: {
   title: string
   value: number
   icon: 'fleet' | 'active' | 'issues' | 'documents'
   color: 'blue' | 'green' | 'red' | 'yellow'
+  size?: 'compact' | 'default' | 'executive'
 }) {
   const colorClasses = {
     blue: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
@@ -466,32 +671,47 @@ function StatCard({
     red: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
     yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
   }
+  const sizeClasses = size === 'compact'
+    ? 'p-3'
+    : size === 'executive'
+    ? 'p-6'
+    : 'p-4'
+  const titleClasses = size === 'compact'
+    ? 'text-[10px]'
+    : size === 'executive'
+    ? 'text-xs'
+    : 'text-[11px]'
+  const valueClasses = size === 'compact'
+    ? 'text-xl'
+    : size === 'executive'
+    ? 'text-3xl sm:text-4xl'
+    : 'text-2xl'
 
   return (
-    <div className="bg-white/85 dark:bg-gray-800/75 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 p-4">
+    <div className={`bg-white/85 dark:bg-gray-800/75 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 ${sizeClasses}`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[11px] tracking-wide text-gray-600 dark:text-gray-400 uppercase">{title}</p>
-          <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{value}</p>
+          <p className={`${titleClasses} tracking-wide text-gray-600 dark:text-gray-400 uppercase`}>{title}</p>
+          <p className={`${valueClasses} font-semibold text-gray-900 dark:text-white mt-1`}>{value}</p>
         </div>
-        <div className={`p-3 rounded-xl ${colorClasses[color]}`}>
+        <div className={`rounded-xl ${size === 'compact' ? 'p-2' : size === 'executive' ? 'p-4' : 'p-3'} ${colorClasses[color]}`}>
           {icon === 'fleet' && (
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className={size === 'compact' ? 'w-5 h-5' : size === 'executive' ? 'w-8 h-8' : 'w-6 h-6'} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13l1-3a2 2 0 011.9-1.37h12.2A2 2 0 0120 10l1 3m-1 0v5a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H7v1a1 1 0 01-1 1H5a1 1 0 01-1-1v-5m0 0h16M7 13h.01M17 13h.01" />
             </svg>
           )}
           {icon === 'active' && (
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className={size === 'compact' ? 'w-5 h-5' : size === 'executive' ? 'w-8 h-8' : 'w-6 h-6'} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           )}
           {icon === 'issues' && (
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className={size === 'compact' ? 'w-5 h-5' : size === 'executive' ? 'w-8 h-8' : 'w-6 h-6'} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           )}
           {icon === 'documents' && (
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className={size === 'compact' ? 'w-5 h-5' : size === 'executive' ? 'w-8 h-8' : 'w-6 h-6'} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           )}

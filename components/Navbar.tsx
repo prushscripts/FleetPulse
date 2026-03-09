@@ -8,7 +8,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useTheme } from '@/components/ThemeProvider'
 
-export type Company = { id: string; name: string; displayName?: string }
+export type Company = { id: string; name: string; displayName?: string; logoUrl?: string; roadmapOnly?: boolean }
 
 function companyLogoSlug(c: Company): string {
   let n = (c.displayName || c.name).toLowerCase()
@@ -23,15 +23,24 @@ function CompanyLogoImage({ company, className }: { company: Company; className?
   const [failed, setFailed] = useState(false)
   const [extIndex, setExtIndex] = useState(0)
   const ext = LOGO_EXTENSIONS[extIndex]
-  if (failed || !slug) {
+  const fallback = (
+    <span className={`flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded ${className || 'w-7 h-7'}`} aria-hidden>
+      <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+      </svg>
+    </span>
+  )
+  if (company.logoUrl && !failed) {
     return (
-      <span className={`flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded ${className || 'w-7 h-7'}`} aria-hidden>
-        <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
-      </span>
+      <img
+        src={company.logoUrl}
+        alt=""
+        className={className}
+        onError={() => setFailed(true)}
+      />
     )
   }
+  if (failed || !slug) return fallback
   return (
     <img
       src={`/images/companylogos/${slug}${ext}`}
@@ -60,7 +69,12 @@ export default function Navbar() {
     (pathname.startsWith('/dashboard') || pathname.startsWith('/home')) &&
     companies.length >= 2
 
-  const [companySettings, setCompanySettings] = useState<{ inspectionsEnabled?: boolean } | null>(null)
+  type CompanySetting = {
+    inspectionsEnabled?: boolean
+    template?: string
+    customTemplate?: { tabs?: string[] }
+  }
+  const [companySettings, setCompanySettings] = useState<CompanySetting | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -79,12 +93,14 @@ export default function Navbar() {
         setCompanies([])
         setCurrentCompanyId(null)
       }
-      const settings = user?.user_metadata?.company_settings as Record<string, { inspectionsEnabled?: boolean }> | undefined
+      const settings = user?.user_metadata?.company_settings as Record<string, CompanySetting> | undefined
       const current = cid && settings?.[cid] ? settings[cid] : null
       setCompanySettings(current ?? null)
     }
     load()
   }, [supabase, pathname])
+
+  const [switchingTo, setSwitchingTo] = useState<string | null>(null)
 
   const handleSwitchCompany = async (company: Company) => {
     if (company.id === currentCompanyId) {
@@ -97,7 +113,11 @@ export default function Navbar() {
         data: { company_id: company.id, company_name: displayName },
       })
       setCompanySwitcherOpen(false)
-      window.location.reload()
+      setSwitchingTo(displayName)
+      const isRoadmapOnly = company.roadmapOnly || (company.name || '').toLowerCase().includes('roadmap')
+      setTimeout(() => {
+        window.location.href = isRoadmapOnly ? '/dashboard/roadmap' : '/home'
+      }, 420)
     } catch {
       setCompanySwitcherOpen(false)
     }
@@ -114,22 +134,48 @@ export default function Navbar() {
   const showRoadmap = /prush/i.test(currentCompanyName)
 
   const inspectionsEnabled = companySettings?.inspectionsEnabled !== false
-  const navItems = [
-    { label: 'Home', href: '/home' },
-    { label: 'Vehicles', href: '/dashboard' },
-    { label: 'Drivers', href: '/dashboard/drivers' },
-    ...(inspectionsEnabled ? [{ label: 'Inspections', href: '/dashboard/inspections' }] : []),
-    { label: 'About', href: '/dashboard/about' },
-    ...(showRoadmap ? [{ label: 'Roadmap', href: '/dashboard/roadmap' }] : []),
-    ...(currentCompanyId ? [{ label: 'Control Panel', href: '/dashboard/control-panel' }] : []),
-  ]
+  const template = companySettings?.template ?? 'default'
+  const customTabs = template === 'custom' && companySettings?.customTemplate?.tabs?.length
+    ? companySettings.customTemplate.tabs
+    : null
 
-  if (isAdmin) {
-    navItems.push({ label: 'Admin', href: '/dashboard/admin' })
+  const TAB_KEY_MAP: Record<string, { label: string; href: string }> = {
+    home: { label: 'Home', href: '/home' },
+    vehicles: { label: 'Vehicles', href: '/dashboard' },
+    drivers: { label: 'Drivers', href: '/dashboard/drivers' },
+    inspections: { label: 'Inspections', href: '/dashboard/inspections' },
+    about: { label: 'About', href: '/dashboard/about' },
+    roadmap: { label: 'Roadmap', href: '/dashboard/roadmap' },
+    control_panel: { label: 'Control Panel', href: '/dashboard/control-panel' },
   }
 
-  if (pathname.startsWith('/dashboard/settings')) {
-    navItems.push({ label: 'Settings', href: '/dashboard/settings' })
+  let navItems: { label: string; href: string }[]
+  if (customTabs?.length) {
+    navItems = customTabs
+      .map((key) => TAB_KEY_MAP[key])
+      .filter(Boolean) as { label: string; href: string }[]
+    if (!navItems.some((i) => i.href === '/dashboard/settings')) {
+      if (pathname.startsWith('/dashboard/settings')) {
+        navItems.push({ label: 'Settings', href: '/dashboard/settings' })
+      }
+    }
+  } else {
+    navItems = [
+      { label: 'Home', href: '/home' },
+      { label: 'Vehicles', href: '/dashboard' },
+      { label: 'Drivers', href: '/dashboard/drivers' },
+      ...(inspectionsEnabled ? [{ label: 'Inspections', href: '/dashboard/inspections' }] : []),
+      { label: 'About', href: '/dashboard/about' },
+      ...(showRoadmap ? [{ label: 'Roadmap', href: '/dashboard/roadmap' }] : []),
+      ...(currentCompanyId ? [{ label: 'Control Panel', href: '/dashboard/control-panel' }] : []),
+    ]
+    if (pathname.startsWith('/dashboard/settings')) {
+      navItems.push({ label: 'Settings', href: '/dashboard/settings' })
+    }
+  }
+
+  if (isAdmin && !navItems.some((i) => i.href === '/dashboard/admin')) {
+    navItems.push({ label: 'Admin', href: '/dashboard/admin' })
   }
 
   const isTabActive = (href: string) => {
@@ -142,42 +188,47 @@ export default function Navbar() {
 
 
   return (
+    <>
+      {switchingTo && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gray-900/95 dark:bg-gray-950/95 backdrop-blur-md transition-opacity duration-300">
+          <div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mb-4" />
+          <p className="text-sm font-medium text-gray-200 dark:text-gray-300">Switching to {switchingTo}</p>
+        </div>
+      )}
     <nav className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-sm border-b border-gray-200/80 dark:border-gray-700/80 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-[4.5rem] min-h-[4.5rem]">
-          {/* Logo: prominent, fits correctly */}
-          <div className="flex items-center justify-start flex-shrink-0 w-[200px] sm:w-[280px]">
-            <Link href="/home" className="flex items-center h-full min-h-[44px] sm:min-h-[52px] group">
+        <div className="flex justify-between items-center min-h-[4rem] sm:min-h-[5rem] py-1">
+          {/* Logo: large and readable. For best results use source image at least 320×96px (e.g. 320w × 96h). */}
+          <div className="flex items-center justify-start flex-shrink-0 w-[240px] sm:w-[320px]">
+            <Link href="/home" className="flex items-center h-full min-h-[48px] sm:min-h-[72px] group">
               <Image
                 src="/images/banner1.png"
                 alt="FleetPulse"
-                width={280}
-                height={80}
-                className="h-11 sm:h-[52px] w-auto max-w-full transition-transform duration-200 group-hover:scale-[1.02] object-contain object-left"
+                width={320}
+                height={96}
+                className="h-12 sm:h-[72px] w-auto max-w-full transition-transform duration-200 group-hover:scale-[1.02] object-contain object-left"
                 priority
                 unoptimized
               />
             </Link>
           </div>
-          <div className="hidden sm:flex sm:flex-1 sm:justify-center sm:items-center sm:space-x-0.5">
+          <div className="hidden sm:flex sm:flex-1 sm:justify-center sm:items-center sm:gap-0.5">
               {navItems.map((item) => {
                 const active = isTabActive(item.href)
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`relative inline-flex items-center px-4 py-2.5 text-xs tracking-wide rounded-t-lg transition-all duration-250 ${
+                    className={`relative inline-flex items-center px-4 py-3 text-sm font-medium transition-all duration-200 rounded-md ${
                       active
-                        ? 'text-gray-900 dark:text-white font-semibold bg-gradient-to-b from-indigo-50/60 to-transparent dark:from-indigo-900/30'
-                        : 'text-gray-600 dark:text-gray-400 font-medium hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50/50 dark:hover:bg-gray-700/30'
+                        ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700/80'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-gray-700/50'
                     }`}
                   >
-                    {item.label}
-                    <span
-                      className={`absolute left-2 right-2 bottom-0 h-0.5 rounded-full transition-all duration-250 ${
-                        active ? 'bg-indigo-500 opacity-100' : 'bg-transparent opacity-0'
-                      }`}
-                    />
+                    <span className="relative z-10">{item.label}</span>
+                    {active && (
+                      <span className="absolute inset-0 rounded-md border border-gray-200/80 dark:border-gray-600 bg-white/50 dark:bg-gray-600/50 shadow-sm" aria-hidden />
+                    )}
                   </Link>
                 )
               })}
@@ -436,5 +487,6 @@ export default function Navbar() {
         )}
       </div>
     </nav>
+    </>
   )
 }

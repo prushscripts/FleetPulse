@@ -27,17 +27,20 @@ export default function WelcomeClient() {
           </p>
         </div>
 
-        {/* Invite code CTA */}
+        {/* Company Authentication ID CTA */}
         <div className="mb-16 p-8 rounded-2xl bg-white/[0.03] border border-white/10 shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset] backdrop-blur-sm">
-          <p className="text-center text-white/80 text-base font-medium mb-6">
-            Already have a company invite code?
+          <p className="text-center text-white/80 text-base font-medium mb-2">
+            Have your <strong className="text-white">Company Authentication ID</strong>?
+          </p>
+          <p className="text-center text-white/60 text-sm mb-6">
+            You’ll find it in your welcome email from FleetPulse, or get it from your administrator. Use it to sign in and share it with your team so they can join this company.
           </p>
           <div className="flex justify-center">
             <Link
               href="/dashboard/activate"
               className="group inline-flex items-center gap-2.5 px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
             >
-              Enter invite code
+              Enter Company Authentication ID
               <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>

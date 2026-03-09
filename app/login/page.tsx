@@ -1,18 +1,72 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import Image from 'next/image'
+import EntryAnimation from '@/components/EntryAnimation'
+
+const ENTRY_DURATION_MS = 2200
+
+type CompanyOption = { id: string; name: string; displayName?: string; roadmapOnly?: boolean }
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showEntry, setShowEntry] = useState(false)
+  const [companies, setCompanies] = useState<CompanyOption[]>([])
+  const [companiesLoading, setCompaniesLoading] = useState(false)
+  const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null)
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false)
+  const companyDropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    const raw = email.trim().toLowerCase()
+    if (!raw || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
+      setCompanies([])
+      setSelectedCompany(null)
+      return
+    }
+    const t = setTimeout(async () => {
+      setCompaniesLoading(true)
+      try {
+        const res = await fetch('/api/companies-for-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: raw }),
+        })
+        const data = await res.json()
+        const list = data?.companies ?? []
+        setCompanies(list)
+        if (list.length === 1) {
+          setSelectedCompany(list[0])
+        } else {
+          setSelectedCompany(list[0] ?? null)
+        }
+      } catch {
+        setCompanies([])
+        setSelectedCompany(null)
+      } finally {
+        setCompaniesLoading(false)
+      }
+    }, 400)
+    return () => clearTimeout(t)
+  }, [email])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (companyDropdownRef.current && !companyDropdownRef.current.contains(e.target as Node)) {
+        setShowCompanyDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -20,46 +74,52 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (error) {
-        console.error('Login error:', error)
-        setError(error.message || 'An error occurred during login')
+      if (signInError) {
+        setError(signInError.message || 'An error occurred during login')
         setLoading(false)
         return
       }
 
-      console.log('Login successful:', data)
-      
-      // Wait a moment for cookies to be set
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
-      // Refresh the session to ensure cookies are set
+      const companyToSet = selectedCompany ?? (companies.length === 1 ? companies[0] : null)
+      if (companyToSet) {
+        await supabase.auth.updateUser({
+          data: {
+            company_id: companyToSet.id,
+            company_name: companyToSet.displayName || companyToSet.name,
+          },
+        })
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 100))
       const { data: sessionData } = await supabase.auth.getSession()
-      
+
       if (sessionData?.session) {
         setLoading(false)
-        // Use router.push first, then fallback to window.location if needed
-        router.push('/dashboard')
-        // Force a full page reload after a short delay to ensure server-side can read cookies
+        setShowEntry(true)
+        const isRoadmapOnly = companyToSet?.roadmapOnly || (companyToSet?.name || '').toLowerCase().includes('roadmap')
+        const redirectTo = isRoadmapOnly ? '/dashboard/roadmap' : '/home'
         setTimeout(() => {
-          window.location.href = '/dashboard'
-        }, 100)
+          router.push(redirectTo)
+          window.location.href = redirectTo
+        }, ENTRY_DURATION_MS)
       } else {
         setError('Session not established. Please try again.')
         setLoading(false)
       }
-    } catch (error: any) {
-      console.error('Login exception:', error)
-      setError(error.message || 'An error occurred during login')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred during login')
       setLoading(false)
     }
   }
 
   return (
+    <>
+      {showEntry && <EntryAnimation />}
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-indigo-950/95 via-gray-900 to-purple-950/95 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950/90">
       {/* Animated grid - stronger */}
       <div
@@ -135,6 +195,63 @@ export default function LoginPage() {
                 placeholder="you@example.com"
               />
             </div>
+
+            {/* Company selector: shown when we found companies for this email */}
+            {companies.length > 0 && (
+              <div ref={companyDropdownRef} className="relative">
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                  Open as
+                </label>
+                {companiesLoading ? (
+                  <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-500 dark:text-gray-400 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50">
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Finding your companies…</span>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowCompanyDropdown((v) => !v)}
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-sm text-left border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                    >
+                      <span className="truncate">
+                        {selectedCompany ? (selectedCompany.displayName || selectedCompany.name) : 'Select company'}
+                      </span>
+                      <svg className={`w-4 h-4 flex-shrink-0 text-gray-400 transition-transform ${showCompanyDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {showCompanyDropdown && (
+                      <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg py-1 max-h-48 overflow-auto">
+                        {companies.map((c) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCompany(c)
+                              setShowCompanyDropdown(false)
+                            }}
+                            className={`w-full px-3 py-2.5 text-left text-sm transition-colors ${
+                              selectedCompany?.id === c.id
+                                ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium'
+                                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                            }`}
+                          >
+                            {c.displayName || c.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                      You’ll land in this company after signing in.
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
 
             <div>
               <label htmlFor="password" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
@@ -221,5 +338,6 @@ export default function LoginPage() {
       </div>
       </div>
     </div>
+    </>
   )
 }

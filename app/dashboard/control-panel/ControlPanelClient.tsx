@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
+import { createDefaultCustomTemplate } from '@/lib/custom-template'
 
 const TEMPLATES = [
   { id: 'default', label: 'Default', description: 'Standard fleet dashboard layout' },
   { id: 'compact', label: 'Compact', description: 'Dense layout for power users' },
   { id: 'executive', label: 'Executive', description: 'High-level KPIs and summaries' },
+  { id: 'custom', label: 'Custom', description: 'Build your own with sections, layout, and tabs' },
 ]
 
 export default function ControlPanelClient({
@@ -50,12 +53,17 @@ export default function ControlPanelClient({
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean)
+      const currentCompany = (existing[companyId] as Record<string, unknown>) || {}
       const updated = {
         ...existing,
         [companyId]: {
+          ...currentCompany,
           template,
           inspectionsEnabled,
           territorySegments: segments,
+          ...(template === 'custom' && !currentCompany.customTemplate
+            ? { customTemplate: createDefaultCustomTemplate() }
+            : {}),
         },
       }
       const { error } = await supabase.auth.updateUser({
@@ -134,9 +142,18 @@ export default function ControlPanelClient({
                     onChange={() => setTemplate(t.id)}
                     className="mt-1"
                   />
-                  <div>
+                  <div className="flex-1">
                     <span className="font-medium text-gray-900 dark:text-white">{t.label}</span>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{t.description}</p>
+                    {t.id === 'custom' && (
+                      <Link
+                        href="/dashboard/control-panel/template-builder"
+                        className="inline-block mt-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Open Template Builder →
+                      </Link>
+                    )}
                   </div>
                 </label>
               ))}

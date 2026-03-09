@@ -53,10 +53,16 @@ export default async function HomeDashboardPage() {
 
   const territoryMap = buildTerritoryMap()
   const companyId = user.user_metadata?.company_id as string | undefined
-  const companySettings = (user.user_metadata?.company_settings as Record<string, { territorySegments?: string[] }>) || {}
+  const companySettings = (user.user_metadata?.company_settings as Record<string, {
+    territorySegments?: string[]
+    template?: string
+    customTemplate?: import('@/lib/custom-template').CustomTemplate
+  }>) || {}
   const territorySegments = companyId && companySettings[companyId]?.territorySegments?.length
     ? companySettings[companyId].territorySegments!
     : (Object.keys(territoryMap).length ? ['New York', 'DMV'] : [])
+  const template = (companyId && companySettings[companyId]?.template) || 'default'
+  const customTemplate = (companyId && template === 'custom' && companySettings[companyId]?.customTemplate) || null
 
   return (
     <>
@@ -66,6 +72,8 @@ export default async function HomeDashboardPage() {
           territoryMap={territoryMap}
           companyId={companyId}
           territorySegmentLabels={territorySegments}
+          template={template}
+          customTemplate={customTemplate}
         />
       </TabSlideTransition>
     </>

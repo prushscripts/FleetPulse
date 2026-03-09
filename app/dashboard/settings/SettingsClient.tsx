@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { User } from '@supabase/supabase-js'
@@ -20,8 +20,11 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   const [tier, setTier] = useState<SubscriptionTier>('professional')
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState<string | null>(null)
-  type CompanyEntry = { id: string; name: string; displayName?: string }
+  type CompanyEntry = { id: string; name: string; displayName?: string; logoUrl?: string; roadmapOnly?: boolean }
   const [companies, setCompanies] = useState<CompanyEntry[]>([])
+  const [logoUploadingId, setLogoUploadingId] = useState<string | null>(null)
+  const [logoUploadForId, setLogoUploadForId] = useState<string | null>(null)
+  const logoInputRef = React.useRef<HTMLInputElement>(null)
   const [companyKeyInput, setCompanyKeyInput] = useState('')
   const [companyActivating, setCompanyActivating] = useState(false)
   const [companyError, setCompanyError] = useState<string | null>(null)
@@ -120,30 +123,31 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     setCompanyActivating(true)
     setCompanyError(null)
     try {
-      const { data: company, error: fetchError } = await supabase
-        .from('companies')
-        .select('id, name')
-        .eq('auth_key', key)
-        .maybeSingle()
-      if (fetchError) throw fetchError
-      if (!company) {
+      let resolved: { id: string; name: string } | null = null
+      const { data: rpcRows, error: rpcError } = await supabase.rpc('get_company_by_invite_code', { invite_code: key })
+      if (!rpcError && Array.isArray(rpcRows) && rpcRows.length) resolved = rpcRows[0] as { id: string; name: string }
+      if (!resolved) {
+        const { data: d1 } = await supabase.from('companies').select('id, name').eq('auth_key', key).maybeSingle()
+        const { data: d2 } = await supabase.from('companies').select('id, name').eq('auth_key', key.toLowerCase()).maybeSingle()
+        resolved = d1 || d2 || null
+      }
+      if (!resolved) {
         setCompanyError('Invalid company key. Check the key and try again.')
         setCompanyActivating(false)
         return
       }
-      const existing = companies.filter((c) => c.id !== company.id)
-      const merged = existing.length === companies.length ? [...companies, { id: company.id, name: company.name, displayName: company.name }] : companies
+      const existing = companies.filter((c) => c.id !== resolved!.id)
+      const merged = existing.length === companies.length ? [...companies, { id: resolved.id, name: resolved.name, displayName: resolved.name }] : companies
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { company_id: company.id, company_name: company.name, companies: merged },
+        data: { company_id: resolved.id, company_name: resolved.name, companies: merged },
       })
       if (updateError) throw updateError
-      setCompanyId(company.id)
-      setCompanyName(company.name)
+      setCompanyId(resolved.id)
+      setCompanyName(resolved.name)
       setCompanies(merged)
       setCompanyKeyInput('')
-      setMessage({ type: 'success', text: 'Company activated. You now have access to your company data.' })
-      setTimeout(() => setMessage(null), 4000)
-      router.refresh()
+      setMessage({ type: 'success', text: 'Company activated. Redirecting…' })
+      setTimeout(() => { window.location.href = '/home' }, 400)
     } catch (err: any) {
       setCompanyError(err?.message || 'Activation failed.')
     } finally {
@@ -177,6 +181,38 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     }
     setMessage({ type: 'success', text: 'Display name updated.' })
     setTimeout(() => setMessage(null), 3000)
+  }
+
+  const handleLogoUpload = async (c: CompanyEntry, file: File) => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
+    if (!/^(png|jpe?g|webp)$/.test(ext)) {
+      setMessage({ type: 'error', text: 'Use PNG, JPEG, or WebP.' })
+      return
+    }
+    setLogoUploadingId(c.id)
+    try {
+      const path = `${c.id}/logo.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('company-logos')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(path)
+      const updated = companies.map((ent) =>
+        ent.id === c.id ? { ...ent, logoUrl: publicUrl } : ent
+      )
+      const { error: updateError } = await supabase.auth.updateUser({ data: { companies: updated } })
+      if (updateError) throw updateError
+      setCompanies(updated)
+      setMessage({ type: 'success', text: 'Logo updated.' })
+      setTimeout(() => setMessage(null), 3000)
+      router.refresh()
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err?.message || 'Upload failed.' })
+    } finally {
+      setLogoUploadingId(null)
+      setLogoUploadForId(null)
+      if (logoInputRef.current) logoInputRef.current.value = ''
+    }
   }
 
   const handleDeleteCompany = async (c: CompanyEntry) => {
@@ -213,32 +249,39 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     setAddCompanyLoading(true)
     setAddCompanyError(null)
     try {
-      const { data: company, error: fetchError } = await supabase
-        .from('companies')
-        .select('id, name')
-        .eq('auth_key', key)
-        .maybeSingle()
-      if (fetchError) throw fetchError
-      if (!company) {
+      let resolved: { id: string; name: string; auth_key?: string } | null = null
+      const { data: rpcRows, error: rpcError } = await supabase.rpc('get_company_by_invite_code', { invite_code: key })
+      if (!rpcError && Array.isArray(rpcRows) && rpcRows.length) resolved = rpcRows[0] as { id: string; name: string; auth_key?: string }
+      if (!resolved) {
+        const { data: d1 } = await supabase.from('companies').select('id, name, auth_key').eq('auth_key', key).maybeSingle()
+        const { data: d2 } = await supabase.from('companies').select('id, name, auth_key').eq('auth_key', key.toLowerCase()).maybeSingle()
+        resolved = d1 || d2 || null
+      }
+      if (!resolved) {
         setAddCompanyError('Invalid company key. Check the key and try again.')
         setAddCompanyLoading(false)
         return
       }
-      if (companies.some((c) => c.id === company.id)) {
+      if (companies.some((c) => c.id === resolved!.id)) {
         setAddCompanyError('You already have access to this company.')
         setAddCompanyLoading(false)
         return
       }
-      const merged = [...companies, { id: company.id, name: company.name, displayName: company.name }]
+      const authKey = (resolved.auth_key ?? '').toLowerCase()
+      const roadmapOnly = authKey === 'prushlogisticsroadmap'
+      const merged: CompanyEntry[] = [...companies, { id: resolved.id, name: resolved.name, displayName: resolved.name, roadmapOnly }]
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { companies: merged },
+        data: { company_id: resolved.id, company_name: resolved.name, companies: merged },
       })
       if (updateError) throw updateError
       setCompanies(merged)
+      setCompanyId(resolved.id)
+      setCompanyName(resolved.name)
       setAddCompanyKey('')
-      setMessage({ type: 'success', text: `Added "${company.name}". Switch to it using the company switcher at the top of the page.` })
-      setTimeout(() => setMessage(null), 4000)
-      router.refresh()
+      setMessage({ type: 'success', text: `Added "${resolved.name}". Redirecting…` })
+      setTimeout(() => {
+        window.location.href = roadmapOnly ? '/dashboard/roadmap' : '/home'
+      }, 400)
     } catch (err: any) {
       setAddCompanyError(err?.message || 'Failed to add company.')
     } finally {
@@ -435,8 +478,29 @@ export default function SettingsClient({ user }: SettingsClientProps) {
             <div className="p-5 sm:p-6">
               <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">My Companies</h2>
 
-              {/* Logo upload hint */}
-              <div className="mb-6 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                Click a company logo to upload or change it. PNG, JPEG, or WebP. Shows in the navbar when that company is selected.
+              </p>
+
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  const id = logoUploadForId
+                  if (file && id) {
+                    const c = companies.find((x) => x.id === id)
+                    if (c) handleLogoUpload(c, file)
+                  }
+                  setLogoUploadForId(null)
+                  e.target.value = ''
+                }}
+              />
+
+              {/* Old logo hint removed - use upload per company below */}
+              <div className="hidden">
                 <div className="flex gap-3">
                   <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -478,6 +542,21 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                   <ul className="space-y-2 mb-6">
                     {companies.map((c) => (
                       <li key={c.id} className="flex flex-wrap items-center gap-2 sm:gap-3 py-3 px-4 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
+                        <button
+                          type="button"
+                          onClick={() => { setLogoUploadForId(c.id); logoInputRef.current?.click() }}
+                          disabled={logoUploadingId === c.id}
+                          className="flex-shrink-0 w-12 h-12 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                          title="Upload logo"
+                        >
+                          {logoUploadingId === c.id ? (
+                            <svg className="w-5 h-5 animate-spin text-indigo-500" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                          ) : c.logoUrl ? (
+                            <img src={c.logoUrl} alt="" className="w-full h-full object-contain" />
+                          ) : (
+                            <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                          )}
+                        </button>
                         <span className="font-medium text-gray-900 dark:text-white min-w-0 truncate">
                           {editingDisplayNameId === c.id ? (
                             <span className="flex items-center gap-2 flex-wrap">
@@ -502,7 +581,6 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                         {companyId === c.id && (
                           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">Current</span>
                         )}
-                        <span className="text-[11px] text-gray-500 dark:text-gray-400 w-full sm:w-auto">Logo: <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">{companyLogoSlug(c)}.png</code> or <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">.jpg</code></span>
                         {editingDisplayNameId !== c.id && (
                           <button
                             type="button"

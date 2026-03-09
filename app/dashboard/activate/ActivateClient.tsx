@@ -16,41 +16,41 @@ export default function ActivateClient({ userEmail }: { userEmail: string }) {
     e.preventDefault()
     const key = companyKey.trim()
     if (!key) {
-      setError('Enter your company authentication key.')
+      setError('Enter your Company Authentication ID.')
       return
     }
     setLoading(true)
     setError(null)
     try {
-      const { data: company, error: fetchError } = await supabase
-        .from('companies')
-        .select('id, name')
-        .eq('auth_key', key)
-        .maybeSingle()
-
-      if (fetchError) throw fetchError
+      let company: { id: string; name: string } | null = null
+      const { data: rpcRows, error: rpcError } = await supabase.rpc('get_company_by_invite_code', { invite_code: key })
+      if (!rpcError && Array.isArray(rpcRows) && rpcRows.length) company = rpcRows[0] as { id: string; name: string }
       if (!company) {
-        setError('Invalid company key. Check the key and try again.')
+        const { data: d1 } = await supabase.from('companies').select('id, name').eq('auth_key', key).maybeSingle()
+        const { data: d2 } = await supabase.from('companies').select('id, name').eq('auth_key', key.toLowerCase()).maybeSingle()
+        company = d1 || d2 || null
+      }
+      if (!company) {
+        setError('Invalid Company Authentication ID. Check the ID and try again.')
         setLoading(false)
         return
       }
 
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       const existing = (currentUser?.user_metadata?.companies as { id: string; name: string }[]) ?? []
-      const merged = existing.some((c: { id: string }) => c.id === company.id)
+      const merged = existing.some((c: { id: string }) => c.id === company!.id)
         ? existing
-        : [...existing, { id: company.id, name: company.name }]
+        : [...existing, { id: company!.id, name: company!.name }]
 
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
-          company_id: company.id,
-          company_name: company.name,
+          company_id: company!.id,
+          company_name: company!.name,
           companies: merged,
         },
       })
       if (updateError) throw updateError
-      router.refresh()
-      router.push('/dashboard')
+      window.location.href = '/home'
     } catch (err: any) {
       setError(err?.message || 'Activation failed. Try again.')
     } finally {
@@ -67,7 +67,7 @@ export default function ActivateClient({ userEmail }: { userEmail: string }) {
               Activate your account
             </h1>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Enter your company authentication key to access your fleet data.
+              Enter your Company Authentication ID (from your welcome email or your administrator) to access your company’s fleet data. You can share this ID with your team so they can sign up and join the same company.
             </p>
           </div>
 
@@ -85,10 +85,10 @@ export default function ActivateClient({ userEmail }: { userEmail: string }) {
           <form onSubmit={handleActivate} className="space-y-4">
             <div>
               <label htmlFor="companyKey" className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Company authentication key
+                Company Authentication ID
                 <span
                   className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-gray-400 dark:border-gray-500 text-gray-500 dark:text-gray-400 cursor-help text-xs font-bold"
-                  title="If you don't have an ID, contact your company administration to acquire one."
+                  title="Found in your FleetPulse welcome email, or ask your company administrator."
                 >
                   ?
                 </span>
