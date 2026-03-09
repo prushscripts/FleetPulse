@@ -145,10 +145,20 @@ export default function LoginPage() {
       {/* Content - transparent so logo video mix-blend can see through */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-10 bg-transparent">
       <div className="w-full max-w-sm bg-transparent">
-        {/* Logo and Header — no video (dark box); use text logo until a clean PNG/SVG exists */}
+        {/* Logo: screenbend in pure #000000 container so mix-blend-mode: screen works (navy/dark blue left a tint; pure black does not). */}
         <div className="text-center mb-6">
-          <div className="text-3xl font-bold text-white tracking-wide mb-4">
-            Fleet<span className="text-purple-400">Pulse</span>
+          <div className="flex justify-center mb-5" style={{ backgroundColor: '#000000' }}>
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              aria-label="FleetPulse"
+              className="logo-video h-40 w-auto object-contain mx-auto"
+              style={{ mixBlendMode: 'screen' }}
+            >
+              <source src="/assets/fleetpulse_screenbend.webm" type="video/webm" />
+            </video>
           </div>
           <h2 className="text-2xl font-bold text-white mb-1">
             Welcome Back
