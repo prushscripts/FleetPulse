@@ -30,7 +30,15 @@ export default function EntryAnimation() {
             poster="/assets/fleetpulse_poster.png"
             aria-label="FleetPulse"
             className="w-auto object-contain"
-            style={{ height: '150px', width: '400px', borderRadius: '14px', boxShadow: '0 0 40px rgba(99, 102, 241, 0.6)', objectFit: 'cover' }}
+            style={{
+              height: '160px',
+              width: '160px',
+              borderRadius: '50%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+              boxShadow: '0 0 50px rgba(99, 102, 241, 0.7), 0 0 100px rgba(99, 102, 241, 0.3)',
+              border: '2px solid rgba(99, 102, 241, 0.5)'
+            }}
             onCanPlay={(e) => e.currentTarget.play()}
           >
             <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />

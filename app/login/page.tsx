@@ -155,7 +155,7 @@ export default function LoginPage() {
               poster="/assets/fleetpulse_poster.png"
               aria-label="FleetPulse"
               className="w-auto object-contain mx-auto"
-              style={{ height: '180px', maxWidth: '420px', width: '100%', borderRadius: '14px', boxShadow: '0 0 30px rgba(99, 102, 241, 0.4)' }}
+              style={{ height: '180px', maxWidth: '420px', width: '100%', borderRadius: '14px', boxShadow: '0 0 20px rgba(99, 102, 241, 0.25)' }}
               onCanPlay={(e) => e.currentTarget.play()}
             >
               <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />

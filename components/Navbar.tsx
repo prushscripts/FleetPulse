@@ -199,20 +199,22 @@ export default function Navbar() {
         <div className="flex justify-between items-center min-h-[4rem] sm:min-h-[5rem] py-1">
           {/* Logo: fleetpulse_logo_loop.mp4 with purple glow */}
           <div className="flex items-center justify-start flex-shrink-0 overflow-visible">
-            <Link href="/home" className="flex items-center h-full min-h-[4rem] group block">
-              <video
-                autoPlay
-                muted
-                loop
-                playsInline
-                poster="/assets/fleetpulse_poster.png"
-                aria-label="FleetPulse logo"
-                className="w-auto object-contain"
-                style={{ height: '48px', width: '220px', borderRadius: '8px', boxShadow: '0 0 16px rgba(99, 102, 241, 0.4)', objectFit: 'cover' }}
-                onCanPlay={(e) => e.currentTarget.play()}
-              >
-                <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
-              </video>
+            <Link href="/home" className="flex items-center h-full group block">
+              <div style={{ height: '64px', display: 'flex', alignItems: 'center' }}>
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  poster="/assets/fleetpulse_poster.png"
+                  aria-label="FleetPulse logo"
+                  className="w-auto object-contain"
+                  style={{ height: '56px', width: 'auto', minWidth: '200px', maxWidth: '240px', borderRadius: '8px', boxShadow: '0 0 14px rgba(99, 102, 241, 0.35)', objectFit: 'cover' }}
+                  onCanPlay={(e) => e.currentTarget.play()}
+                >
+                  <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
+                </video>
+              </div>
             </Link>
           </div>
           <div className="hidden sm:flex sm:flex-1 sm:justify-center sm:items-center sm:gap-0.5">
