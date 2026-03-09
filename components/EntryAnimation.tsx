@@ -27,9 +27,11 @@ export default function EntryAnimation() {
             muted
             loop
             playsInline
+            poster="/assets/fleetpulse_poster.png"
             aria-label="FleetPulse"
             className="w-auto object-contain"
-            style={{ height: '120px', borderRadius: '12px', boxShadow: '0 0 28px rgba(99, 102, 241, 0.45)' }}
+            style={{ height: '150px', width: '400px', borderRadius: '14px', boxShadow: '0 0 40px rgba(99, 102, 241, 0.6)', objectFit: 'cover' }}
+            onCanPlay={(e) => e.currentTarget.play()}
           >
             <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
           </video>

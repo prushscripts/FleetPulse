@@ -205,9 +205,11 @@ export default function Navbar() {
                 muted
                 loop
                 playsInline
+                poster="/assets/fleetpulse_poster.png"
                 aria-label="FleetPulse logo"
                 className="w-auto object-contain"
-                style={{ height: '52px', borderRadius: '8px', boxShadow: '0 0 14px rgba(99, 102, 241, 0.35)' }}
+                style={{ height: '48px', width: '220px', borderRadius: '8px', boxShadow: '0 0 16px rgba(99, 102, 241, 0.4)', objectFit: 'cover' }}
+                onCanPlay={(e) => e.currentTarget.play()}
               >
                 <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
               </video>
