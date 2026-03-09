@@ -132,21 +132,26 @@ export default function SignupPage() {
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <div className="flex justify-center mb-6">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              poster="/assets/fleetpulse_poster.png"
-              aria-label="FleetPulse"
-              className="w-auto object-contain mx-auto"
-              style={{ height: '180px', maxWidth: '420px', width: '100%', borderRadius: '14px', boxShadow: '0 0 20px rgba(99, 102, 241, 0.25)' }}
-              onCanPlay={(e) => e.currentTarget.play()}
-            >
-              <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
-            </video>
-          </div>
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            poster="/assets/fleetpulse_poster.png"
+            aria-label="FleetPulse"
+            onCanPlay={(e) => e.currentTarget.play()}
+            style={{
+              width: '100%',
+              maxWidth: '380px',
+              height: 'auto',
+              borderRadius: '16px',
+              display: 'block',
+              margin: '0 auto 24px auto',
+              boxShadow: '0 0 60px rgba(99, 102, 241, 0.2)'
+            }}
+          >
+            <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
+          </video>
           <h2 className="text-2xl font-bold text-white mb-1">
             Create Your Account
           </h2>

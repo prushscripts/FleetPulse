@@ -197,26 +197,33 @@ export default function Navbar() {
     <nav className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-sm border-b border-gray-200/80 dark:border-gray-700/80 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center min-h-[4rem] sm:min-h-[5rem] py-1">
-          {/* Logo: fleetpulse_logo_loop.mp4 with purple glow */}
-          <div className="flex items-center justify-start flex-shrink-0 overflow-visible">
-            <Link href="/home" className="flex items-center h-full group block">
-              <div style={{ height: '64px', display: 'flex', alignItems: 'center' }}>
-                <video
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  poster="/assets/fleetpulse_poster.png"
-                  aria-label="FleetPulse logo"
-                  className="w-auto object-contain"
-                  style={{ height: '56px', width: 'auto', minWidth: '200px', maxWidth: '240px', borderRadius: '8px', boxShadow: '0 0 14px rgba(99, 102, 241, 0.35)', objectFit: 'cover' }}
-                  onCanPlay={(e) => e.currentTarget.play()}
-                >
-                  <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
-                </video>
-              </div>
-            </Link>
-          </div>
+          {/* Logo: circular video orb + text */}
+          <Link href="/home" className="flex items-center gap-3 flex-shrink-0">
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              flexShrink: 0,
+              boxShadow: '0 0 12px rgba(99, 102, 241, 0.5)',
+              border: '1px solid rgba(99, 102, 241, 0.4)'
+            }}>
+              <video autoPlay muted loop playsInline aria-label="FleetPulse logo"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'left center' }}
+              >
+                <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
+              </video>
+            </div>
+            <span style={{
+              fontSize: '20px',
+              fontWeight: '700',
+              color: 'white',
+              letterSpacing: '0.01em',
+              flexShrink: 0
+            }}>
+              Fleet<span style={{ color: '#a78bfa' }}>Pulse</span>
+            </span>
+          </Link>
           <div className="hidden sm:flex sm:flex-1 sm:justify-center sm:items-center sm:gap-0.5">
               {navItems.map((item) => {
                 const active = isTabActive(item.href)

@@ -29,17 +29,16 @@ export default function EntryAnimation() {
             playsInline
             poster="/assets/fleetpulse_poster.png"
             aria-label="FleetPulse"
-            className="w-auto object-contain"
-            style={{
-              height: '160px',
-              width: '160px',
-              borderRadius: '50%',
-              objectFit: 'cover',
-              objectPosition: 'center',
-              boxShadow: '0 0 50px rgba(99, 102, 241, 0.7), 0 0 100px rgba(99, 102, 241, 0.3)',
-              border: '2px solid rgba(99, 102, 241, 0.5)'
-            }}
             onCanPlay={(e) => e.currentTarget.play()}
+            style={{
+              width: '320px',
+              height: 'auto',
+              borderRadius: '16px',
+              objectFit: 'cover',
+              boxShadow: '0 0 60px rgba(99, 102, 241, 0.6), 0 0 120px rgba(99, 102, 241, 0.2)',
+              border: '1px solid rgba(99, 102, 241, 0.3)',
+              marginBottom: '16px'
+            }}
           >
             <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
           </video>
