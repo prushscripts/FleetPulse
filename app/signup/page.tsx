@@ -128,22 +128,21 @@ export default function SignupPage() {
       {/* Scan lines - two for more motion */}
       <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-400/40 to-transparent pointer-events-none animate-auth-scan" />
       <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-400/25 to-transparent pointer-events-none animate-auth-scan" style={{ animationDelay: '4s', animationDuration: '12s' }} />
-      {/* Content - transparent so logo video mix-blend can see through */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-10 bg-transparent">
-      <div className="w-full max-w-sm bg-transparent">
-        {/* Logo: screenbend in pure #000000 container so mix-blend-mode: screen works (navy/dark blue left a tint; pure black does not). */}
+      {/* Content */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <div className="flex justify-center mb-5" style={{ backgroundColor: '#000000' }}>
+          <div className="flex justify-center mb-6">
             <video
               autoPlay
               muted
               loop
               playsInline
               aria-label="FleetPulse"
-              className="logo-video h-40 w-auto object-contain mx-auto"
-              style={{ mixBlendMode: 'screen' }}
+              className="w-auto object-contain"
+              style={{ height: '160px', borderRadius: '14px', boxShadow: '0 0 30px rgba(99, 102, 241, 0.4)' }}
             >
-              <source src="/assets/fleetpulse_screenbend.webm" type="video/webm" />
+              <source src="/assets/fleetpulse_navbar.mp4" type="video/mp4" />
             </video>
           </div>
           <h2 className="text-2xl font-bold text-white mb-1">

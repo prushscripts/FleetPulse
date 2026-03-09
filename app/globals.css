@@ -439,17 +439,3 @@ body {
   }
 }
 
-/* FleetPulse logo video: blend so black background disappears (use with fleetpulse_screenbend.webm) */
-.logo-video {
-  mix-blend-mode: screen;
-  background: transparent !important;
-  background-color: transparent !important;
-}
-
-.logo-video-container {
-  background: transparent !important;
-  background-color: transparent !important;
-  border: none;
-  box-shadow: none;
-  overflow: visible;
-}

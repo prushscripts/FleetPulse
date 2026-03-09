@@ -19,7 +19,7 @@ export default function EntryAnimation() {
       </div>
       {/* Center glow */}
       <div className="absolute w-96 h-96 rounded-full bg-indigo-500/30 blur-[80px] animate-entry-glow pointer-events-none" />
-      {/* Logo + text — plain MP4, no blend (dark background would wash out screen blend) */}
+      {/* Logo + text */}
       <div className="relative z-10 flex flex-col items-center justify-center">
         <div className="animate-entry-logo">
           <video
@@ -28,9 +28,10 @@ export default function EntryAnimation() {
             loop
             playsInline
             aria-label="FleetPulse"
-            className="h-24 w-auto object-contain drop-shadow-[0_0_30px_rgba(99,102,241,0.5)]"
+            className="w-auto object-contain"
+            style={{ height: '100px', borderRadius: '12px', boxShadow: '0 0 24px rgba(99, 102, 241, 0.4)' }}
           >
-            <source src="/assets/fleetpulse_final.mp4" type="video/mp4" />
+            <source src="/assets/fleetpulse_navbar.mp4" type="video/mp4" />
           </video>
         </div>
         <p className="mt-6 text-indigo-300/90 text-sm font-medium tracking-[0.3em] uppercase animate-entry-text">
