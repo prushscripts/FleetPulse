@@ -197,9 +197,9 @@ export default function Navbar() {
     <nav className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-sm border-b border-gray-200/80 dark:border-gray-700/80 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center min-h-[4rem] sm:min-h-[5rem] py-1">
-          {/* Logo: screenbend WebM + transparent containers so mix-blend-mode: screen can blend to page. */}
-          <div className="flex items-center justify-start flex-shrink-0 min-w-0 max-w-[220px] sm:max-w-[260px] bg-transparent">
-            <Link href="/home" className="flex items-center h-full min-h-[44px] sm:min-h-[52px] group block min-w-0 bg-transparent">
+          {/* Logo: screenbend WebM + mix-blend only here (navbar is semi-transparent). Larger + brightness/contrast for visibility. */}
+          <div className="flex items-center justify-start flex-shrink-0 min-w-[120px] bg-transparent">
+            <Link href="/home" className="flex items-center h-full min-h-[52px] sm:min-h-[64px] group block bg-transparent">
               <div className="logo-video-container bg-transparent flex items-center">
                 <video
                   autoPlay
@@ -207,7 +207,7 @@ export default function Navbar() {
                   loop
                   playsInline
                   aria-label="FleetPulse logo"
-                  className="logo-video h-11 sm:h-14 w-auto max-h-[44px] sm:max-h-[52px] flex-shrink-0 transition-transform duration-200 group-hover:scale-[1.02] object-contain object-left"
+                  className="logo-video h-16 sm:h-20 w-auto min-w-[120px] flex-shrink-0 transition-transform duration-200 group-hover:scale-[1.02] object-contain object-left brightness-150 contrast-125"
                   style={{ background: 'transparent', mixBlendMode: 'screen' }}
                 >
                   <source src="/assets/fleetpulse_screenbend.webm" type="video/webm" />
