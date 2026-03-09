@@ -198,7 +198,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center min-h-[4rem] sm:min-h-[5rem] py-1">
           {/* Logo: fleetpulse_logo_loop.mp4 with purple glow */}
-          <div className="flex items-center justify-start flex-shrink-0">
+          <div className="flex items-center justify-start flex-shrink-0 overflow-visible">
             <Link href="/home" className="flex items-center h-full min-h-[4rem] group block">
               <video
                 autoPlay
@@ -206,8 +206,8 @@ export default function Navbar() {
                 loop
                 playsInline
                 aria-label="FleetPulse logo"
-                className="h-16 w-auto object-contain"
-                style={{ borderRadius: '10px', boxShadow: '0 0 18px rgba(99, 102, 241, 0.35)' }}
+                className="w-auto object-contain"
+                style={{ height: '52px', borderRadius: '8px', boxShadow: '0 0 14px rgba(99, 102, 241, 0.35)' }}
               >
                 <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
               </video>

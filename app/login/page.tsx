@@ -154,7 +154,7 @@ export default function LoginPage() {
               playsInline
               aria-label="FleetPulse"
               className="w-auto object-contain mx-auto"
-              style={{ height: '160px', borderRadius: '14px', boxShadow: '0 0 30px rgba(99, 102, 241, 0.4)' }}
+              style={{ height: '180px', maxWidth: '420px', width: '100%', borderRadius: '14px', boxShadow: '0 0 30px rgba(99, 102, 241, 0.4)' }}
             >
               <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
             </video>

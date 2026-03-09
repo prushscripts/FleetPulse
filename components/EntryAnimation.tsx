@@ -29,7 +29,7 @@ export default function EntryAnimation() {
             playsInline
             aria-label="FleetPulse"
             className="w-auto object-contain"
-            style={{ height: '100px', borderRadius: '12px', boxShadow: '0 0 24px rgba(99, 102, 241, 0.4)' }}
+            style={{ height: '120px', borderRadius: '12px', boxShadow: '0 0 28px rgba(99, 102, 241, 0.45)' }}
           >
             <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
           </video>
