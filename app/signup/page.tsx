@@ -128,14 +128,22 @@ export default function SignupPage() {
       {/* Scan lines - two for more motion */}
       <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-400/40 to-transparent pointer-events-none animate-auth-scan" />
       <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-400/25 to-transparent pointer-events-none animate-auth-scan" style={{ animationDelay: '4s', animationDuration: '12s' }} />
-      {/* Content */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm">
+      {/* Content - transparent so logo video mix-blend can see through */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-10 bg-transparent">
+      <div className="w-full max-w-sm bg-transparent">
         {/* Logo and Header */}
-        <div className="text-center mb-6">
-          <div className="flex justify-center mb-5">
-            <video autoPlay muted loop playsInline aria-label="FleetPulse" className="h-36 sm:h-44 md:h-52 w-auto max-w-[560px] sm:max-w-[640px] object-contain mx-auto">
-              <source src="/assets/fleetpulse_final.mp4" type="video/mp4" />
+        <div className="text-center mb-6 bg-transparent">
+          <div className="logo-video-container flex justify-center mb-5 bg-transparent">
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              aria-label="FleetPulse"
+              className="logo-video h-36 sm:h-44 md:h-52 w-auto max-w-[560px] sm:max-w-[640px] object-contain mx-auto"
+              style={{ background: 'transparent', mixBlendMode: 'screen' }}
+            >
+              <source src="/assets/fleetpulse_screenbend.webm" type="video/webm" />
             </video>
           </div>
           <h2 className="text-2xl font-bold text-white mb-1">
