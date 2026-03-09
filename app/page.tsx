@@ -71,15 +71,9 @@ export default async function Home() {
             <div className="max-w-3xl lg:max-w-4xl">
               <ScrollReveal delay={0}>
                 <div className="flex justify-center mb-6 sm:mb-8">
-                  <video
-                    src="/Animations/possibleLogoLoop.mp4"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    aria-label="FleetPulse"
-                    className="h-20 sm:h-24 md:h-28 lg:h-32 w-auto max-w-[400px] sm:max-w-[480px] md:max-w-[520px] object-contain drop-shadow-2xl select-none"
-                  />
+                  <video autoPlay muted loop playsInline aria-label="FleetPulse" className="h-20 sm:h-24 md:h-28 lg:h-32 w-auto max-w-[400px] sm:max-w-[480px] md:max-w-[520px] object-contain drop-shadow-2xl select-none">
+                    <source src="/assets/fleetpulse_final.mp4" type="video/mp4" />
+                  </video>
                 </div>
               </ScrollReveal>
               <ScrollReveal delay={100}>
@@ -434,15 +428,9 @@ export default async function Home() {
             <ScrollReveal delay={0}>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 py-8">
                 <div className="flex justify-center mb-6">
-                  <video
-                    src="/Animations/possibleLogoLoop.mp4"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    aria-label="FleetPulse"
-                    className="h-16 sm:h-20 md:h-24 w-auto max-w-[340px] sm:max-w-[380px] object-contain mx-auto drop-shadow-xl select-none"
-                  />
+                  <video autoPlay muted loop playsInline aria-label="FleetPulse" className="h-16 sm:h-20 md:h-24 w-auto max-w-[340px] sm:max-w-[380px] object-contain mx-auto drop-shadow-xl select-none">
+                    <source src="/assets/fleetpulse_final.mp4" type="video/mp4" />
+                  </video>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 drop-shadow-lg select-none cursor-default">
                   Ready to streamline your fleet management?

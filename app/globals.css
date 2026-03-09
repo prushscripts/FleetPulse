@@ -438,3 +438,8 @@ body {
     );
   }
 }
+
+/* FleetPulse logo video: blend so black background disappears (use with fleetpulse_screenbend.webm) */
+.logo-video {
+  mix-blend-mode: screen;
+}
