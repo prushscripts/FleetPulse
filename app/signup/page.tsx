@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import Image from 'next/image'
 import EntryAnimation from '@/components/EntryAnimation'
 
 const ENTRY_DURATION_MS = 2200
@@ -135,14 +134,14 @@ export default function SignupPage() {
         {/* Logo and Header */}
         <div className="text-center mb-6">
           <div className="flex justify-center mb-5">
-            <Image
-              src="/images/banner1.png"
-              alt="FleetPulse"
-              width={640}
-              height={240}
+            <video
+              src="/Animations/possibleLogoLoop.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              aria-label="FleetPulse"
               className="h-36 sm:h-44 md:h-52 w-auto max-w-[560px] sm:max-w-[640px] object-contain mx-auto"
-              priority
-              unoptimized
             />
           </div>
           <h2 className="text-2xl font-bold text-white mb-1">

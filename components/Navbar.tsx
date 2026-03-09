@@ -5,7 +5,6 @@ import { useState } from 'react'
 import { useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useTheme } from '@/components/ThemeProvider'
 
 export type Company = { id: string; name: string; displayName?: string; logoUrl?: string; roadmapOnly?: boolean }
@@ -198,17 +197,17 @@ export default function Navbar() {
     <nav className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-sm border-b border-gray-200/80 dark:border-gray-700/80 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center min-h-[4rem] sm:min-h-[5rem] py-1">
-          {/* Logo: large and readable. For best results use source image at least 320×96px (e.g. 320w × 96h). */}
+          {/* Logo: loop video for top-left brand */}
           <div className="flex items-center justify-start flex-shrink-0 w-[240px] sm:w-[320px]">
-            <Link href="/home" className="flex items-center h-full min-h-[48px] sm:min-h-[72px] group">
-              <Image
-                src="/images/banner1.png"
-                alt="FleetPulse"
-                width={320}
-                height={96}
+            <Link href="/home" className="flex items-center h-full min-h-[48px] sm:min-h-[72px] group block">
+              <video
+                src="/Animations/possibleLogoLoop.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                aria-label="FleetPulse"
                 className="h-12 sm:h-[72px] w-auto max-w-full transition-transform duration-200 group-hover:scale-[1.02] object-contain object-left"
-                priority
-                unoptimized
               />
             </Link>
           </div>

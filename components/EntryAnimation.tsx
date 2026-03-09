@@ -1,7 +1,5 @@
 'use client'
 
-import Image from 'next/image'
-
 export default function EntryAnimation() {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0a12] overflow-hidden">
@@ -24,14 +22,14 @@ export default function EntryAnimation() {
       {/* Logo + text */}
       <div className="relative z-10 flex flex-col items-center justify-center">
         <div className="animate-entry-logo">
-          <Image
-            src="/images/banner1.png"
-            alt="FleetPulse"
-            width={280}
-            height={90}
+          <video
+            src="/Animations/possibleLogoLoop.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-label="FleetPulse"
             className="h-20 w-auto object-contain drop-shadow-[0_0_30px_rgba(99,102,241,0.5)]"
-            priority
-            unoptimized
           />
         </div>
         <p className="mt-6 text-indigo-300/90 text-sm font-medium tracking-[0.3em] uppercase animate-entry-text">
