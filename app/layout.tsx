@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import RouteTransition from '@/components/RouteTransition'
+import { PageTransitionProvider } from '@/components/PageTransition'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -55,8 +56,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={inter.variable}>
       <body className={inter.className}>
         <ThemeProvider>
-          <RouteTransition />
-          {children}
+          <PageTransitionProvider>
+            <RouteTransition />
+            {children}
+          </PageTransitionProvider>
         </ThemeProvider>
       </body>
     </html>
