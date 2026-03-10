@@ -194,37 +194,40 @@ export default function Navbar() {
           <p className="text-sm font-medium text-gray-200 dark:text-gray-300">Switching to {switchingTo}</p>
         </div>
       )}
-    <nav className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-sm border-b border-gray-200/80 dark:border-gray-700/80 sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center min-h-[4rem] sm:min-h-[5rem] py-1">
-          {/* Logo: circular video orb + text */}
-          <Link href="/home" className="flex items-center gap-3 flex-shrink-0">
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              overflow: 'hidden',
-              flexShrink: 0,
-              boxShadow: '0 0 12px rgba(99, 102, 241, 0.5)',
-              border: '1px solid rgba(99, 102, 241, 0.4)'
-            }}>
-              <video autoPlay muted loop playsInline aria-label="FleetPulse logo"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'left center' }}
-              >
-                <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
-              </video>
-            </div>
-            <span style={{
-              fontSize: '20px',
-              fontWeight: '700',
-              color: 'white',
-              letterSpacing: '0.01em',
+    <nav
+      style={{
+        background: 'linear-gradient(135deg, rgba(13,17,35,0.95) 0%, rgba(20,25,50,0.95) 100%)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(99, 102, 241, 0.15)',
+        height: '64px',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 24px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50
+      }}
+    >
+      <div className="max-w-7xl mx-auto w-full flex justify-between items-center" style={{ height: '100%' }}>
+        <Link href="/home" style={{ display: 'flex', alignItems: 'center', gap: '0px', flexShrink: 0, textDecoration: 'none' }}>
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-label="FleetPulse logo"
+            style={{
+              height: '64px',
+              width: '180px',
+              objectFit: 'cover',
+              objectPosition: 'center center',
               flexShrink: 0
-            }}>
-              Fleet<span style={{ color: '#a78bfa' }}>Pulse</span>
-            </span>
-          </Link>
-          <div className="hidden sm:flex sm:flex-1 sm:justify-center sm:items-center sm:gap-0.5">
+            }}
+          >
+            <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
+          </video>
+        </Link>
+        <div className="hidden sm:flex sm:flex-1 sm:justify-center sm:items-center sm:gap-0.5">
               {navItems.map((item) => {
                 const active = isTabActive(item.href)
                 return (
@@ -244,8 +247,8 @@ export default function Navbar() {
                   </Link>
                 )
               })}
-          </div>
-          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 ml-2 sm:ml-6">
+        </div>
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 ml-2 sm:ml-6">
             {showCompanySwitcher && (
               <div className="relative hidden sm:block">
                 <button

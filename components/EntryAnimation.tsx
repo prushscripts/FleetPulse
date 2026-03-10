@@ -31,13 +31,12 @@ export default function EntryAnimation() {
             aria-label="FleetPulse"
             onCanPlay={(e) => e.currentTarget.play()}
             style={{
-              width: '320px',
+              width: '380px',
               height: 'auto',
-              borderRadius: '16px',
-              objectFit: 'cover',
-              boxShadow: '0 0 60px rgba(99, 102, 241, 0.6), 0 0 120px rgba(99, 102, 241, 0.2)',
-              border: '1px solid rgba(99, 102, 241, 0.3)',
-              marginBottom: '16px'
+              borderRadius: '20px',
+              border: '1px solid rgba(99, 102, 241, 0.4)',
+              boxShadow: '0 0 80px rgba(99, 102, 241, 0.5)',
+              marginBottom: '24px'
             }}
           >
             <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />

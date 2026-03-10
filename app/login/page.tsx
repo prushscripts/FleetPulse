@@ -156,12 +156,11 @@ export default function LoginPage() {
             onCanPlay={(e) => e.currentTarget.play()}
             style={{
               width: '100%',
-              maxWidth: '380px',
+              maxWidth: '340px',
               height: 'auto',
-              borderRadius: '16px',
               display: 'block',
-              margin: '0 auto 24px auto',
-              boxShadow: '0 0 60px rgba(99, 102, 241, 0.2)'
+              margin: '0 auto 20px auto',
+              borderRadius: '12px'
             }}
           >
             <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
