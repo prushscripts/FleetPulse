@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useContext, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 export function usePageTransition() {
@@ -11,13 +11,11 @@ export function usePageTransition() {
   const navigateTo = (href: string) => {
     setIsTransitioning(true)
     setOpacity(1)
+    router.push(href)
     setTimeout(() => {
       setOpacity(0)
-      setTimeout(() => {
-        router.push(href)
-        setIsTransitioning(false)
-      }, 300)
-    }, 200 + 1200)
+      setTimeout(() => setIsTransitioning(false), 300)
+    }, 400)
   }
 
   return { isTransitioning, opacity, navigateTo }
@@ -46,20 +44,14 @@ const overlayStyle: React.CSSProperties = {
 function TransitionOverlay({ isTransitioning, opacity }: { isTransitioning: boolean; opacity: number }) {
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  useEffect(() => {
-    if (isTransitioning && videoRef.current) {
-      videoRef.current.currentTime = 0
-      videoRef.current.play().catch(() => {})
-    }
-  }, [isTransitioning])
-
   if (!isTransitioning) return null
 
   return (
     <div style={{ ...overlayStyle, opacity }}>
       <video
         ref={videoRef}
-        src="/assets/fleetpulse_logo_loop.mp4"
+        src="/assets/possibleLogoLoop.mp4"
+        autoPlay
         muted
         playsInline
         style={{

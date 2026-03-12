@@ -1,43 +1,44 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useRef } from 'react'
 
-const ENTRY_DURATION_MS = 2200
 const FADEOUT_MS = 400
-const FADEOUT_START_MS = ENTRY_DURATION_MS - FADEOUT_MS
 
-export default function EntryAnimation() {
+export default function EntryAnimation({ onComplete }: { onComplete?: () => void }) {
   const [exiting, setExiting] = useState(false)
+  const onCompleteRef = useRef(onComplete)
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setExiting(true)
-    }, FADEOUT_START_MS)
-    return () => clearTimeout(t)
-  }, [])
+  onCompleteRef.current = onComplete
+
+  const handleEnded = () => {
+    setExiting(true)
+    setTimeout(() => {
+      onCompleteRef.current?.()
+    }, FADEOUT_MS)
+  }
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden transition-opacity duration-[400ms] ease-out"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden transition-opacity ease-out"
       style={{
         backgroundColor: 'var(--fleet-navy, #0d1120)',
         opacity: exiting ? 0 : 1,
+        transitionDuration: `${FADEOUT_MS}ms`,
       }}
     >
-      {/* Logo video - no ring, no circle, centered */}
       <div className="flex flex-col items-center justify-center">
         <div className="w-[380px] h-[80px] flex items-center justify-center mb-6">
           <video
             autoPlay
             muted
-            loop
             playsInline
             aria-label="FleetPulse"
             onCanPlay={(e) => e.currentTarget.play()}
+            onEnded={handleEnded}
             className="max-w-full max-h-full w-auto h-auto object-contain"
             style={{ width: '380px', height: 'auto' }}
           >
-            <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
+            <source src="/assets/possibleLogoLoop.mp4" type="video/mp4" />
           </video>
         </div>
         <p

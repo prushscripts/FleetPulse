@@ -2,26 +2,32 @@
 
 import Link from 'next/link'
 import React from 'react'
-const NAV_STYLE = {
-  background: 'linear-gradient(135deg, rgba(13,17,35,0.95) 0%, rgba(20,25,50,0.95) 100%)',
-  backdropFilter: 'blur(20px)',
-  borderBottom: '1px solid rgba(99, 102, 241, 0.15)',
-  height: '64px',
-  display: 'flex',
-  alignItems: 'center',
-  padding: '0 24px',
-  position: 'sticky',
-  top: 0,
-  zIndex: 50
+
+function getNavStyle(scrolled) {
+  return {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 50,
+    height: '56px',
+    display: 'flex',
+    alignItems: 'center',
+    padding: '0 24px',
+    background: scrolled ? 'rgba(8,12,28,0.97)' : 'rgba(8,12,28,0.88)',
+    backdropFilter: 'blur(16px)',
+    borderBottom: scrolled ? '1px solid rgba(139, 92, 246, 0.25)' : '1px solid rgba(139, 92, 246, 0.15)',
+  }
 }
 
 export function NavbarViewUIRaw(props) {
   const CompanyLogoImage = props.CompanyLogoImage
+  const navStyle = getNavStyle(props.scrolled)
   return (<div className="navbar-root">
     {props.switchingTo && (<div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gray-900/95 dark:bg-gray-950/95 backdrop-blur-md transition-opacity duration-300"><div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mb-4" /><p className="text-sm font-medium text-gray-200 dark:text-gray-300">Switching to {props.switchingTo}</p></div>)}
-    <nav style={NAV_STYLE}>
+    <nav style={navStyle}>
       <div className="max-w-7xl mx-auto w-full flex justify-between items-center" style={{ height: '100%' }}>
-        <Link href="/home" onClick={(e) => { e.preventDefault(); props.navigateTo('/home') }} style={{ display: 'flex', alignItems: 'center', gap: '0px', flexShrink: 0, textDecoration: 'none' }}>
+        <Link href="/home" onClick={(e) => { e.preventDefault(); props.navigateTo('/home') }} style={{ display: 'flex', alignItems: 'center', flexShrink: 0, textDecoration: 'none', background: 'transparent' }}>
           <video
             autoPlay
             muted
@@ -29,11 +35,12 @@ export function NavbarViewUIRaw(props) {
             playsInline
             aria-label="FleetPulse logo"
             style={{
-              height: '64px',
               width: '180px',
-              objectFit: 'cover',
-              objectPosition: 'center center',
-              flexShrink: 0
+              height: 'auto',
+              objectFit: 'contain',
+              flexShrink: 0,
+              mixBlendMode: 'screen',
+              background: 'transparent',
             }}
           >
             <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
@@ -47,16 +54,13 @@ export function NavbarViewUIRaw(props) {
                     key={item.href}
                     href={item.href}
                     onClick={(e) => { e.preventDefault(); props.navigateTo(item.href) }}
-                    className={`relative inline-flex items-center px-4 py-3 text-sm font-medium transition-all duration-200 rounded-md ${
+                    className={`relative inline-flex items-center px-4 py-3 text-[13px] font-semibold transition-all duration-150 ease-out border-b-2 ${
                       active
-                        ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700/80'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-gray-700/50'
+                        ? 'text-white border-[rgba(139,92,246,0.8)]'
+                        : 'border-transparent text-white/55 hover:text-white/85'
                     }`}
                   >
-                    <span className="relative z-10">{item.label}</span>
-                    {active && (
-                      <span className="absolute inset-0 rounded-md border border-gray-200/80 dark:border-gray-600 bg-white/50 dark:bg-gray-600/50 shadow-sm" aria-hidden />
-                    )}
+                    {item.label}
                   </Link>
                 )
               })}
@@ -158,7 +162,7 @@ export function NavbarViewUIRaw(props) {
             </button>
             <button
               onClick={props.handleLogout}
-              className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 tracking-wide"
+              className="text-xs text-gray-400 hover:text-white border border-white/10 hover:border-white/30 rounded-lg px-3 py-1.5 transition-all duration-150"
             >
               Logout
             </button>

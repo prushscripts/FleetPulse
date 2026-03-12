@@ -24,6 +24,7 @@ export type NavbarViewProps = {
   toggleTheme: () => void
   CompanyLogoImage: React.ComponentType<{ company: Company; className?: string }>
   navigateTo: (href: string) => void
+  scrolled?: boolean
 }
 
 export function NavbarView(props: NavbarViewProps) {

@@ -111,6 +111,14 @@ export default function Navbar() {
   }, [supabase, pathname])
 
   const [switchingTo, setSwitchingTo] = useState<string | null>(null)
+  const [navbarScrolled, setNavbarScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setNavbarScrolled(typeof window !== 'undefined' && window.scrollY > 60)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const handleSwitchCompany = async (company: Company) => {
     if (company.id === currentCompanyId) {
@@ -209,6 +217,7 @@ export default function Navbar() {
       toggleTheme={toggleTheme}
       CompanyLogoImage={CompanyLogoImage}
       navigateTo={navigateTo}
+      scrolled={navbarScrolled}
     />
   )
 }

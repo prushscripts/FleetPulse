@@ -6,8 +6,6 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import EntryAnimation from '@/components/EntryAnimation'
 
-const ENTRY_DURATION_MS = 2200
-
 type CompanyOption = { id: string; name: string; displayName?: string; roadmapOnly?: boolean }
 
 export default function LoginPage() {
@@ -16,6 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [showEntry, setShowEntry] = useState(false)
+  const [redirectOnComplete, setRedirectOnComplete] = useState<string | null>(null)
   const [companies, setCompanies] = useState<CompanyOption[]>([])
   const [companiesLoading, setCompaniesLoading] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null)
@@ -102,10 +101,7 @@ export default function LoginPage() {
         setShowEntry(true)
         const isRoadmapOnly = companyToSet?.roadmapOnly || (companyToSet?.name || '').toLowerCase().includes('roadmap')
         const redirectTo = isRoadmapOnly ? '/dashboard/roadmap' : '/home'
-        setTimeout(() => {
-          router.push(redirectTo)
-          window.location.href = redirectTo
-        }, ENTRY_DURATION_MS)
+        setRedirectOnComplete(redirectTo)
       } else {
         setError('Session not established. Please try again.')
         setLoading(false)
@@ -118,7 +114,14 @@ export default function LoginPage() {
 
   return (
     <>
-      {showEntry && <EntryAnimation />}
+      {showEntry && redirectOnComplete && (
+        <EntryAnimation
+          onComplete={() => {
+            router.push(redirectOnComplete)
+            window.location.href = redirectOnComplete
+          }}
+        />
+      )}
     <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: 'var(--fleet-navy, #0d1120)' }}>
       {/* Subtle animated background: slow-moving radial gradient + faint grid */}
       <div
@@ -140,7 +143,7 @@ export default function LoginPage() {
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <div className="mx-auto mb-4 w-full max-w-[340px]" style={{ aspectRatio: '520/112', minHeight: '112px', background: 'transparent' }}>
+          <div className="mx-auto mb-2 flex items-center justify-center" style={{ width: '320px', height: 'auto', background: 'transparent' }}>
             <video
               autoPlay
               muted
@@ -149,7 +152,7 @@ export default function LoginPage() {
               aria-label="FleetPulse"
               onCanPlay={(e) => e.currentTarget.play()}
               className="w-full h-full object-contain block"
-              style={{ width: '100%', height: '100%', background: 'transparent' }}
+              style={{ background: 'transparent', mixBlendMode: 'screen' }}
             >
               <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
             </video>
