@@ -128,6 +128,16 @@
   .animate-auth-scan {
     animation: authScan 7s linear infinite;
   }
+  /* Login/signup: sonar pulse rings behind logo */
+  @keyframes authPulseRing {
+    0% { transform: scale(0.6); opacity: 0.6; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+  .animate-auth-pulse-ring {
+    animation: authPulseRing 3s ease-out infinite;
+  }
+  .animate-auth-pulse-ring-2 { animation-delay: 1s; }
+  .animate-auth-pulse-ring-3 { animation-delay: 2s; }
 
   /* Entry / login success: sonar pulse + portal */
   @keyframes entrySonar {
@@ -186,6 +196,35 @@
   }
   .entry-ellipsis-dot-2 { animation-delay: 0.4s; }
   .entry-ellipsis-dot-3 { animation-delay: 0.8s; }
+  /* Entry stage 2: typewriter "ENTERING SYSTEM" letter by letter */
+  @keyframes entryTypewriter {
+    0% { width: 0; }
+    100% { width: 15ch; }
+  }
+  .animate-entry-typewriter {
+    animation: entryTypewriter 1.8s steps(15, end) 0.5s forwards;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: bottom;
+    width: 0;
+    overflow: hidden;
+    min-width: 0;
+  }
+  /* Entry stage 3: pulse burst */
+  @keyframes entryPulseBurst {
+    0% { width: 0; height: 0; opacity: 0.8; }
+    100% { width: 200vw; height: 200vw; opacity: 0; }
+  }
+  .animate-entry-pulse-burst {
+    animation: entryPulseBurst 600ms ease-out forwards;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(139,92,246,0.6) 40%, transparent 70%);
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
   
   .animate-fade-in {
     animation: fade-in 0.8s ease-out;

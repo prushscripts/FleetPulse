@@ -1,58 +1,115 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
+const STAGE1_MS = 500
+const STAGE2_MIN_MS = 2000
+const PULSE_MS = 600
 const FADEOUT_MS = 400
 
 export default function EntryAnimation({ onComplete }: { onComplete?: () => void }) {
-  const [exiting, setExiting] = useState(false)
+  const [stage, setStage] = useState<1 | 2 | 3 | 4>(1)
+  const [overlayOpacity, setOverlayOpacity] = useState(1)
   const onCompleteRef = useRef(onComplete)
+  const stage2TimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   onCompleteRef.current = onComplete
 
-  const handleEnded = () => {
-    setExiting(true)
-    setTimeout(() => {
-      onCompleteRef.current?.()
-    }, FADEOUT_MS)
+  // Stage 1: black screen 0–0.5s
+  useEffect(() => {
+    const t = setTimeout(() => setStage(2), STAGE1_MS)
+    return () => clearTimeout(t)
+  }, [])
+
+  // Stage 2: video + typewriter; trigger stage 3 on video end or after 2s
+  const handleVideoEnded = () => {
+    if (stage2TimerRef.current) {
+      clearTimeout(stage2TimerRef.current)
+      stage2TimerRef.current = null
+    }
+    setStage(3)
   }
+  useEffect(() => {
+    if (stage !== 2) return
+    stage2TimerRef.current = setTimeout(() => setStage(3), STAGE2_MIN_MS)
+    return () => {
+      if (stage2TimerRef.current) clearTimeout(stage2TimerRef.current)
+    }
+  }, [stage])
+
+  // Stage 3: pulse runs 600ms then stage 4
+  useEffect(() => {
+    if (stage !== 3) return
+    pulseTimerRef.current = setTimeout(() => setStage(4), PULSE_MS)
+    return () => {
+      if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current)
+    }
+  }, [stage])
+
+  // Stage 4: call onComplete at start, fade overlay 400ms
+  useEffect(() => {
+    if (stage !== 4) return
+    onCompleteRef.current?.()
+    setOverlayOpacity(0)
+  }, [stage])
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden transition-opacity ease-out"
+      className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden"
       style={{
-        backgroundColor: 'var(--fleet-navy, #0d1120)',
-        opacity: exiting ? 0 : 1,
-        transitionDuration: `${FADEOUT_MS}ms`,
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: '#080a14',
+        opacity: overlayOpacity,
+        transition: stage === 4 ? `opacity ${FADEOUT_MS}ms ease-out` : 'none',
       }}
     >
-      <div className="flex flex-col items-center justify-center">
-        <div className="w-[380px] h-[80px] flex items-center justify-center mb-6">
-          <video
-            autoPlay
-            muted
-            playsInline
-            aria-label="FleetPulse"
-            onCanPlay={(e) => e.currentTarget.play()}
-            onEnded={handleEnded}
-            className="max-w-full max-h-full w-auto h-auto object-contain"
-            style={{ width: '380px', height: 'auto' }}
+      {/* Stage 1: nothing (just black) */}
+
+      {/* Stage 2: video + "ENTERING SYSTEM" typewriter + dots */}
+      {stage >= 2 && stage < 3 && (
+        <div className="flex flex-col items-center justify-center">
+          <div
+            className="flex items-center justify-center mb-6"
+            style={{
+              width: 'min(600px, 80vw)',
+            }}
           >
-            <source src="/assets/possibleLogoLoop.mp4" type="video/mp4" />
-          </video>
+            <video
+              autoPlay
+              muted
+              playsInline
+              aria-label="FleetPulse"
+              onCanPlay={(e) => e.currentTarget.play()}
+              onEnded={handleVideoEnded}
+              style={{
+                width: '100%',
+                mixBlendMode: 'screen',
+                background: 'transparent',
+                display: 'block',
+              }}
+            >
+              <source src="/assets/possibleLogoLoop.mp4" type="video/mp4" />
+            </video>
+          </div>
+          <p
+            className="text-xs font-mono tracking-[0.4em] text-purple-400/80 flex items-center justify-center gap-0.5"
+            style={{ letterSpacing: '0.4em' }}
+          >
+            <span className="animate-entry-typewriter">ENTERING SYSTEM</span>
+            <span className="inline-flex gap-0.5 ml-1" aria-hidden>
+              <span className="entry-ellipsis-dot w-1 h-1 rounded-full bg-current inline-block" />
+              <span className="entry-ellipsis-dot entry-ellipsis-dot-2 w-1 h-1 rounded-full bg-current inline-block" />
+              <span className="entry-ellipsis-dot entry-ellipsis-dot-3 w-1 h-1 rounded-full bg-current inline-block" />
+            </span>
+          </p>
         </div>
-        <p
-          className="text-xs uppercase text-indigo-300/80 flex items-center gap-0.5"
-          style={{ letterSpacing: '4px' }}
-        >
-          ENTERING SYSTEM
-          <span className="inline-flex gap-0.5 ml-1" aria-hidden>
-            <span className="entry-ellipsis-dot w-1 h-1 rounded-full bg-current inline-block" />
-            <span className="entry-ellipsis-dot entry-ellipsis-dot-2 w-1 h-1 rounded-full bg-current inline-block" />
-            <span className="entry-ellipsis-dot entry-ellipsis-dot-3 w-1 h-1 rounded-full bg-current inline-block" />
-          </span>
-        </p>
-      </div>
+      )}
+
+      {/* Stage 3: pulse burst (single white/purple radial burst) */}
+      {stage === 3 && <div className="animate-entry-pulse-burst" aria-hidden />}
     </div>
   )
 }

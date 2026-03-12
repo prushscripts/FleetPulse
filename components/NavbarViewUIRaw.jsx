@@ -14,9 +14,10 @@ function getNavStyle(scrolled) {
     display: 'flex',
     alignItems: 'center',
     padding: '0 24px',
-    background: scrolled ? 'rgba(8,12,28,0.97)' : 'rgba(8,12,28,0.88)',
+    background: 'rgba(8,12,28,0.92)',
     backdropFilter: 'blur(16px)',
     borderBottom: scrolled ? '1px solid rgba(139, 92, 246, 0.25)' : '1px solid rgba(139, 92, 246, 0.15)',
+    overflow: 'hidden',
   }
 }
 
@@ -40,7 +41,7 @@ export function NavbarViewUIRaw(props) {
     }
   }, [profileOpen])
   const profileInitial = (props.currentCompanyName || 'U').charAt(0).toUpperCase()
-  return (<div className="navbar-root">
+  return (<div className="navbar-root overflow-hidden">
     {props.switchingTo && (
       <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-lg bg-gray-900/95 border border-purple-500/30 shadow-lg backdrop-blur-md animate-in fade-in duration-200">
         <div className="w-4 h-4 rounded-full border-2 border-purple-400 border-t-transparent animate-spin flex-shrink-0" />
@@ -49,21 +50,14 @@ export function NavbarViewUIRaw(props) {
     )}
     <nav style={navStyle}>
       <div className="max-w-7xl mx-auto w-full flex justify-between items-center" style={{ height: '100%' }}>
-        <Link href="/home" onClick={(e) => { e.preventDefault(); props.navigateTo('/home') }} style={{ display: 'flex', alignItems: 'center', flexShrink: 0, textDecoration: 'none', background: 'transparent' }}>
+        <Link href="/home" onClick={(e) => { e.preventDefault(); props.navigateTo('/home') }} style={{ width: '160px', background: 'transparent', border: 'none', padding: 0, display: 'flex', alignItems: 'center', flexShrink: 0, textDecoration: 'none' }}>
           <video
             autoPlay
             muted
             loop
             playsInline
             aria-label="FleetPulse logo"
-            style={{
-              width: '180px',
-              height: 'auto',
-              objectFit: 'contain',
-              flexShrink: 0,
-              mixBlendMode: 'screen',
-              background: 'transparent',
-            }}
+            style={{ width: '100%', mixBlendMode: 'screen', background: 'transparent', display: 'block' }}
           >
             <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
           </video>
@@ -188,7 +182,7 @@ export function NavbarViewUIRaw(props) {
 
         {props.mobileOpen && (
           <div className="sm:hidden pb-3 animate-fade-in-scale">
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-xl p-3 space-y-2">
+            <div className="rounded-2xl border border-white/10 bg-gray-900/95 backdrop-blur-md shadow-xl p-3 space-y-2">
               {props.showCompanySwitcher && (
                 <div className="mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
                   <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-2 block mb-2">Company</span>

@@ -100,7 +100,7 @@ export default function SignupPage() {
           }}
         />
       )}
-    <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: 'var(--fleet-navy, #0d1120)' }}>
+    <div className={`min-h-screen relative overflow-hidden ${showEntry ? 'pointer-events-none' : ''}`} style={{ backgroundColor: 'var(--fleet-navy, #0d1120)' }}>
       {/* Subtle animated background: slow-moving radial gradient + faint grid */}
       <div
         className="absolute inset-0 opacity-[0.07] animate-auth-grid"
@@ -111,17 +111,24 @@ export default function SignupPage() {
         }}
       />
       <div
-        className="absolute inset-0 opacity-40 animate-auth-grid"
+        className="absolute inset-0 animate-auth-grid"
         style={{
-          backgroundImage: 'linear-gradient(rgba(99, 102, 241, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.08) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.06) 1px, transparent 1px)',
           backgroundSize: '48px 48px',
+          opacity: 0.06,
         }}
       />
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-6">
-          <div className="mx-auto mb-2 flex items-center justify-center" style={{ width: '320px', height: 'auto', background: 'transparent' }}>
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-10">
+      <div className="w-full max-w-sm flex flex-col flex-1 justify-center">
+        <div className="text-center mb-6 relative flex flex-col items-center">
+          {/* Pulse rings behind logo */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[120px] flex items-center justify-center pointer-events-none" style={{ marginTop: '-0.5rem' }}>
+            <span className="absolute w-32 h-32 rounded-full border border-[rgba(139,92,246,0.15)] animate-auth-pulse-ring" />
+            <span className="absolute w-32 h-32 rounded-full border border-[rgba(139,92,246,0.15)] animate-auth-pulse-ring animate-auth-pulse-ring-2" />
+            <span className="absolute w-32 h-32 rounded-full border border-[rgba(139,92,246,0.15)] animate-auth-pulse-ring animate-auth-pulse-ring-3" />
+          </div>
+          <div className="relative z-10 mx-auto mb-2 flex items-center justify-center" style={{ width: '280px', background: 'transparent', border: 'none', padding: 0 }}>
             <video
               autoPlay
               muted
@@ -129,8 +136,7 @@ export default function SignupPage() {
               playsInline
               aria-label="FleetPulse"
               onCanPlay={(e) => e.currentTarget.play()}
-              className="w-full h-full object-contain block"
-              style={{ background: 'transparent', mixBlendMode: 'screen' }}
+              style={{ width: '100%', mixBlendMode: 'screen', background: 'transparent', display: 'block' }}
             >
               <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
             </video>
@@ -147,7 +153,7 @@ export default function SignupPage() {
         </div>
 
         {/* Signup Card — glassy */}
-        <div className="rounded-xl p-5 border border-white/[0.08] backdrop-blur-[12px] shadow-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
+        <div className="rounded-xl p-5 backdrop-blur-[12px]" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(139,92,246,0.12)', boxShadow: '0 0 60px rgba(109,40,217,0.08)' }}>
           <form onSubmit={handleSignup} className="space-y-4">
             {error && (
               <div className={`px-3 py-2 rounded-lg text-sm flex items-start gap-2 ${
@@ -286,6 +292,9 @@ export default function SignupPage() {
             </Link>
           </div>
         </div>
+        <p className="mt-8 text-center text-[10px] text-white/20 tracking-widest">
+          Secured by 256-bit SSL · FleetPulse v2.0 · © 2025 Prush Logistics Group LLC
+        </p>
       </div>
       </div>
     </div>
