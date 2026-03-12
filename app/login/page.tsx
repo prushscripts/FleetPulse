@@ -119,62 +119,54 @@ export default function LoginPage() {
   return (
     <>
       {showEntry && <EntryAnimation />}
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-indigo-950/95 via-gray-900 to-purple-950/95 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950/90">
-      {/* Animated grid - stronger */}
+    <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: 'var(--fleet-navy, #0d1120)' }}>
+      {/* Subtle animated background: slow-moving radial gradient + faint grid */}
       <div
-        className="absolute inset-0 opacity-60 dark:opacity-50 animate-auth-grid"
+        className="absolute inset-0 opacity-[0.07] animate-auth-grid"
         style={{
-          backgroundImage: 'linear-gradient(rgba(99, 102, 241, 0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.18) 1px, transparent 1px)',
-          backgroundSize: '56px 56px',
-        }}
-      />
-      <div
-        className="absolute inset-0 opacity-30 dark:opacity-20 animate-auth-grid"
-        style={{
-          backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(139, 92, 246, 0.06) 40px, rgba(139, 92, 246, 0.06) 41px), repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(99, 102, 241, 0.06) 40px, rgba(99, 102, 241, 0.06) 41px)',
+          backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% 50%, rgba(99, 102, 241, 0.4), transparent 70%), radial-gradient(ellipse 60% 40% at 80% 20%, rgba(139, 92, 246, 0.2), transparent 50%)',
           backgroundSize: '100% 100%',
-          animationDuration: '22s',
+          animationDuration: '20s',
         }}
       />
-      {/* Pulsing orbs */}
-      <div className="absolute top-1/4 left-1/4 w-[520px] h-[520px] rounded-full bg-indigo-500/25 dark:bg-indigo-500/20 blur-[120px] pointer-events-none animate-auth-pulse" />
-      <div className="absolute bottom-1/3 right-1/4 w-[440px] h-[440px] rounded-full bg-purple-500/22 dark:bg-purple-600/18 blur-[100px] pointer-events-none animate-auth-pulse-slow" />
-      <div className="absolute top-1/2 right-1/3 w-[380px] h-[380px] rounded-full bg-indigo-400/18 dark:bg-indigo-500/15 blur-[80px] pointer-events-none animate-auth-pulse" style={{ animationDelay: '1.5s' }} />
-      <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-400/40 to-transparent pointer-events-none animate-auth-scan" />
-      <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-400/25 to-transparent pointer-events-none animate-auth-scan" style={{ animationDelay: '4s', animationDuration: '12s' }} />
+      <div
+        className="absolute inset-0 opacity-40 animate-auth-grid"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(99, 102, 241, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.08) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+        }}
+      />
       {/* Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            poster="/assets/fleetpulse_poster.png"
-            aria-label="FleetPulse"
-            onCanPlay={(e) => e.currentTarget.play()}
-            style={{
-              width: '100%',
-              maxWidth: '340px',
-              height: 'auto',
-              display: 'block',
-              margin: '0 auto 20px auto',
-              borderRadius: '12px'
-            }}
-          >
-            <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
-          </video>
+          <div className="mx-auto mb-4 w-full max-w-[340px]" style={{ aspectRatio: '520/112', minHeight: '112px', background: 'transparent' }}>
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              aria-label="FleetPulse"
+              onCanPlay={(e) => e.currentTarget.play()}
+              className="w-full h-full object-contain block"
+              style={{ width: '100%', height: '100%', background: 'transparent' }}
+            >
+              <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
+            </video>
+          </div>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-indigo-400/80 mb-4" style={{ letterSpacing: '3px' }}>
+            Modern Fleet Management
+          </p>
           <h2 className="text-2xl font-bold text-white mb-1">
             Welcome Back
           </h2>
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-gray-400">
             Sign in to your account
           </p>
         </div>
 
-        {/* Login Card — compact, professional */}
-        <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-gray-700/80 p-5">
+        {/* Login Card — glassy */}
+        <div className="rounded-xl p-5 border border-white/[0.08] backdrop-blur-[12px] shadow-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
           <form onSubmit={handleLogin} className="space-y-4">
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-sm flex items-start gap-2">
@@ -297,7 +289,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center items-center gap-2 py-2.5 px-3 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full flex justify-center items-center gap-2 py-2.5 px-3 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 ease-out hover:brightness-105 hover:scale-[1.02] disabled:hover:brightness-100 disabled:hover:scale-100"
             >
               {loading ? (
                 <>
@@ -316,6 +308,10 @@ export default function LoginPage() {
                 </>
               )}
             </button>
+
+            <p className="mt-4 text-center text-[11px] text-gray-500 dark:text-gray-400">
+              🔒 Secure SSL Login · No credit card required · Cancel anytime
+            </p>
           </form>
 
           <p className="mt-4 text-center text-sm text-gray-400">
@@ -336,10 +332,6 @@ export default function LoginPage() {
               Back to home
             </Link>
           </div>
-        </div>
-
-        <div className="mt-4 text-center">
-          <span className="text-[11px] text-gray-400">Secure login with SSL</span>
         </div>
       </div>
       </div>

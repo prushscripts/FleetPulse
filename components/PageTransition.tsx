@@ -59,7 +59,7 @@ function TransitionOverlay({ isTransitioning, opacity }: { isTransitioning: bool
     <div style={{ ...overlayStyle, opacity }}>
       <video
         ref={videoRef}
-        src="/assets/possibleLogoLoop.mp4"
+        src="/assets/fleetpulse_logo_loop.mp4"
         muted
         playsInline
         style={{

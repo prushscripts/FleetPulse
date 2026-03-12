@@ -8,6 +8,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import ScrollReveal from '@/components/ScrollReveal'
 import ScrollBlur from '@/components/ScrollBlur'
 import ParallaxSection from '@/components/ParallaxSection'
+import HomeFeatureCards from '@/components/HomeFeatureCards'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -70,8 +71,8 @@ export default async function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
             <div className="max-w-3xl lg:max-w-4xl">
               <ScrollReveal delay={0}>
-                <div className="flex justify-center mb-6 sm:mb-8">
-                  <video autoPlay muted loop playsInline poster="/assets/fleetpulse_poster.png" aria-label="FleetPulse" className="h-20 sm:h-24 md:h-28 lg:h-32 w-auto max-w-[400px] sm:max-w-[480px] md:max-w-[520px] object-contain drop-shadow-2xl select-none">
+                <div className="flex justify-center mb-6 sm:mb-8 h-20 sm:h-24 md:h-28 lg:h-32 w-full max-w-[400px] sm:max-w-[480px] md:max-w-[520px] mx-auto">
+                  <video autoPlay muted loop playsInline aria-label="FleetPulse" className="h-full w-auto max-w-full object-contain drop-shadow-2xl select-none" style={{ width: 'auto', height: '100%' }}>
                     <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
                   </video>
                 </div>
@@ -92,7 +93,7 @@ export default async function Home() {
                 <div className="flex flex-col sm:flex-row gap-3 mb-6">
                   <Link
                     href="/signup"
-                    className="px-5 py-2.5 bg-white text-indigo-600 rounded-lg font-medium text-sm hover:bg-indigo-50 transition-all shadow-lg hover:shadow-xl cursor-pointer inline-flex items-center justify-center gap-2"
+                    className="px-5 py-2.5 bg-white text-indigo-600 rounded-lg font-medium text-sm hover:bg-indigo-50 transition-all duration-150 ease-out shadow-lg hover:shadow-xl hover:brightness-105 hover:scale-[1.02] cursor-pointer inline-flex items-center justify-center gap-2"
                   >
                     <span>Start Free Trial</span>
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -167,69 +168,7 @@ export default async function Home() {
                     </div>
                   </ScrollReveal>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[
-                      {
-                        title: 'Vehicle Tracking',
-                        description: 'Track mileage, oil changes, and maintenance schedules for all your vehicles.',
-                        icon: '🚗',
-                      },
-                      {
-                        title: 'Driver Management',
-                        description: 'Assign drivers to vehicles and track driver assignments and performance.',
-                        icon: '👤',
-                      },
-                      {
-                        title: 'Digital Inspections',
-                        description: 'Conduct pre-trip and post-trip inspections with photo documentation.',
-                        icon: '📋',
-                      },
-                      {
-                        title: 'Service Records',
-                        description: 'Maintain complete service history with costs and provider information.',
-                        icon: '🔧',
-                      },
-                      {
-                        title: 'Issue Tracking',
-                        description: 'Report and track vehicle issues with priority levels and status updates.',
-                        icon: '⚠️',
-                      },
-                      {
-                        title: 'Document Management',
-                        description: 'Store and track important documents with expiration date reminders.',
-                        icon: '📄',
-                      },
-                      {
-                        title: 'Fleet Health Dashboard',
-                        description: 'Monitor fleet health with oil change percentages and inspection statistics.',
-                        icon: '📊',
-                      },
-                      {
-                        title: 'CSV Import',
-                        description: 'Bulk import vehicles from CSV files for quick setup.',
-                        icon: '📥',
-                      },
-                      {
-                        title: 'Mobile Friendly',
-                        description: 'Access your fleet data anywhere with our responsive design.',
-                        icon: '📱',
-                      },
-                    ].map((feature, idx) => (
-                      <ScrollReveal key={idx} delay={idx * 50}>
-                        <div className="group relative bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 cursor-default select-none overflow-hidden">
-                          {/* Subtle background change on hover - no border change */}
-                          <div className="absolute inset-0 bg-indigo-50/0 dark:bg-indigo-900/0 group-hover:bg-indigo-50/30 dark:group-hover:bg-indigo-900/10 rounded-lg transition-colors duration-200"></div>
-                          <div className="relative">
-                            <div className="text-3xl mb-3 transform group-hover:scale-110 transition-transform duration-200">{feature.icon}</div>
-                            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200">
-                              {feature.title}
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed select-none cursor-default">{feature.description}</p>
-                          </div>
-                        </div>
-                      </ScrollReveal>
-                    ))}
-                  </div>
+                  <HomeFeatureCards />
                 </div>
               </ParallaxSection>
             </ScrollBlur>
@@ -427,8 +366,8 @@ export default async function Home() {
             
             <ScrollReveal delay={0}>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 py-8">
-                <div className="flex justify-center mb-6">
-                  <video autoPlay muted loop playsInline poster="/assets/fleetpulse_poster.png" aria-label="FleetPulse" className="h-16 sm:h-20 md:h-24 w-auto max-w-[340px] sm:max-w-[380px] object-contain mx-auto drop-shadow-xl select-none">
+                <div className="flex justify-center mb-6 h-16 sm:h-20 md:h-24 w-full max-w-[340px] sm:max-w-[380px] mx-auto">
+                  <video autoPlay muted loop playsInline aria-label="FleetPulse" className="h-full w-auto max-w-full object-contain drop-shadow-xl select-none" style={{ width: 'auto', height: '100%' }}>
                     <source src="/assets/fleetpulse_logo_loop.mp4" type="video/mp4" />
                   </video>
                 </div>
@@ -441,13 +380,13 @@ export default async function Home() {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                   <Link
                     href="/signup"
-                    className="inline-block px-8 py-3.5 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50 transition-all shadow-xl hover:shadow-2xl hover:scale-105 transform duration-300 cursor-pointer"
+                    className="inline-block px-8 py-3.5 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50 transition-all duration-150 ease-out shadow-xl hover:shadow-2xl hover:brightness-105 hover:scale-[1.02] cursor-pointer"
                   >
                     Start Your Free Trial
                   </Link>
                   <a
                     href="mailto:fleetpulse@fastmail.com"
-                    className="inline-block px-8 py-3.5 bg-indigo-700/90 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-indigo-800 transition-all border-2 border-white/40 hover:border-white/60 shadow-xl hover:shadow-2xl hover:scale-105 transform duration-300 cursor-pointer"
+                    className="inline-block px-8 py-3.5 bg-indigo-700/90 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-indigo-800 transition-all duration-150 ease-out border-2 border-white/40 hover:border-white/60 shadow-xl hover:shadow-2xl hover:brightness-105 hover:scale-[1.02] cursor-pointer"
                   >
                     Contact Us
                   </a>

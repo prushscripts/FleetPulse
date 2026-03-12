@@ -262,6 +262,18 @@
   .animate-entry-grid {
     animation: entryGridIn 1.2s ease-out forwards;
   }
+
+  /* Entering system ellipsis: three dots fade in one by one, 0.4s stagger loop */
+  @keyframes entryEllipsis {
+    0%, 20% { opacity: 0.2; }
+    30%, 50% { opacity: 1; }
+    60%, 100% { opacity: 0.2; }
+  }
+  .entry-ellipsis-dot {
+    animation: entryEllipsis 1.2s ease-in-out infinite;
+  }
+  .entry-ellipsis-dot-2 { animation-delay: 0.4s; }
+  .entry-ellipsis-dot-3 { animation-delay: 0.8s; }
   
   .animate-fade-in {
     animation: fade-in 0.8s ease-out;
@@ -341,11 +353,23 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Global button consistency: border-radius, padding, hover brightness + scale 1.02, 150ms ease */
+  .btn-consistent {
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    transition: filter 150ms ease, transform 150ms ease;
+  }
+  .btn-consistent:hover {
+    filter: brightness(1.05);
+    transform: scale(1.02);
+  }
 }
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --fleet-navy: #0d1120;
 }
 
 @media (prefers-color-scheme: dark) {
