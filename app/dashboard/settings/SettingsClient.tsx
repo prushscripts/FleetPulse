@@ -31,6 +31,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   const [addCompanyKey, setAddCompanyKey] = useState('')
   const [addCompanyLoading, setAddCompanyLoading] = useState(false)
   const [addCompanyError, setAddCompanyError] = useState<string | null>(null)
+  const [pendingAddCompany, setPendingAddCompany] = useState<{ id: string; name: string } | null>(null)
   const [editingDisplayNameId, setEditingDisplayNameId] = useState<string | null>(null)
   const [editingDisplayNameValue, setEditingDisplayNameValue] = useState('')
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
@@ -239,36 +240,59 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     router.refresh()
   }
 
-  const handleAddCompany = async (e: React.FormEvent) => {
+  const lookupCompanyByCode = async (code: string): Promise<{ id: string; name: string } | null> => {
+    const key = code.trim().toLowerCase()
+    if (!key) return null
+    let resolved: { id: string; name: string } | null = null
+    const { data: rpcRows, error: rpcError } = await supabase.rpc('get_company_by_invite_code', { invite_code: key })
+    if (!rpcError && Array.isArray(rpcRows) && rpcRows.length) resolved = rpcRows[0] as { id: string; name: string }
+    if (!resolved) {
+      const { data: d1 } = await supabase.from('companies').select('id, name').eq('auth_key', key).maybeSingle()
+      const { data: d2 } = await supabase.from('companies').select('id, name').eq('auth_key', code.trim()).maybeSingle()
+      resolved = d1 || d2 || null
+    }
+    return resolved
+  }
+
+  const handleAddCompanyLookup = async (e: React.FormEvent) => {
     e.preventDefault()
-    const key = addCompanyKey.trim()
+    const key = addCompanyKey.trim().toLowerCase()
     if (!key) {
-      setAddCompanyError('Enter a company authentication key.')
+      setAddCompanyError('Enter a company invite code.')
       return
     }
     setAddCompanyLoading(true)
     setAddCompanyError(null)
+    setPendingAddCompany(null)
     try {
-      let resolved: { id: string; name: string; auth_key?: string } | null = null
-      const { data: rpcRows, error: rpcError } = await supabase.rpc('get_company_by_invite_code', { invite_code: key })
-      if (!rpcError && Array.isArray(rpcRows) && rpcRows.length) resolved = rpcRows[0] as { id: string; name: string; auth_key?: string }
+      const resolved = await lookupCompanyByCode(addCompanyKey.trim())
       if (!resolved) {
-        const { data: d1 } = await supabase.from('companies').select('id, name, auth_key').eq('auth_key', key).maybeSingle()
-        const { data: d2 } = await supabase.from('companies').select('id, name, auth_key').eq('auth_key', key.toLowerCase()).maybeSingle()
-        resolved = d1 || d2 || null
-      }
-      if (!resolved) {
-        setAddCompanyError('Invalid company key. Check the key and try again.')
+        setAddCompanyError('Company not found. Check the code and try again.')
         setAddCompanyLoading(false)
         return
       }
-      if (companies.some((c) => c.id === resolved!.id)) {
+      if (companies.some((c) => c.id === resolved.id)) {
         setAddCompanyError('You already have access to this company.')
         setAddCompanyLoading(false)
         return
       }
-      const authKey = (resolved.auth_key ?? '').toLowerCase()
-      const roadmapOnly = authKey === 'prushlogisticsroadmap'
+      setPendingAddCompany(resolved)
+    } catch (err: any) {
+      setAddCompanyError(err?.message || 'Lookup failed.')
+    } finally {
+      setAddCompanyLoading(false)
+    }
+  }
+
+  const handleAddCompanyConfirm = async () => {
+    const resolved = pendingAddCompany
+    if (!resolved) return
+    setAddCompanyLoading(true)
+    setAddCompanyError(null)
+    try {
+      const configRes = await fetch(`/api/company-config?company_id=${encodeURIComponent(resolved.id)}`)
+      const config = configRes.ok ? await configRes.json() : {}
+      const roadmapOnly = !!config.roadmap_only
       const merged: CompanyEntry[] = [...companies, { id: resolved.id, name: resolved.name, displayName: resolved.name, roadmapOnly }]
       const { error: updateError } = await supabase.auth.updateUser({
         data: { company_id: resolved.id, company_name: resolved.name, companies: merged },
@@ -278,6 +302,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
       setCompanyId(resolved.id)
       setCompanyName(resolved.name)
       setAddCompanyKey('')
+      setPendingAddCompany(null)
       setMessage({ type: 'success', text: `Added "${resolved.name}". Redirecting…` })
       setTimeout(() => {
         window.location.href = roadmapOnly ? '/dashboard/roadmap' : '/home'
@@ -286,6 +311,24 @@ export default function SettingsClient({ user }: SettingsClientProps) {
       setAddCompanyError(err?.message || 'Failed to add company.')
     } finally {
       setAddCompanyLoading(false)
+    }
+  }
+
+  const handleSwitchCompany = async (c: CompanyEntry) => {
+    if (companyId === c.id) return
+    setCompanyActivating(true)
+    setCompanyError(null)
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { company_id: c.id, company_name: c.displayName ?? c.name },
+      })
+      if (error) throw error
+      setMessage({ type: 'success', text: 'Switching company…' })
+      setTimeout(() => { window.location.href = '/dashboard' }, 400)
+    } catch (err: any) {
+      setCompanyError(err?.message || 'Switch failed.')
+    } finally {
+      setCompanyActivating(false)
     }
   }
 
@@ -542,6 +585,12 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                   <ul className="space-y-2 mb-6">
                     {companies.map((c) => (
                       <li key={c.id} className="flex flex-wrap items-center gap-2 sm:gap-3 py-3 px-4 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
+                        <span
+                          className="flex-shrink-0 w-3 h-3 rounded-full"
+                          title={companyId === c.id ? 'Active company' : 'Inactive'}
+                          aria-hidden
+                          style={{ backgroundColor: companyId === c.id ? 'rgb(99 102 241)' : 'rgb(156 163 175)' }}
+                        />
                         <button
                           type="button"
                           onClick={() => { setLogoUploadForId(c.id); logoInputRef.current?.click() }}
@@ -581,6 +630,16 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                         {companyId === c.id && (
                           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">Current</span>
                         )}
+                        {companyId !== c.id && (
+                          <button
+                            type="button"
+                            onClick={() => handleSwitchCompany(c)}
+                            disabled={companyActivating}
+                            className="text-xs px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium"
+                          >
+                            Switch to this company
+                          </button>
+                        )}
                         {editingDisplayNameId !== c.id && (
                           <button
                             type="button"
@@ -593,7 +652,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                         )}
                         {deleteConfirmId === c.id ? (
                           <span className="flex items-center gap-1 ml-auto">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">Remove?</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Leave this company?</span>
                             <button type="button" onClick={() => handleDeleteCompany(c)} className="text-xs px-2 py-1 bg-red-600 text-white rounded">Yes</button>
                             <button type="button" onClick={() => setDeleteConfirmId(null)} className="text-xs px-2 py-1 text-gray-600 dark:text-gray-400">No</button>
                           </span>
@@ -602,11 +661,11 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                             type="button"
                             onClick={() => setDeleteConfirmId(c.id)}
                             className="ml-auto p-1.5 rounded-lg text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            title="Remove company from account"
-                            aria-label="Delete company"
+                            title="Leave company"
+                            aria-label="Leave company"
                           >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1z" />
                             </svg>
                           </button>
                         )}
@@ -615,26 +674,50 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                   </ul>
                   <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Add another company</p>
-                    <form onSubmit={handleAddCompany} className="flex flex-col sm:flex-row gap-3">
-                      <div className="flex-1">
-                        <label className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                          Company invite code
-                          <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-gray-400 text-gray-500 cursor-help text-[10px] font-bold" title="If you don't have an ID, contact your company administration to acquire one.">?</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={addCompanyKey}
-                          onChange={(e) => setAddCompanyKey(e.target.value)}
-                          placeholder=""
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                        />
+                    {pendingAddCompany ? (
+                      <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
+                        <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200">Company found: {pendingAddCompany.name}</p>
+                        <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">Add this company to your account?</p>
+                        <div className="flex gap-2 mt-3">
+                          <button
+                            type="button"
+                            onClick={handleAddCompanyConfirm}
+                            disabled={addCompanyLoading}
+                            className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
+                          >
+                            {addCompanyLoading ? 'Adding…' : 'Yes, add company'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setPendingAddCompany(null); setAddCompanyError(null); }}
+                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-end">
-                        <button type="submit" disabled={addCompanyLoading} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium whitespace-nowrap">
-                          {addCompanyLoading ? 'Adding…' : 'Add company'}
-                        </button>
-                      </div>
-                    </form>
+                    ) : (
+                      <form onSubmit={handleAddCompanyLookup} className="flex flex-col sm:flex-row gap-3">
+                        <div className="flex-1">
+                          <label className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                            Company invite code
+                            <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-gray-400 text-gray-500 cursor-help text-[10px] font-bold" title="If you don't have an ID, contact your company administration to acquire one.">?</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={addCompanyKey}
+                            onChange={(e) => setAddCompanyKey(e.target.value)}
+                            placeholder="Enter code (case-insensitive)"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <button type="submit" disabled={addCompanyLoading} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium whitespace-nowrap">
+                            {addCompanyLoading ? 'Looking up…' : 'Find company'}
+                          </button>
+                        </div>
+                      </form>
+                    )}
                     {addCompanyError && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{addCompanyError}</p>}
                   </div>
                 </>

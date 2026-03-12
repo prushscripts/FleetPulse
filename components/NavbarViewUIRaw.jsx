@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 
 function getNavStyle(scrolled) {
   return {
@@ -20,11 +20,33 @@ function getNavStyle(scrolled) {
   }
 }
 
+function truncateName(name, max = 14) {
+  if (!name) return 'Company'
+  return name.length > max ? name.slice(0, max) + '…' : name
+}
+
 export function NavbarViewUIRaw(props) {
   const CompanyLogoImage = props.CompanyLogoImage
   const navStyle = getNavStyle(props.scrolled)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const profileRef = useRef(null)
+  useEffect(() => {
+    const onOutside = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false)
+    }
+    if (profileOpen) {
+      document.addEventListener('mousedown', onOutside)
+      return () => document.removeEventListener('mousedown', onOutside)
+    }
+  }, [profileOpen])
+  const profileInitial = (props.currentCompanyName || 'U').charAt(0).toUpperCase()
   return (<div className="navbar-root">
-    {props.switchingTo && (<div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gray-900/95 dark:bg-gray-950/95 backdrop-blur-md transition-opacity duration-300"><div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mb-4" /><p className="text-sm font-medium text-gray-200 dark:text-gray-300">Switching to {props.switchingTo}</p></div>)}
+    {props.switchingTo && (
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-lg bg-gray-900/95 border border-purple-500/30 shadow-lg backdrop-blur-md animate-in fade-in duration-200">
+        <div className="w-4 h-4 rounded-full border-2 border-purple-400 border-t-transparent animate-spin flex-shrink-0" />
+        <span className="text-sm font-medium text-white/90">Switching to {props.switchingTo}…</span>
+      </div>
+    )}
     <nav style={navStyle}>
       <div className="max-w-7xl mx-auto w-full flex justify-between items-center" style={{ height: '100%' }}>
         <Link href="/home" onClick={(e) => { e.preventDefault(); props.navigateTo('/home') }} style={{ display: 'flex', alignItems: 'center', flexShrink: 0, textDecoration: 'none', background: 'transparent' }}>
@@ -65,53 +87,47 @@ export function NavbarViewUIRaw(props) {
                 )
               })}
         </div>
-        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 ml-2 sm:ml-6">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-2 sm:ml-6">
+            <button
+              type="button"
+              onClick={() => props.setMobileOpen((v) => !v)}
+              className="sm:hidden p-2 rounded-full bg-white/5 border border-white/10 text-white/80 hover:text-white hover:border-white/20 transition-all w-8 h-8 flex items-center justify-center"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
             {props.showCompanySwitcher && (
               <div className="relative hidden sm:block">
                 <button
                   type="button"
                   onClick={() => props.setCompanySwitcherOpen((v) => !v)}
-                  className="flex items-center gap-2.5 pl-2 pr-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-all shadow-sm min-w-[160px]"
+                  className="flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 text-xs font-medium text-white/80 hover:text-white hover:border-white/20 transition-all"
                   aria-label="Switch company"
                 >
-                  {props.currentCompany ? (
-                    <CompanyLogoImage company={props.currentCompany} className="w-7 h-7 rounded-md flex-shrink-0 object-contain bg-gray-100 dark:bg-gray-700" />
-                  ) : (
-                    <span className="w-7 h-7 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-600">
-                      <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                    </span>
-                  )}
-                  <span className="max-w-[120px] truncate">
-                    {props.currentCompanyName || 'Company'}
-                  </span>
-                  <svg className={`w-4 h-4 text-gray-500 flex-shrink-0 transition-transform ${props.companySwitcherOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <span className="max-w-[140px] truncate">{truncateName(props.currentCompanyName || 'Company', 14)}</span>
+                  <svg className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${props.companySwitcherOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
                 {props.companySwitcherOpen && (
                   <>
                     <div className="fixed inset-0 z-30" aria-hidden onClick={() => props.setCompanySwitcherOpen(false)} />
-                    <div className="absolute right-0 top-full mt-1.5 z-40 min-w-[220px] py-1.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl">
+                    <div className="absolute right-0 top-full mt-1.5 z-40 min-w-[200px] py-1.5 rounded-xl border border-white/10 bg-gray-900/95 backdrop-blur-md shadow-xl">
                       {props.companies.map((c) => (
                         <button
                           key={c.id}
                           type="button"
                           onClick={() => props.handleSwitchCompany(c)}
-                          className={`w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm transition-colors ${
-                            c.id === props.currentCompanyId
-                              ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium'
-                              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/80'
-                          }`}
+                          className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm text-white/90 hover:bg-white/10 transition-colors"
                         >
-                          <CompanyLogoImage company={c} className="w-6 h-6 rounded flex-shrink-0 object-contain bg-gray-100 dark:bg-gray-700" />
-                          <span className="truncate flex-1">{c.displayName ?? c.name}</span>
-                          {c.id === props.currentCompanyId && (
-                            <svg className="w-4 h-4 flex-shrink-0 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
+                          {c.id === props.currentCompanyId ? (
+                            <span className="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0" aria-hidden />
+                          ) : (
+                            <span className="w-2 h-2 flex-shrink-0" aria-hidden />
                           )}
+                          <span className="truncate flex-1">{c.displayName ?? c.name}</span>
                         </button>
                       ))}
                     </div>
@@ -119,25 +135,11 @@ export function NavbarViewUIRaw(props) {
                 )}
               </div>
             )}
-            <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => props.setMobileOpen((v) => !v)}
-              className="sm:hidden p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-              aria-label="Toggle menu"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
             <Link
               href="/dashboard/settings"
               onClick={(e) => { e.preventDefault(); props.navigateTo('/dashboard/settings') }}
-              className={`p-2 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 ${
-                props.pathname.startsWith('/dashboard/settings')
-                  ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
+              className="hidden sm:flex w-8 h-8 items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/80 hover:text-white hover:border-white/20 transition-all flex-shrink-0"
+              title="Settings"
               aria-label="Settings"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -147,7 +149,7 @@ export function NavbarViewUIRaw(props) {
             </Link>
             <button
               onClick={props.toggleTheme}
-              className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 transform hover:scale-110 active:scale-95"
+              className="hidden sm:flex w-8 h-8 items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/80 hover:text-white hover:border-white/20 transition-all flex-shrink-0"
               aria-label="Toggle theme"
             >
               {props.theme === 'dark' ? (
@@ -160,12 +162,26 @@ export function NavbarViewUIRaw(props) {
                 </svg>
               )}
             </button>
-            <button
-              onClick={props.handleLogout}
-              className="text-xs text-gray-400 hover:text-white border border-white/10 hover:border-white/30 rounded-lg px-3 py-1.5 transition-all duration-150"
-            >
-              Logout
-            </button>
+            <div className="relative hidden sm:block" ref={profileRef}>
+              <button
+                type="button"
+                onClick={() => setProfileOpen((v) => !v)}
+                className="w-8 h-8 rounded-full bg-indigo-600/40 border border-indigo-400/30 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 hover:bg-indigo-600/60 transition-all"
+                aria-label="Profile menu"
+              >
+                {profileInitial}
+              </button>
+              {profileOpen && (
+                <div className="absolute right-0 top-full mt-1.5 z-40 min-w-[120px] py-1 rounded-lg border border-white/10 bg-gray-900/95 backdrop-blur-md shadow-xl">
+                  <button
+                    type="button"
+                    onClick={() => { setProfileOpen(false); props.handleLogout() }}
+                    className="w-full text-left px-4 py-2 text-sm text-white/90 hover:bg-white/10 transition-colors"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -309,6 +325,13 @@ export function NavbarViewUIRaw(props) {
                     </svg>
                   )}
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => { props.setMobileOpen(false); props.handleLogout() }}
+                  className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all"
+                >
+                  <span className="flex-1 text-left">Sign out</span>
+                </button>
               </div>
             </div>
           </div>

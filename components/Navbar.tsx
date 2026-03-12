@@ -1,8 +1,7 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/components/ThemeProvider'
 import { NavbarView } from '@/components/NavbarView'
@@ -85,6 +84,7 @@ export default function Navbar() {
     companies.length >= 2
 
   const [companySettings, setCompanySettings] = useState<CompanySetting | null>(null)
+  const companyConfigRef = useRef<Record<string, unknown> | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -110,8 +110,33 @@ export default function Navbar() {
     load()
   }, [supabase, pathname])
 
+  useEffect(() => {
+    if (!currentCompanyId) {
+      setCompanyConfig(null)
+      companyConfigRef.current = null
+      return
+    }
+    let cancelled = false
+    fetch(`/api/company-config?company_id=${encodeURIComponent(currentCompanyId)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((config) => {
+        if (!cancelled && config) {
+          companyConfigRef.current = config
+          setCompanyConfig(config)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          companyConfigRef.current = null
+          setCompanyConfig(null)
+        }
+      })
+    return () => { cancelled = true }
+  }, [currentCompanyId])
+
   const [switchingTo, setSwitchingTo] = useState<string | null>(null)
   const [navbarScrolled, setNavbarScrolled] = useState(false)
+  const [companyConfig, setCompanyConfig] = useState<Record<string, unknown> | null>(null)
 
   useEffect(() => {
     const onScroll = () => setNavbarScrolled(typeof window !== 'undefined' && window.scrollY > 60)
@@ -132,9 +157,19 @@ export default function Navbar() {
       })
       setCompanySwitcherOpen(false)
       setSwitchingTo(displayName)
-      const isRoadmapOnly = company.roadmapOnly || (company.name || '').toLowerCase().includes('roadmap')
+      let roadmapOnly = company.roadmapOnly ?? (company.name || '').toLowerCase().includes('roadmap')
+      try {
+        const res = await fetch(`/api/company-config?company_id=${encodeURIComponent(company.id)}`)
+        if (res.ok) {
+          const config = await res.json()
+          setCompanyConfig(config)
+          if (config.roadmap_only !== undefined) roadmapOnly = !!config.roadmap_only
+        }
+      } catch (_) {
+        // non-blocking
+      }
       setTimeout(() => {
-        window.location.href = isRoadmapOnly ? '/dashboard/roadmap' : '/home'
+        window.location.href = roadmapOnly ? '/dashboard/roadmap' : '/home'
       }, 420)
     } catch {
       setCompanySwitcherOpen(false)
@@ -157,7 +192,8 @@ export default function Navbar() {
     ? companySettings.customTemplate.tabs
     : null
 
-  const TAB_KEY_MAP = ((): Record<string, { label: string; href: string }> => ({
+  const TAB_ORDER = ['home', 'vehicles', 'drivers', 'inspections', 'about', 'roadmap', 'control_panel', 'admin'] as const
+  const TAB_KEY_MAP: Record<string, { label: string; href: string }> = {
     home: { label: 'Home', href: '/home' },
     vehicles: { label: 'Vehicles', href: '/dashboard' },
     drivers: { label: 'Drivers', href: '/dashboard/drivers' },
@@ -165,12 +201,42 @@ export default function Navbar() {
     about: { label: 'About', href: '/dashboard/about' },
     roadmap: { label: 'Roadmap', href: '/dashboard/roadmap' },
     control_panel: { label: 'Control Panel', href: '/dashboard/control-panel' },
-  }))()
+    admin: { label: 'Admin', href: '/dashboard/admin' },
+  }
+
+  const configEnabledTabs = (companyConfig?.enabled_tabs as string[] | undefined) ?? null
+  const configCustomLabels = (companyConfig?.custom_tab_labels as Record<string, string> | undefined) ?? null
+  const configInspections = companyConfig?.inspections_enabled as boolean | undefined
+  const configRoadmap = companyConfig?.roadmap_only as boolean | undefined
+  const inspectionsEnabledFromConfig = configInspections !== undefined ? configInspections : companySettings?.inspectionsEnabled !== false
+  const showRoadmapFromConfig = configRoadmap !== undefined ? configRoadmap : showRoadmap
 
   let navItems: { label: string; href: string }[]
-  if (customTabs?.length) {
+  if (configEnabledTabs?.length) {
+    const ordered = TAB_ORDER.filter((key) => configEnabledTabs.includes(key))
+    navItems = ordered
+      .filter((key) => {
+        if (key === 'inspections' && !inspectionsEnabledFromConfig) return false
+        if (key === 'roadmap' && !showRoadmapFromConfig) return false
+        if (key === 'control_panel' && !currentCompanyId) return false
+        if (key === 'admin' && !isAdmin) return false
+        return true
+      })
+      .map((key) => {
+        const item = TAB_KEY_MAP[key]
+        if (!item) return null
+        const label = configCustomLabels?.[key] ?? item.label
+        return { label, href: item.href }
+      })
+      .filter(Boolean) as { label: string; href: string }[]
+  } else if (customTabs?.length) {
     navItems = customTabs
-      .map((key) => TAB_KEY_MAP[key])
+      .map((key) => {
+        const item = TAB_KEY_MAP[key]
+        if (!item) return null
+        const label = configCustomLabels?.[key] ?? item.label
+        return { label, href: item.href }
+      })
       .filter(Boolean) as { label: string; href: string }[]
     if (!navItems.some((i) => i.href === '/dashboard/settings')) {
       if (pathname.startsWith('/dashboard/settings')) {
@@ -179,13 +245,13 @@ export default function Navbar() {
     }
   } else {
     navItems = [
-      { label: 'Home', href: '/home' },
-      { label: 'Vehicles', href: '/dashboard' },
-      { label: 'Drivers', href: '/dashboard/drivers' },
-      ...(inspectionsEnabled ? [{ label: 'Inspections', href: '/dashboard/inspections' }] : []),
-      { label: 'About', href: '/dashboard/about' },
-      ...(showRoadmap ? [{ label: 'Roadmap', href: '/dashboard/roadmap' }] : []),
-      ...(currentCompanyId ? [{ label: 'Control Panel', href: '/dashboard/control-panel' }] : []),
+      { label: configCustomLabels?.home ?? 'Home', href: '/home' },
+      { label: configCustomLabels?.vehicles ?? 'Vehicles', href: '/dashboard' },
+      { label: configCustomLabels?.drivers ?? 'Drivers', href: '/dashboard/drivers' },
+      ...(inspectionsEnabledFromConfig ? [{ label: configCustomLabels?.inspections ?? 'Inspections', href: '/dashboard/inspections' }] : []),
+      { label: configCustomLabels?.about ?? 'About', href: '/dashboard/about' },
+      ...(showRoadmapFromConfig ? [{ label: configCustomLabels?.roadmap ?? 'Roadmap', href: '/dashboard/roadmap' }] : []),
+      ...(currentCompanyId ? [{ label: configCustomLabels?.control_panel ?? 'Control Panel', href: '/dashboard/control-panel' }] : []),
     ]
     if (pathname.startsWith('/dashboard/settings')) {
       navItems.push({ label: 'Settings', href: '/dashboard/settings' })
@@ -193,7 +259,7 @@ export default function Navbar() {
   }
 
   if (isAdmin && !navItems.some((i) => i.href === '/dashboard/admin')) {
-    navItems.push({ label: 'Admin', href: '/dashboard/admin' })
+    navItems.push({ label: configCustomLabels?.admin ?? 'Admin', href: '/dashboard/admin' })
   }
 
   return (
@@ -218,6 +284,7 @@ export default function Navbar() {
       CompanyLogoImage={CompanyLogoImage}
       navigateTo={navigateTo}
       scrolled={navbarScrolled}
+      companyConfig={companyConfig}
     />
   )
 }
