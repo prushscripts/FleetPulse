@@ -654,80 +654,65 @@ export default function DashboardClient(
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Fleet header - compact single row */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 py-3 px-4 rounded-xl border border-gray-200/80 dark:border-gray-700/80 bg-white/95 dark:bg-gray-800/95 shadow-sm">
-          <div className="flex flex-wrap items-baseline gap-3 sm:gap-4">
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white tracking-tight">
-              Fleet Dashboard
-            </h1>
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              <span className="font-medium text-indigo-600 dark:text-indigo-400">{vehicles.length}</span> vehicles
-              <span className="mx-2 text-gray-300 dark:text-gray-600">·</span>
-              <span className="text-gray-500 dark:text-gray-500 capitalize">{tier}</span>
-              <span className="text-gray-400 dark:text-gray-500"> (limit {TIER_CONFIG[tier].maxVehicles})</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowImportModal(true)}
-              disabled={!TIER_CONFIG[tier].features.csvImport}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-            >
-              Import CSV
-            </button>
-            {canAddVehicle ? (
-              <Link
-                href="/dashboard/vehicles/new"
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
-              >
-                + Add Vehicle
-              </Link>
-            ) : (
+        {/* Header: Fleet Overview + actions on right */}
+        <header className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white tracking-tight">
+                Fleet Overview
+              </h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {vehicles.length} vehicle{vehicles.length === 1 ? '' : 's'} • {tier.charAt(0).toUpperCase() + tier.slice(1)} Plan
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
               <button
-                type="button"
-                onClick={() =>
-                  showToast(
-                    'Vehicle limit reached',
-                    `Your ${tier} tier supports up to ${TIER_CONFIG[tier].maxVehicles} vehicles.`
-                  )
-                }
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-400"
+                onClick={() => setShowImportModal(true)}
+                disabled={!TIER_CONFIG[tier].features.csvImport}
+                className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
               >
-                + Add Vehicle
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Import CSV
               </button>
-            )}
+              {canAddVehicle ? (
+                <Link
+                  href="/dashboard/vehicles/new"
+                  className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Vehicle
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    showToast(
+                      'Vehicle limit reached',
+                      `Your ${tier} tier supports up to ${TIER_CONFIG[tier].maxVehicles} vehicles.`
+                    )
+                  }
+                  className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-400"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Vehicle
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        </header>
 
-        {/* Territory Toggle - All / New York / DMV / Other */}
-        <div className="mb-4">
-          <div className="inline-flex gap-1 p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/60 dark:border-gray-700/60">
-            {(['all', 'New York', 'DMV', 'Other'] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setTerritoryFilter(value)}
-                className={`relative px-4 py-2.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
-                  territoryFilter === value
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30 scale-[1.02]'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60'
-                }`}
-              >
-                <span className="relative z-10">{value === 'all' ? 'All' : value}</span>
-                {territoryFilter === value && (
-                  <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 animate-pulse opacity-20" aria-hidden />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Premium Search and Filter Section */}
+        {/* Single toolbar: search + filter chips + sort + view toggle */}
         <div className="mb-6 flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+            <div className="flex-1 relative min-w-0">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
@@ -736,130 +721,121 @@ export default function DashboardClient(
                 placeholder="Search by truck #..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 text-xs border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm"
+                className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
               />
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => handleSort('code')}
-                className={`px-3 py-2 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
-                  sortField === 'code'
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm'
-                }`}
-              >
-                Sort by Truck # {sortField === 'code' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </button>
-              <button
-                onClick={() => handleSort('current_mileage')}
-                className={`px-3 py-2 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
-                  sortField === 'current_mileage'
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm'
-                }`}
-              >
-                Sort by Mileage {sortField === 'current_mileage' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </button>
-              <button
-                onClick={() => handleSort('oil_status')}
-                className={`px-3 py-2 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
-                  sortField === 'oil_status'
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm'
-                }`}
-              >
-                Sort by Oil Status {sortField === 'oil_status' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {(['all', 'active', 'out_of_service', 'in_shop'] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setStatusFilter(value)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                    statusFilter === value
+                      ? value === 'all'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : value === 'active'
+                        ? 'bg-green-600 text-white shadow-sm'
+                        : value === 'out_of_service'
+                        ? 'bg-red-600 text-white shadow-sm'
+                        : 'bg-amber-500 text-white shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {value === 'all' ? 'All' : value === 'out_of_service' ? 'Out of Service' : value === 'in_shop' ? 'In Shop' : 'Active'}
+                </button>
+              ))}
+              {hiddenVehicles.length > 0 && (
+                <button
+                  onClick={() => setStatusFilter(statusFilter === 'hidden' ? 'all' : 'hidden')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                    statusFilter === 'hidden'
+                      ? 'bg-gray-600 text-white shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Hidden ({hiddenVehicles.length})
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-gray-500 dark:text-gray-400 mr-1">Sort:</span>
+            <button
+              onClick={() => handleSort('code')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                sortField === 'code'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              Truck # {sortField === 'code' && (sortDirection === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => handleSort('current_mileage')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                sortField === 'current_mileage'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              Mileage {sortField === 'current_mileage' && (sortDirection === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => handleSort('oil_status')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                sortField === 'oil_status'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              Oil Status {sortField === 'oil_status' && (sortDirection === 'asc' ? '↑' : '↓')}
+            </button>
+            <div className="flex-1" />
+            <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
               <button
                 onClick={() => setViewMode('list')}
-                className={`px-3 py-2 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
-                  viewMode === 'list'
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700'
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === 'list' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
                 List
               </button>
               <button
                 onClick={() => setViewMode('cards')}
-                className={`px-3 py-2 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
-                  viewMode === 'cards'
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700'
+                className={`px-3 py-1.5 text-xs font-medium transition-colors border-l border-gray-300 dark:border-gray-600 ${
+                  viewMode === 'cards' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
                 Cards
               </button>
             </div>
           </div>
-          {/* Status Filters with Filters Button */}
+          {/* Territory + Filters row */}
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
-                statusFilter === 'all'
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setStatusFilter('active')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
-                statusFilter === 'active'
-                  ? 'bg-green-600 text-white shadow-md'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm'
-              }`}
-            >
-              Active
-            </button>
-            <button
-              onClick={() => setStatusFilter('out_of_service')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
-                statusFilter === 'out_of_service'
-                  ? 'bg-red-600 text-white shadow-md'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm'
-              }`}
-            >
-              Out of Service
-            </button>
-            <button
-              onClick={() => setStatusFilter('in_shop')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
-                statusFilter === 'in_shop'
-                  ? 'bg-yellow-600 text-white shadow-md'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm'
-              }`}
-            >
-              In Shop
-            </button>
-            
-            {/* Vertical Separator */}
-            <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 mx-1"></div>
-            
-            {/* Hidden Filter Button - Only show if there are hidden vehicles */}
-            {hiddenVehicles.length > 0 && (
-              <button
-                onClick={() => setStatusFilter(statusFilter === 'hidden' ? 'all' : 'hidden')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
-                  statusFilter === 'hidden'
-                    ? 'bg-gray-600 text-white shadow-md'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm'
-                }`}
-              >
-                Hidden ({hiddenVehicles.length})
-              </button>
-            )}
-            
-            {/* Compact Filters Menu */}
+            <div className="inline-flex gap-1 p-1 bg-white/90 dark:bg-gray-800/90 rounded-lg border border-gray-200/60 dark:border-gray-700/60">
+              {(['all', 'New York', 'DMV', 'Other'] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setTerritoryFilter(value)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    territoryFilter === value
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {value === 'all' ? 'All' : value}
+                </button>
+              ))}
+            </div>
             <div className="relative" ref={filterMenuRef}>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   showFilters || groupFilter.length > 0 || typeFilter.length > 0 || oilFilter.length > 0 || issuesFilter.length > 0 || docsFilter.length > 0
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -872,7 +848,6 @@ export default function DashboardClient(
                   </span>
                 )}
               </button>
-              
               {showFilters && (
                 <div className="absolute top-full left-0 mt-2 w-[calc(100vw-2rem)] sm:w-[500px] max-w-[500px] bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-5 z-50">
                   <div className="flex items-center justify-between mb-4">
@@ -1117,17 +1092,17 @@ export default function DashboardClient(
             <div className="overflow-x-auto -mx-4 sm:mx-0">
               <div className="inline-block min-w-full align-middle px-4 sm:px-0">
                 <table className="min-w-full">
-                <thead className="bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
                   <tr>
-                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Truck #</th>
-                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Plate</th>
-                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Group</th>
-                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Type</th>
-                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Mileage</th>
-                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Status</th>
-                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Issues</th>
-                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Docs</th>
-                    <th className="px-5 py-3.5 text-right text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+                    <th className="px-5 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Truck #</th>
+                    <th className="px-5 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Plate</th>
+                    <th className="px-5 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Group</th>
+                    <th className="px-5 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Type</th>
+                    <th className="px-5 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Mileage</th>
+                    <th className="px-5 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                    <th className="px-5 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Issues</th>
+                    <th className="px-5 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Docs</th>
+                    <th className="px-5 py-4 text-right text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1136,13 +1111,15 @@ export default function DashboardClient(
                     return (
                       <tr
                         key={vehicle.id}
-                        className={`group hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors ${
+                        className={`group transition-colors ${
+                          index % 2 === 0 ? 'bg-white dark:bg-gray-800/50' : 'bg-gray-50/50 dark:bg-gray-800/30'
+                        } hover:bg-indigo-50/40 dark:hover:bg-indigo-900/10 ${
                           lastVehicleId === vehicle.id
-                            ? 'bg-indigo-50/40 dark:bg-indigo-900/10 border-l-2 border-indigo-500'
+                            ? 'border-l-2 border-indigo-500 bg-indigo-50/40 dark:bg-indigo-900/10'
                             : ''
                         } ${index < filteredVehicles.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''}`}
                       >
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-4">
                           <button onClick={() => navigateToVehicle(vehicle.id)} className="text-left group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                             <p className="text-xs font-medium text-gray-900 dark:text-gray-100 leading-tight mb-0.5">{vehicle.code}</p>
                             <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">
@@ -1151,32 +1128,32 @@ export default function DashboardClient(
                             </p>
                           </button>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-4">
                           <span className="text-xs text-gray-700 dark:text-gray-300 font-mono whitespace-normal break-words max-w-[140px] inline-block" title={(plateMap[vehicle.code.toLowerCase()] ?? vehicle.license_plate) || undefined}>
                             {(plateMap[vehicle.code.toLowerCase()] ?? vehicle.license_plate) || '—'}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-4">
                           <span className="text-xs text-gray-700 dark:text-gray-300">{getTerritory(vehicle)}</span>
                         </td>
-                        <td className="px-5 py-3.5">
-                          <span className="text-[11px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">{vehicle.vehicle_type}</span>
+                        <td className="px-5 py-4">
+                          <span className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide">{vehicle.vehicle_type}</span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-4">
                           <div className="text-xs font-medium text-gray-900 dark:text-gray-100">{vehicle.current_mileage.toLocaleString()}</div>
                           <div className={`text-[11px] mt-0.5 ${oilStatus.status === 'overdue' ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
                             due {vehicle.oil_change_due_mileage.toLocaleString()}
                           </div>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-4">
                           <span className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${getVehicleStatusColor(vehicle.status)}`}>
                             {getVehicleStatusLabel(vehicle.status)}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-4">
                           <span className="text-xs text-gray-700 dark:text-gray-300">{vehicle.open_issues_count || 0}</span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-4">
                           <div className="text-xs text-gray-700 dark:text-gray-300">
                             {vehicle.documents_count || 0}
                             {vehicle.expired_documents_count > 0 && (
@@ -1184,27 +1161,39 @@ export default function DashboardClient(
                             )}
                           </div>
                         </td>
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-1.5 justify-end">
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-2 justify-end">
                             <button
                               type="button"
                               onClick={() => openVehicleDocuments(vehicle.id)}
-                              className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+                              title="Documents"
                             >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
                               Docs
                             </button>
                             <button
                               type="button"
                               onClick={() => openAddIssueModal(vehicle)}
-                              className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+                              title="Add issue"
                             >
-                              + Issue
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              </svg>
+                              Issue
                             </button>
                             <button
                               type="button"
                               onClick={() => openQuickEdit(vehicle)}
-                              className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                              title="Edit"
                             >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
                               Edit
                             </button>
                             <button

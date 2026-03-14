@@ -17,7 +17,7 @@ function getNavStyle(scrolled?: boolean) {
     height: NAV_HEIGHT,
     display: 'flex',
     alignItems: 'center',
-    padding: '0 32px',
+    padding: '0 28px',
     background: 'rgba(8,12,28,0.92)',
     backdropFilter: 'blur(16px)',
     borderBottom: scrolled ? '1px solid rgba(139, 92, 246, 0.25)' : '1px solid rgba(139, 92, 246, 0.15)',
@@ -82,12 +82,12 @@ export function NavbarView(props: NavbarViewProps) {
           <Link
             href="/home"
             onClick={(e) => { e.preventDefault(); props.navigateTo('/home') }}
-            className="flex items-center flex-shrink-0 h-[44px] w-[180px] rounded-lg overflow-hidden"
+            className="flex items-center flex-shrink-0 h-[32px] w-[160px] rounded-md overflow-hidden"
             style={{
               background: 'transparent',
               textDecoration: 'none',
-              maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+              maskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
             }}
           >
             <video
@@ -96,7 +96,7 @@ export function NavbarView(props: NavbarViewProps) {
               loop
               playsInline
               aria-label="FleetPulse logo"
-              className="w-full h-auto block object-contain object-left"
+              className="w-full h-full object-contain object-left"
               style={{ mixBlendMode: 'screen', background: 'transparent' }}
             >
               <source src="/videos/fleetpulse_logo_loop.mp4" type="video/mp4" />
@@ -114,9 +114,9 @@ export function NavbarView(props: NavbarViewProps) {
                 >
                   {active && (
                     <motion.span
-                      layoutId="navbar-underline"
+                      layoutId="nav-underline"
                       className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[rgba(139,92,246,0.9)]"
-                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                     />
                   )}
                   <span className={`relative z-10 ${active ? 'text-white' : ''}`}>{item.label}</span>

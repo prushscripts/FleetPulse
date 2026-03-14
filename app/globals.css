@@ -161,6 +161,14 @@
   .loading-overlay-text {
     animation: loadingOverlayTextIn 0.25s ease-out 0.2s both;
   }
+  @keyframes loadingOverlayProgress {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(100%); }
+  }
+  .loading-overlay-progress {
+    width: 40%;
+    animation: loadingOverlayProgress 0.9s ease-in-out infinite;
+  }
 
   /* Entry / login success: sonar pulse + portal */
   @keyframes entrySonar {

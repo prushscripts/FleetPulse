@@ -38,6 +38,7 @@ export function usePageTransition() {
       setTimeout(() => {
         setIsTransitioning(false)
         setExiting(false)
+        setLoadingLabel('')
       }, FADE_OUT_MS)
     }, FADE_IN_MS + MIN_VISIBLE_MS)
   }
