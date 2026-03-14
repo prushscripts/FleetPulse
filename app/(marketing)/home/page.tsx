@@ -71,6 +71,7 @@ export default async function HomeDashboardPage() {
         <HomeDashboardClient
           territoryMap={territoryMap}
           companyId={companyId}
+          companyName={(user.user_metadata?.company_name as string) || (user.user_metadata?.displayName as string) || undefined}
           territorySegmentLabels={territorySegments}
           template={template}
           customTemplate={customTemplate}
