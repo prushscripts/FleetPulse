@@ -23,6 +23,21 @@ located in the repository root.
 
 ---
 
+## Use Cases
+
+FleetPulse is designed to support fleets of any type, including:
+
+* Automotive parts delivery fleets
+* Contractor fleets (HVAC, plumbing, electrical)
+* Service vehicle fleets
+* Last-mile delivery companies
+* Regional logistics providers
+* Transportation companies
+
+The platform is flexible enough to support both small fleets and large multi-vehicle organizations.
+
+---
+
 # Core Features
 
 ### Fleet Dashboard
@@ -118,6 +133,19 @@ This architecture allows FleetPulse to scale across **many organizations while k
 | Authentication | Supabase Auth           |
 | Storage        | Supabase Storage        |
 | Deployment     | Vercel                  |
+
+---
+
+## Platform Capabilities
+
+FleetPulse is built for reliability and scale:
+
+* **Multi-tenant SaaS architecture** — Many organizations on one platform with clear tenant separation
+* **Secure company-level data isolation** — Each company's data is scoped and protected
+* **Scalable cloud deployment** — Hosted on Vercel with automatic scaling
+* **Modern web UI** — Optimized for operations teams and daily fleet management
+* **Secure authentication and storage** — Supabase Auth and Storage with Row Level Security
+* **Expandable platform** — Ready for analytics, dispatching, and integrations
 
 ---
 
