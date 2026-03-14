@@ -36,7 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="w-full pt-[56px]">
+    <div className="w-full pt-[64px]">
       {children}
     </div>
   )

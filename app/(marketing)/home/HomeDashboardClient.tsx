@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
+import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import type { CustomTemplate } from '@/lib/custom-template'
@@ -652,6 +653,32 @@ export default function HomeDashboardClient({
   )
 }
 
+function AnimatedValue({ value, className }: { value: number; className: string }) {
+  const [display, setDisplay] = useState(0)
+  const displayRef = useRef(0)
+  useEffect(() => {
+    if (value === 0) {
+      setDisplay(0)
+      displayRef.current = 0
+      return
+    }
+    const duration = 520
+    const start = performance.now()
+    const startVal = displayRef.current
+    const tick = (now: number) => {
+      const elapsed = now - start
+      const progress = Math.min(elapsed / duration, 1)
+      const easeOut = 1 - (1 - progress) ** 2
+      const next = Math.round(startVal + (value - startVal) * easeOut)
+      setDisplay(next)
+      displayRef.current = next
+      if (progress < 1) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }, [value])
+  return <span className={className}>{display}</span>
+}
+
 function StatCard({
   title,
   value,
@@ -688,11 +715,23 @@ function StatCard({
     : 'text-2xl'
 
   return (
-    <div className={`bg-white/85 dark:bg-gray-800/75 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 ${sizeClasses}`}>
+    <motion.div
+      className={`bg-white/85 dark:bg-gray-800/75 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700 ${sizeClasses}`}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+      whileHover={{
+        y: -3,
+        transition: { duration: 0.2 },
+        boxShadow: '0 12px 40px -12px rgba(139, 92, 246, 0.2), 0 0 0 1px rgba(139, 92, 246, 0.08)',
+      }}
+    >
       <div className="flex items-center justify-between">
         <div>
           <p className={`${titleClasses} tracking-wide text-gray-600 dark:text-gray-400 uppercase`}>{title}</p>
-          <p className={`${valueClasses} font-semibold text-gray-900 dark:text-white mt-1`}>{value}</p>
+          <p className={`${valueClasses} font-semibold text-gray-900 dark:text-white mt-1`}>
+            <AnimatedValue value={value} className={valueClasses + ' font-semibold text-gray-900 dark:text-white'} />
+          </p>
         </div>
         <div className={`rounded-xl ${size === 'compact' ? 'p-2' : size === 'executive' ? 'p-4' : 'p-3'} ${colorClasses[color]}`}>
           {icon === 'fleet' && (
@@ -717,6 +756,6 @@ function StatCard({
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

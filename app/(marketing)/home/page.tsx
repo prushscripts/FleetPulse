@@ -65,7 +65,7 @@ export default async function HomeDashboardPage() {
   const customTemplate = (companyId && template === 'custom' && companySettings[companyId]?.customTemplate) || null
 
   return (
-    <div className="pt-[56px]">
+    <div className="pt-[64px]">
       <Navbar />
       <TabSlideTransition>
         <HomeDashboardClient
