@@ -1,257 +1,392 @@
 # FleetPulse
 
-A production-ready internal fleet management web application built with Next.js 14, TypeScript, Tailwind CSS, and Supabase.
+FleetPulse is a **multi-tenant fleet management SaaS platform** built with **Next.js 14, TypeScript, Tailwind CSS, and Supabase**. It enables companies to manage vehicles, drivers, maintenance, documents, and operational issues in a centralized dashboard while keeping each company's data securely isolated.
 
-## Project overview
+The platform is designed to support **any type of fleet operation**, including logistics companies, service fleets, contractors, delivery networks, and transportation providers.
 
-FleetPulse is a **multi-tenant fleet management SaaS**: fleet managers track vehicles, drivers, maintenance, issues, and documents; data is isolated by company (tenant). Users sign up or join a company via an invite code (`auth_key`) and can switch between companies in the navbar. For detailed product and technical context—including tenant model, roles, and where logic lives—see **`AI_CONTEXT.md`** and **`PROJECT_ARCHITECTURE.md`** in the repo root.
+---
 
-## Features
+# Product Overview
 
-- **Authentication**: Email + password authentication via Supabase
-- **Dashboard**: View all vehicles in a clean grid layout with search and sorting
-- **Vehicle Management**: 
-  - Edit vehicle information
-  - Update current mileage and oil change due mileage
-  - View mileage history
-  - Add service records
-  - Track issues (open, in_progress, resolved)
-  - Upload and manage documents with expiration tracking
-- **CSV Import**: Bulk import vehicles from CSV files
-- **Oil Change Tracking**: Automatic overdue detection based on mileage
-- **Document Expiration**: Visual warnings for expired documents
-- **Issue Tracking**: Track vehicle issues with priority levels
-- **Responsive Design**: Works on desktop and mobile devices
-- **Dark Mode**: Automatic dark mode support
+FleetPulse provides companies with a modern fleet operations dashboard where administrators can monitor vehicles, track maintenance, manage documentation, and resolve operational issues.
 
-## Tech Stack
+The platform uses a **multi-tenant architecture**, meaning each company operates within its own isolated workspace (tenant). Users can belong to one or more companies and switch between them directly in the application.
 
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **Storage**: Supabase Storage
-- **Deployment**: Vercel-ready
+Companies can invite users using secure invite codes (`auth_key`), allowing teams such as dispatchers, drivers, and fleet managers to collaborate within the same fleet workspace.
 
-## Prerequisites
+For deeper technical documentation see:
 
-- Node.js 18+ installed
-- A Supabase account (free tier works)
-- npm or yarn package manager
+* `AI_CONTEXT.md`
+* `PROJECT_ARCHITECTURE.md`
 
-## Setup Instructions
+located in the repository root.
 
-### 1. Clone the Repository
+---
 
-```bash
+# Core Features
+
+### Fleet Dashboard
+
+* Centralized dashboard showing all fleet vehicles
+* Search and sorting capabilities
+* Quick visibility into vehicle status and issues
+
+### Vehicle Management
+
+* Create and manage vehicles
+* Update mileage and service intervals
+* Track oil change requirements
+* Maintain detailed vehicle records
+
+### Maintenance & Service Records
+
+* Add service events
+* Track maintenance history
+* Log service providers and notes
+
+### Issue Tracking
+
+* Log operational issues
+* Track issue status:
+
+  * `open`
+  * `in_progress`
+  * `resolved`
+* Assign priority levels
+
+### Document Management
+
+* Upload vehicle-related documents
+* Track expiration dates
+* Automatic expiration warnings
+
+### CSV Fleet Import
+
+* Bulk import vehicles via CSV
+* Quickly onboard fleets with many vehicles
+
+### Oil Change Tracking
+
+Automatic status detection:
+
+* **Overdue:** `current_mileage >= oil_change_due_mileage`
+* **OK:** `current_mileage < oil_change_due_mileage`
+
+### Document Expiration Monitoring
+
+Documents are flagged as expired when:
+
+```
+expiration_date < today
+```
+
+### Responsive UI
+
+* Fully responsive interface
+* Works across desktop, tablet, and mobile devices
+
+### Dark Mode
+
+* Automatic dark mode support via Tailwind
+
+---
+
+# Multi-Tenant Architecture
+
+FleetPulse is designed as a **multi-tenant SaaS platform**.
+
+Key characteristics:
+
+* Each company operates within its **own isolated tenant**
+* Data separation enforced through **Supabase Row Level Security**
+* Users may belong to **multiple companies**
+* Fleet managers can **invite users via invite code**
+* Companies can switch tenants directly from the UI
+
+This architecture allows FleetPulse to scale across **many organizations while keeping data securely separated**.
+
+---
+
+# Tech Stack
+
+| Layer          | Technology              |
+| -------------- | ----------------------- |
+| Frontend       | Next.js 14 (App Router) |
+| Language       | TypeScript              |
+| Styling        | Tailwind CSS            |
+| Backend        | Supabase (PostgreSQL)   |
+| Authentication | Supabase Auth           |
+| Storage        | Supabase Storage        |
+| Deployment     | Vercel                  |
+
+---
+
+# Prerequisites
+
+* Node.js **18+**
+* Supabase account (free tier works)
+* npm or yarn
+
+---
+
+# Setup Instructions
+
+## 1. Clone the Repository
+
+```
 git clone <your-repo-url>
 cd FleetPulse
 ```
 
-### 2. Install Dependencies
+---
 
-```bash
+## 2. Install Dependencies
+
+```
 npm install
 ```
 
-### 3. Set Up Supabase
+---
 
-1. Go to [Supabase](https://supabase.com) and create a new project
-2. Once your project is ready, go to **Settings** → **API**
-3. Copy your **Project URL** and **anon/public key**
+## 3. Create a Supabase Project
 
-### 4. Create Database Schema
+1. Go to https://supabase.com
+2. Create a new project
+3. Navigate to **Settings → API**
+4. Copy:
 
-1. In your Supabase dashboard, go to **SQL Editor**
-2. Open the file `supabase/schema.sql` from this project
-3. Copy and paste the entire SQL script into the SQL Editor
-4. Click **Run** to execute the script
-5. This will create all necessary tables, indexes, and Row Level Security policies
+   * Project URL
+   * anon/public key
 
-### 5. Create Storage Bucket
+---
 
-1. In your Supabase dashboard, go to **Storage**
-2. Click **Create a new bucket**
-3. Name it: `vehicle-documents`
-4. Make it **Public** (or configure policies as needed)
-5. Click **Create bucket**
+## 4. Create Database Schema
 
-### 6. Configure Environment Variables
+1. Open **Supabase SQL Editor**
+2. Open the file:
 
-1. Copy `.env.example` to `.env.local`:
-   ```bash
-   cp .env.example .env.local
-   ```
+```
+supabase/schema.sql
+```
 
-2. Edit `.env.local` and add your Supabase credentials:
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-   ```
+3. Copy and paste the contents into the SQL editor
+4. Click **Run**
 
-### 7. Run the Development Server
+This creates:
 
-```bash
+* all tables
+* indexes
+* Row Level Security policies
+
+---
+
+## 5. Create Storage Bucket
+
+1. Go to **Supabase → Storage**
+2. Create bucket:
+
+```
+vehicle-documents
+```
+
+3. Set visibility to **Public** (or configure policies)
+
+---
+
+## 6. Configure Environment Variables
+
+Copy `.env.example`:
+
+```
+cp .env.example .env.local
+```
+
+Add:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+---
+
+## 7. Run the Development Server
+
+```
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open:
 
-### 8. Create Your First User
+```
+http://localhost:3000
+```
+
+---
+
+## 8. Create First User
 
 1. Navigate to the signup page
-2. Create an account with your email and password
-3. You'll be automatically logged in and redirected to the dashboard
+2. Create a new account
+3. You will be redirected to the dashboard
 
-## Database Schema
+---
 
-The application uses the following tables:
+# Database Schema
 
-- **vehicles**: Core vehicle information
-- **fuel_logs**: Fuel consumption tracking
-- **service_records**: Maintenance and service history
-- **issues**: Vehicle issue tracking
-- **documents**: Document storage with expiration dates
+Primary tables used by the application:
 
-All tables include proper foreign key relationships, indexes for performance, and Row Level Security (RLS) policies for data protection.
+| Table           | Purpose                          |
+| --------------- | -------------------------------- |
+| vehicles        | Core vehicle records             |
+| fuel_logs       | Fuel tracking                    |
+| service_records | Maintenance history              |
+| issues          | Vehicle issue tracking           |
+| documents       | Document storage with expiration |
 
-## CSV Import Format
+All tables include:
 
-When importing vehicles via CSV, use the following column headers:
+* Foreign key relationships
+* Performance indexes
+* Row Level Security policies
 
-- `code` (required): Vehicle code (e.g., z611)
-- `make`: Vehicle make
-- `model`: Vehicle model
-- `year`: Vehicle year
-- `current_mileage`: Current mileage (default: 0)
-- `oil_change_due_mileage`: Oil change due mileage (default: 0)
-- `license_plate`: License plate number
-- `vin`: Vehicle identification number
-- `notes`: Additional notes
+---
 
-Example CSV:
-```csv
+# CSV Import Format
+
+Use the following headers when importing vehicles:
+
+| Column                 | Required | Description            |
+| ---------------------- | -------- | ---------------------- |
+| code                   | Yes      | Unique vehicle code    |
+| make                   | No       | Vehicle manufacturer   |
+| model                  | No       | Vehicle model          |
+| year                   | No       | Vehicle year           |
+| current_mileage        | No       | Current mileage        |
+| oil_change_due_mileage | No       | Oil change due mileage |
+| license_plate          | No       | License plate          |
+| vin                    | No       | Vehicle VIN            |
+| notes                  | No       | Additional notes       |
+
+Example:
+
+```
 code,make,model,year,current_mileage,oil_change_due_mileage,license_plate,vin
 z611,Ford,Transit,2020,45000,50000,ABC-1234,1FTBR1CM0KKA12345
 z612,Ford,Transit,2021,32000,35000,DEF-5678,1FTBR1CM0LKA67890
 ```
 
-## Business Logic
+---
 
-### Oil Change Status
-- **Overdue**: `current_mileage >= oil_change_due_mileage`
-- **OK**: `current_mileage < oil_change_due_mileage`
-
-### Document Expiration
-- Documents are considered expired if `expiration_date < today`
-
-### Issue Status
-- **open**: Newly reported issue
-- **in_progress**: Issue is being worked on
-- **resolved**: Issue has been resolved
-
-## Project Structure
+# Project Structure
 
 ```
-FleetPulse/
-├── app/
-│   ├── dashboard/
-│   │   ├── DashboardClient.tsx    # Dashboard page component
-│   │   ├── page.tsx                # Dashboard page
-│   │   └── vehicles/
-│   │       ├── [id]/
-│   │       │   ├── VehicleDetailClient.tsx  # Vehicle detail component
-│   │       │   └── page.tsx
-│   │       └── new/
-│   │           ├── NewVehicleClient.tsx     # New vehicle form
-│   │           └── page.tsx
-│   ├── login/
-│   │   └── page.tsx                # Login page
-│   ├── signup/
-│   │   └── page.tsx               # Signup page
-│   ├── globals.css                # Global styles
-│   ├── layout.tsx                 # Root layout
-│   └── page.tsx                   # Home page (redirects to dashboard)
-├── components/
-│   └── Navbar.tsx                 # Navigation component
-├── lib/
-│   └── supabase/
-│       ├── client.ts              # Browser Supabase client
-│       ├── server.ts               # Server Supabase client
-│       └── middleware.ts           # Auth middleware
-├── supabase/
-│   └── schema.sql                 # Database schema
-├── middleware.ts                  # Next.js middleware
-└── package.json
+FleetPulse
+│
+├── app/                  # Next.js App Router
+├── components/           # Reusable UI components
+├── context/              # React context providers
+├── hooks/                # Custom React hooks
+├── lib/                  # Shared utilities
+├── supabase/             # Database schema and Supabase helpers
+├── types/                # TypeScript definitions
+├── public/               # Static assets
+├── scripts/              # Development scripts
+├── docs/                 # Internal documentation
+│
+├── middleware.ts         # Next.js middleware
+├── next.config.js        # Next.js configuration
+├── tailwind.config.ts    # Tailwind configuration
+├── package.json
+└── README.md
 ```
 
-## Deployment to Vercel
+---
 
-### Prerequisites
-- A Vercel account (free tier works)
-- Your Supabase project configured
-- Environment variables ready
+# Deployment (Vercel)
 
-### Steps
+## Push to GitHub
 
-1. **Push your code to GitHub**
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
-   ```
+```
+git add .
+git commit -m "Initial commit"
+git push origin main
+```
 
-2. **Import to Vercel**
-   - Go to [Vercel](https://vercel.com)
-   - Click **Add New Project**
-   - Import your GitHub repository
-   - Vercel will auto-detect Next.js
+---
 
-3. **Configure Environment Variables**
-   - In the Vercel project settings, go to **Environment Variables**
-   - Add the following:
-     - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
-     - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anon key
+## Import to Vercel
 
-4. **Deploy**
-   - Click **Deploy**
-   - Wait for the build to complete
-   - Your app will be live at `https://your-project.vercel.app`
+1. Go to https://vercel.com
+2. Click **Add New Project**
+3. Import your GitHub repository
+4. Vercel automatically detects **Next.js**
 
-### Post-Deployment Checklist
+---
 
-- [ ] Verify environment variables are set correctly
-- [ ] Test authentication (signup/login)
-- [ ] Verify database connection
-- [ ] Test file uploads (documents)
-- [ ] Verify RLS policies are working
-- [ ] Test CSV import functionality
+## Add Environment Variables
 
-## Troubleshooting
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+```
 
-### Authentication Issues
-- Ensure your Supabase project has email authentication enabled
-- Check that RLS policies are correctly set up
-- Verify environment variables are correct
+---
 
-### File Upload Issues
-- Ensure the `vehicle-documents` bucket exists in Supabase Storage
-- Check bucket permissions (should be public or have proper policies)
-- Verify file size limits (default is 50MB in Supabase)
+## Deploy
 
-### Database Connection Issues
-- Verify your Supabase project URL and anon key
-- Check that the schema has been applied correctly
-- Ensure RLS policies allow authenticated users to access data
+Click **Deploy** and Vercel will build the application.
 
-## Support
+Your project will be available at:
 
-For issues or questions, please check:
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Supabase Documentation](https://supabase.com/docs)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+```
+https://your-project.vercel.app
+```
 
-## License
+---
 
-This project is for internal use only.
+# Post-Deployment Checklist
+
+* Verify authentication works
+* Confirm database connection
+* Test vehicle creation
+* Test CSV imports
+* Test file uploads
+* Confirm RLS policies isolate tenant data
+
+---
+
+# Troubleshooting
+
+### Authentication Problems
+
+* Ensure Supabase email authentication is enabled
+* Confirm environment variables are correct
+* Verify RLS policies allow authenticated access
+
+### File Upload Problems
+
+* Confirm `vehicle-documents` bucket exists
+* Verify bucket permissions
+* Ensure file sizes are within Supabase limits
+
+### Database Issues
+
+* Confirm schema was executed successfully
+* Check Supabase logs for errors
+* Verify tables and indexes exist
+
+---
+
+# Documentation
+
+Additional technical documentation:
+
+* `AI_CONTEXT.md`
+* `PROJECT_ARCHITECTURE.md`
+
+---
+
+# License
+
+This project is currently maintained for internal development and platform deployment.
