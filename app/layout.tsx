@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { ThemeProvider } from '@/components/ThemeProvider'
-import RouteTransition from '@/components/RouteTransition'
-import { PageTransitionProvider } from '@/components/PageTransition'
+import { ThemeProvider } from '@/components/layout/ThemeProvider'
+import RouteTransition from '@/components/animations/RouteTransition'
+import { PageTransitionProvider } from '@/components/animations/PageTransition'
 
 const inter = Inter({ 
   subsets: ['latin'],

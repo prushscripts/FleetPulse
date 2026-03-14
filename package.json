@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "import-fleetio": "node scripts/import-fleetio.js",
-    "import-voyager": "node scripts/import-voyager-mileage.js"
+    "import-fleetio": "node scripts/imports/import-fleetio.js",
+    "import-voyager": "node scripts/imports/import-voyager-mileage.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.1",

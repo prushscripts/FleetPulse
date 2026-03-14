@@ -1,6 +1,8 @@
 @echo off
 cd /d "%~dp0"
-echo Adding changes...
+echo Push and Deploy - FleetPulse
+echo.
+echo Staging all changes...
 git add .
 echo Committing...
 git commit -m "Deploy" 2>nul || echo (no changes to commit)
