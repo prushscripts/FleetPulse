@@ -2,6 +2,10 @@
 
 A production-ready internal fleet management web application built with Next.js 14, TypeScript, Tailwind CSS, and Supabase.
 
+## Project overview
+
+FleetPulse is a **multi-tenant fleet management SaaS**: fleet managers track vehicles, drivers, maintenance, issues, and documents; data is isolated by company (tenant). Users sign up or join a company via an invite code (`auth_key`) and can switch between companies in the navbar. For detailed product and technical context—including tenant model, roles, and where logic lives—see **`AI_CONTEXT.md`** and **`PROJECT_ARCHITECTURE.md`** in the repo root.
+
 ## Features
 
 - **Authentication**: Email + password authentication via Supabase
