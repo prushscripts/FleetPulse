@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import NewVehicleClient from './NewVehicleClient'
-import Navbar from '@/components/layout/Navbar'
 
 export default async function NewVehiclePage() {
   const supabase = await createClient()
@@ -17,7 +16,6 @@ export default async function NewVehiclePage() {
 
   return (
     <>
-      <Navbar />
       <NewVehicleClient companyId={companyId} />
     </>
   )

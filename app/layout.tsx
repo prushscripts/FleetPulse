@@ -4,7 +4,7 @@ import './globals.css'
 import { ThemeProvider } from '@/components/layout/ThemeProvider'
 import RouteTransition from '@/components/animations/RouteTransition'
 import { PageTransitionProvider } from '@/components/animations/PageTransition'
-import PageTransitionWrapper from '@/components/animations/PageTransitionWrapper'
+import NavbarLayout from '@/components/layout/NavbarLayout'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -59,9 +59,9 @@ export default function RootLayout({
         <ThemeProvider>
           <PageTransitionProvider>
             <RouteTransition />
-            <PageTransitionWrapper>
+            <NavbarLayout>
               {children}
-            </PageTransitionWrapper>
+            </NavbarLayout>
           </PageTransitionProvider>
         </ThemeProvider>
       </body>

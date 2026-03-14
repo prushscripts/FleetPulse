@@ -4,7 +4,6 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import Papa from 'papaparse'
 import DashboardClient from './DashboardClient'
-import Navbar from '@/components/layout/Navbar'
 import TabSlideTransition from '@/components/animations/TabSlideTransition'
 
 export type TerritoryKey = 'New York' | 'DMV' | 'Other'
@@ -82,7 +81,6 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <Navbar />
       <TabSlideTransition>
         <DashboardClient plateMap={plateMap} territoryMap={territoryMap} companyId={companyId} />
       </TabSlideTransition>

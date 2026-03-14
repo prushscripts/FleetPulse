@@ -31,7 +31,6 @@ function truncateName(name: string | null | undefined, max = 14) {
 }
 
 export type NavbarViewProps = {
-  switchingTo: string | null
   navItems: { label: string; href: string }[]
   pathname: string
   isTabActive: (href: string) => boolean
@@ -71,12 +70,6 @@ export function NavbarView(props: NavbarViewProps) {
   const profileInitial = (props.currentCompanyName || 'U').charAt(0).toUpperCase()
   return (
     <div className="navbar-root overflow-visible">
-      {props.switchingTo && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-lg bg-gray-900/95 border border-purple-500/30 shadow-lg backdrop-blur-md animate-in fade-in duration-200">
-          <div className="w-4 h-4 rounded-full border-2 border-purple-400 border-t-transparent animate-spin flex-shrink-0" />
-          <span className="text-sm font-medium text-white/90">Switching to {props.switchingTo}…</span>
-        </div>
-      )}
       <nav style={navStyle}>
         <div className="max-w-7xl mx-auto w-full flex justify-between items-center" style={{ height: '100%' }}>
           <Link
@@ -114,7 +107,7 @@ export function NavbarView(props: NavbarViewProps) {
                 >
                   {active && (
                     <motion.span
-                      layoutId="nav-underline"
+                      layoutId="navbar-underline"
                       className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[rgba(139,92,246,0.9)]"
                       transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                     />

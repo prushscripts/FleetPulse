@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Navbar from '@/components/layout/Navbar'
 import AboutClient from './AboutClient'
 import TabSlideTransition from '@/components/animations/TabSlideTransition'
 
@@ -20,7 +19,6 @@ export default async function AboutPage() {
 
   return (
     <>
-      <Navbar />
       <TabSlideTransition>
         <AboutClient displayName={displayName} />
       </TabSlideTransition>

@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import VehicleDetailClient from './VehicleDetailClient'
-import Navbar from '@/components/layout/Navbar'
 
 export default async function VehicleDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
@@ -15,7 +14,6 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
 
   return (
     <>
-      <Navbar />
       <VehicleDetailClient vehicleId={params.id} />
     </>
   )

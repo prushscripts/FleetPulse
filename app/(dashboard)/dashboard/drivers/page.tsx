@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import DriversClient from './DriversClient'
-import Navbar from '@/components/layout/Navbar'
 import TabSlideTransition from '@/components/animations/TabSlideTransition'
 
 export default async function DriversPage() {
@@ -18,7 +17,6 @@ export default async function DriversPage() {
 
   return (
     <>
-      <Navbar />
       <TabSlideTransition>
         <DriversClient companyId={companyId} />
       </TabSlideTransition>

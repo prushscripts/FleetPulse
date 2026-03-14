@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Navbar from '@/components/layout/Navbar'
 import TabSlideTransition from '@/components/animations/TabSlideTransition'
 import TemplateBuilderClient from './TemplateBuilderClient'
 import type { CustomTemplate } from '@/lib/custom-template'
@@ -24,7 +23,6 @@ export default async function TemplateBuilderPage() {
 
   return (
     <>
-      <Navbar />
       <TabSlideTransition>
         <TemplateBuilderClient companyId={companyId ?? null} initialTemplate={customTemplate} />
       </TabSlideTransition>

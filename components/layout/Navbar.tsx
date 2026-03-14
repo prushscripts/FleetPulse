@@ -70,7 +70,7 @@ function CompanyLogoImage({ company, className }: { company: Company; className?
 export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
-  const { navigateTo } = usePageTransitionContext()
+  const { navigateTo, showOverlay } = usePageTransitionContext()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [companies, setCompanies] = useState<Company[]>([])
@@ -134,7 +134,6 @@ export default function Navbar() {
     return () => { cancelled = true }
   }, [currentCompanyId])
 
-  const [switchingTo, setSwitchingTo] = useState<string | null>(null)
   const [navbarScrolled, setNavbarScrolled] = useState(false)
   const [companyConfig, setCompanyConfig] = useState<Record<string, unknown> | null>(null)
 
@@ -150,13 +149,13 @@ export default function Navbar() {
       setCompanySwitcherOpen(false)
       return
     }
+    const displayName = company.displayName ?? company.name
+    showOverlay(`Switching to ${displayName}`)
+    setCompanySwitcherOpen(false)
     try {
-      const displayName = company.displayName ?? company.name
       await supabase.auth.updateUser({
         data: { company_id: company.id, company_name: displayName },
       })
-      setCompanySwitcherOpen(false)
-      setSwitchingTo(displayName)
       let roadmapOnly = company.roadmapOnly ?? (company.name || '').toLowerCase().includes('roadmap')
       try {
         const res = await fetch(`/api/company-config?company_id=${encodeURIComponent(company.id)}`)
@@ -264,7 +263,6 @@ export default function Navbar() {
 
   return (
     <NavbarView
-      switchingTo={switchingTo}
       navItems={navItems}
       pathname={pathname}
       isTabActive={(href) => isTabActive(pathname, href)}

@@ -4,7 +4,6 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import Papa from 'papaparse'
 import HomeDashboardClient from './HomeDashboardClient'
-import Navbar from '@/components/layout/Navbar'
 import TabSlideTransition from '@/components/animations/TabSlideTransition'
 
 export type TerritoryKey = 'New York' | 'DMV' | 'Other'
@@ -66,7 +65,6 @@ export default async function HomeDashboardPage() {
 
   return (
     <div className="pt-[64px]">
-      <Navbar />
       <TabSlideTransition>
         <HomeDashboardClient
           territoryMap={territoryMap}

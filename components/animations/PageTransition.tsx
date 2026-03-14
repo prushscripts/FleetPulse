@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import LoadingOverlay from './LoadingOverlay'
 
@@ -27,7 +27,7 @@ export function usePageTransition() {
   const [loadingLabel, setLoadingLabel] = useState('')
   const router = useRouter()
 
-  const navigateTo = (href: string) => {
+  const navigateTo = useCallback((href: string) => {
     const label = HREF_LABEL_MAP[href] ?? (href.startsWith('/dashboard/vehicles') ? 'Vehicles' : 'Page')
     setLoadingLabel(label)
     setExiting(false)
@@ -35,29 +35,56 @@ export function usePageTransition() {
     router.push(href)
     setTimeout(() => {
       setExiting(true)
+      setLoadingLabel('')
       setTimeout(() => {
         setIsTransitioning(false)
         setExiting(false)
-        setLoadingLabel('')
       }, FADE_OUT_MS)
     }, FADE_IN_MS + MIN_VISIBLE_MS)
-  }
+  }, [router])
 
-  return { isTransitioning, exiting, loadingLabel, navigateTo }
+  const showOverlay = useCallback((label: string) => {
+    setLoadingLabel(label)
+    setExiting(false)
+    setIsTransitioning(true)
+  }, [])
+
+  const hideOverlay = useCallback(() => {
+    setExiting(true)
+    setLoadingLabel('')
+    setTimeout(() => {
+      setIsTransitioning(false)
+      setExiting(false)
+    }, FADE_OUT_MS)
+  }, [])
+
+  return { isTransitioning, exiting, loadingLabel, navigateTo, showOverlay, hideOverlay }
 }
 
-const PageTransitionContext = createContext<{ navigateTo: (href: string) => void } | null>(null)
+type PageTransitionContextValue = {
+  navigateTo: (href: string) => void
+  showOverlay: (label: string) => void
+  hideOverlay: () => void
+}
+
+const PageTransitionContext = createContext<PageTransitionContextValue | null>(null)
 
 export function usePageTransitionContext() {
   const ctx = useContext(PageTransitionContext)
-  if (!ctx) return { navigateTo: (href: string) => { window.location.href = href } }
+  if (!ctx) {
+    return {
+      navigateTo: (href: string) => { window.location.href = href },
+      showOverlay: () => {},
+      hideOverlay: () => {},
+    }
+  }
   return ctx
 }
 
 export function PageTransitionProvider({ children }: { children: React.ReactNode }) {
-  const { isTransitioning, exiting, loadingLabel, navigateTo } = usePageTransition()
+  const { isTransitioning, exiting, loadingLabel, navigateTo, showOverlay, hideOverlay } = usePageTransition()
   return (
-    <PageTransitionContext.Provider value={{ navigateTo }}>
+    <PageTransitionContext.Provider value={{ navigateTo, showOverlay, hideOverlay }}>
       {children}
       {isTransitioning && (
         <LoadingOverlay loadingLabel={loadingLabel} isExiting={exiting} />

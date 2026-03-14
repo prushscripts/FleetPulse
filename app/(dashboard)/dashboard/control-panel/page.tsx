@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Navbar from '@/components/layout/Navbar'
 import ControlPanelClient from './ControlPanelClient'
 import TabSlideTransition from '@/components/animations/TabSlideTransition'
 
@@ -28,7 +27,6 @@ export default async function ControlPanelPage() {
 
   return (
     <>
-      <Navbar />
       <TabSlideTransition>
         <ControlPanelClient
           companyId={companyId}
