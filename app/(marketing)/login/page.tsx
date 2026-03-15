@@ -188,13 +188,13 @@ export default function LoginPage() {
           opacity: 0.08,
         }}
       />
-      {/* Soft radial glow behind logo — purple → transparent, blur, pulse-slow (opacity 0.25) */}
+      {/* Soft radial glow behind logo — stronger (opacity 0.35), pulse-slow */}
       <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[200px] rounded-full pointer-events-none z-0 animate-auth-pulse-slow"
         style={{
           background: 'radial-gradient(circle, rgba(139, 92, 246, 0.35) 0%, transparent 70%)',
           filter: 'blur(120px)',
-          opacity: 0.25,
+          opacity: 0.35,
         }}
       />
       {/* Content */}
@@ -207,14 +207,16 @@ export default function LoginPage() {
             <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.35)] animate-auth-pulse-ring-slow animate-auth-pulse-ring-slow-2" />
             <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.3)] animate-auth-pulse-ring-slow animate-auth-pulse-ring-slow-3" />
           </div>
-          <div className="relative z-10 mx-auto mb-2 flex items-center justify-center">
-            <img
-              src="/branding/fleetpulse-logo.png"
-              alt="FleetPulse"
-              className="max-w-[280px] w-full h-auto object-contain block"
-              width={280}
-              height={93}
-            />
+          <div className="relative z-10 mx-auto mb-2 flex items-center justify-center animate-login-logo-scale-in">
+            <div className="animate-login-logo-float">
+              <img
+                src="/branding/fleetpulse-logo.png"
+                alt="FleetPulse"
+                className="max-w-[280px] w-full h-auto object-contain block"
+                width={280}
+                height={93}
+              />
+            </div>
           </div>
           <p className="text-xs uppercase mb-4 text-indigo-400/80" style={{ letterSpacing: '0.14em', opacity: 0.85 }}>
             Modern Fleet Management

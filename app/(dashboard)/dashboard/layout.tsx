@@ -37,7 +37,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="w-full pt-[64px]">
-      {children}
+      <div key={pathname} className="animate-tab-enter">
+        {children}
+      </div>
     </div>
   )
 }

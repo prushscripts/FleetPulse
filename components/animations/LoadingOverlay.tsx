@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 
 export const LOADING_VIDEO_SRC = '/animations/possibleLogoLoop.mp4'
 export const LOADING_VIDEO_SRC_FALLBACK = '/Animations/possibleLogoLoop.mp4'
@@ -34,14 +34,15 @@ export default function LoadingOverlay({ loadingLabel, isExiting = false }: Load
 
   return (
     <div
-      className="fixed inset-0 z-[999] flex items-center justify-center pointer-events-none min-h-screen w-full bg-black/30 backdrop-blur-md"
+      className="fixed inset-0 z-[999] flex items-center justify-center pointer-events-none min-h-screen w-full backdrop-blur-md"
       style={{
+        backgroundColor: 'rgba(0,0,0,0.4)',
         opacity: visible ? 1 : 0,
         transform: `scale(${scale})`,
         transition: `opacity ${transitionMs}ms ease-out, transform ${transitionMs}ms ease-out`,
       }}
     >
-      {/* Hidden video to preload; card renders only when video is ready to prevent empty square */}
+      {/* Hidden video to preload; content renders only when video is ready */}
       <video
         autoPlay
         muted
@@ -57,25 +58,43 @@ export default function LoadingOverlay({ loadingLabel, isExiting = false }: Load
         }}
       />
       {videoReady && (
-        <div
-          className="rounded-xl shadow-2xl border border-white/10 backdrop-blur-lg px-10 py-8 flex flex-col items-center justify-center"
-          style={{ background: 'rgba(15,15,25,0.9)' }}
-        >
-          <div className="relative flex items-center justify-center mb-4">
-            <video
-              autoPlay
-              muted
-              playsInline
-              loop
-              preload="auto"
-              className="w-[150px] sm:w-[180px] h-auto object-contain opacity-90"
-              style={{ background: 'transparent' }}
-              aria-hidden
-              src={videoSrc}
+        <div className="flex flex-col items-center justify-center">
+          {/* Glowing pulse ring (scale 1 → 1.1 → 1, opacity pulse, 2s infinite) */}
+          <div className="relative flex items-center justify-center w-[220px] h-[220px] sm:w-[260px] sm:h-[260px]">
+            <div
+              className="absolute inset-0 rounded-full border-2 border-purple-500/40 animate-loader-pulse-ring"
+              style={{
+                boxShadow: '0 0 30px rgba(139, 92, 246, 0.2)',
+              }}
             />
+            <div
+              className="absolute inset-[15%] rounded-full border border-purple-400/30 animate-loader-pulse-ring"
+              style={{
+                animationDelay: '0.5s',
+                boxShadow: '0 0 20px rgba(139, 92, 246, 0.15)',
+              }}
+            />
+            {/* Logo animation inside */}
+            <div className="relative z-10 flex items-center justify-center">
+              <video
+                autoPlay
+                muted
+                playsInline
+                loop
+                preload="auto"
+                className="w-[160px] sm:w-[200px] h-auto object-contain opacity-95"
+                style={{
+                  background: 'transparent',
+                  filter: 'drop-shadow(0 0 20px rgba(139, 92, 246, 0.3))',
+                }}
+                aria-hidden
+                src={videoSrc}
+              />
+            </div>
           </div>
+          {/* Loader text below */}
           {showText && (
-            <p className="text-xs font-light uppercase tracking-widest text-purple-300/90 text-center">
+            <p className="mt-6 text-sm font-light uppercase tracking-[0.2em] text-purple-300/90 text-center">
               {textContent}
             </p>
           )}

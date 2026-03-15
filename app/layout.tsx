@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     images: [ogImageUrl],
   },
   icons: {
-    icon: '/branding/favicon.ico',
+    icon: '/branding/favicon.ico?v=2',
     apple: '/branding/fleetpulse-icon-32.png',
   },
 }
