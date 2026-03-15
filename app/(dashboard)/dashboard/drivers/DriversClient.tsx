@@ -519,7 +519,7 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                   </div>
                   
                   {/* Drivers Table */}
-                  <div className="max-h-[calc(100vh-400px)] overflow-y-auto overflow-x-auto -mx-4 sm:mx-0">
+                  <div className="max-h-[calc(100dvh-400px)] overflow-y-auto overflow-x-auto -mx-4 sm:mx-0">
                     <div className="inline-block min-w-full align-middle px-4 sm:px-0">
                       <table className="w-full text-[13px] min-w-[800px] sm:min-w-0">
                       <thead className="bg-gray-50 dark:bg-gray-900/60 sticky top-0 z-10">

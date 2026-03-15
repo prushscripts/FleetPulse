@@ -35,6 +35,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     )
   }
 
+  useEffect(() => {
+    if (activationChecked && (pathname === '/dashboard' || pathname?.startsWith('/dashboard/'))) {
+      if (typeof console !== 'undefined') console.log('[FleetPulse] dashboard rendered')
+    }
+  }, [activationChecked, pathname])
+
   return (
     <div className="w-full pt-[64px]">
       <div key={pathname} className="animate-tab-enter">

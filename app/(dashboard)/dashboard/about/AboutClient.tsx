@@ -190,7 +190,7 @@ export default function AboutClient({ displayName }: { displayName: string }) {
                   Vehicle tracking, drivers, inspections, and reporting.
                 </p>
               </div>
-              <div className="max-h-[calc(100vh-320px)] overflow-y-auto overflow-x-hidden overscroll-behavior-smooth rounded-lg pr-1 -mr-1">
+              <div className="max-h-[calc(100dvh-320px)] overflow-y-auto overflow-x-hidden overscroll-behavior-smooth rounded-lg pr-1 -mr-1">
               <div className="space-y-4">
                 {features.map((feature, idx) => (
                   <div
