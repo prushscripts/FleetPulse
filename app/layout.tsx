@@ -55,15 +55,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning className={inter.variable}>
-      <body className={`${inter.className} overflow-x-hidden`}>
+      <body className={`${inter.className} overflow-x-hidden min-h-full`}>
         <ThemeProvider>
-          <IntroAnimation>
-            <PageTransitionProvider>
-              <NavbarLayout>
-                {children}
-              </NavbarLayout>
-            </PageTransitionProvider>
-          </IntroAnimation>
+          <div className="min-h-full overflow-hidden">
+            <IntroAnimation>
+              <PageTransitionProvider>
+                <NavbarLayout>
+                  {children}
+                </NavbarLayout>
+              </PageTransitionProvider>
+            </IntroAnimation>
+          </div>
         </ThemeProvider>
       </body>
     </html>

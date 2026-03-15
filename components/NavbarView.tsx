@@ -14,10 +14,10 @@ function getNavStyle(scrolled?: boolean) {
     left: 0,
     right: 0,
     zIndex: 50,
-    height: NAV_HEIGHT,
+    minHeight: NAV_HEIGHT,
     display: 'flex',
     alignItems: 'center',
-    padding: '0 28px',
+    padding: 'env(safe-area-inset-top) 28px env(safe-area-inset-bottom) 28px',
     background: 'rgba(8,12,28,0.92)',
     backdropFilter: 'blur(16px)',
     borderBottom: scrolled ? '1px solid rgba(139, 92, 246, 0.25)' : '1px solid rgba(139, 92, 246, 0.15)',
@@ -83,7 +83,7 @@ export function NavbarView(props: NavbarViewProps) {
           <Link
             href="/home"
             onClick={(e) => { e.preventDefault(); props.navigateTo('/home') }}
-            className="flex items-center flex-shrink-0 h-12 sm:h-14 w-auto max-w-[260px] rounded-md overflow-hidden py-1 pr-2"
+            className="flex items-center flex-shrink-0 h-10 sm:h-14 w-auto max-w-[260px] rounded-md overflow-hidden py-1 pr-2"
             style={{ background: 'transparent', textDecoration: 'none' }}
             aria-label="FleetPulse home"
           >
@@ -221,7 +221,7 @@ export function NavbarView(props: NavbarViewProps) {
 
         {props.mobileOpen && (
           <div
-            className="sm:hidden pb-3 pt-2 animate-fade-in-scale overflow-y-auto overflow-x-hidden max-h-[calc(100vh-64px)] max-w-[100vw] w-full mx-auto"
+            className="sm:hidden pb-3 pt-2 animate-fade-in-scale overflow-y-auto overflow-x-hidden max-h-[calc(100dvh-64px)] max-w-[100vw] w-full mx-auto"
             style={{ maxWidth: '100vw' }}
           >
             <div className="rounded-2xl border border-white/10 bg-gray-900/95 backdrop-blur-md shadow-xl p-3 space-y-2 w-full max-w-[100%] box-border mx-auto">

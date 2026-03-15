@@ -34,7 +34,7 @@ export default function LoadingOverlay({ loadingLabel, isExiting = false }: Load
 
   return (
     <div
-      className="fixed inset-0 z-[999] flex items-center justify-center pointer-events-none min-h-screen w-full backdrop-blur-md"
+      className="fixed inset-0 z-[999] flex items-center justify-center pointer-events-none min-h-[100svh] min-h-[100dvh] w-full backdrop-blur-md"
       style={{
         backgroundColor: 'rgba(0,0,0,0.4)',
         opacity: visible ? 1 : 0,

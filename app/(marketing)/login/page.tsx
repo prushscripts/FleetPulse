@@ -179,18 +179,18 @@ export default function LoginPage() {
 
       {/* Page content — blurred when loading */}
       <div className={`min-h-screen min-h-[100dvh] relative transition-all duration-300 ${loading ? 'blur-md' : ''}`}>
-      {/* Grid background — opacity 0.08 */}
+      {/* Grid background — fixed so it does not affect page height */}
       <div
-        className="absolute inset-0 z-0 min-h-screen min-h-[100dvh] animate-auth-grid"
+        className="fixed inset-0 z-0 pointer-events-none animate-auth-grid"
         style={{
           backgroundImage: 'linear-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.12) 1px, transparent 1px)',
           backgroundSize: '48px 48px',
           opacity: 0.08,
         }}
       />
-      {/* Soft radial glow behind logo — stronger (opacity 0.35), pulse-slow */}
+      {/* Soft radial glow behind logo — fixed, stronger (opacity 0.35), pulse-slow */}
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[200px] rounded-full pointer-events-none z-0 animate-auth-pulse-slow"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[200px] rounded-full pointer-events-none z-0 animate-auth-pulse-slow"
         style={{
           background: 'radial-gradient(circle, rgba(139, 92, 246, 0.35) 0%, transparent 70%)',
           filter: 'blur(120px)',
