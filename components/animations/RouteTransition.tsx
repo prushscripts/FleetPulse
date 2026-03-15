@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { LOADING_VIDEO_SRC } from './LoadingOverlay'
+import { LOADING_VIDEO_SRC, LOADING_VIDEO_SRC_FALLBACK } from './LoadingOverlay'
 
 const DASHBOARD_ROUTES = [
   '/home',
@@ -35,6 +35,7 @@ export default function RouteTransition() {
   const pathname = usePathname()
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [exiting, setExiting] = useState(false)
+  const [videoSrc, setVideoSrc] = useState(LOADING_VIDEO_SRC)
   const loadingLabel = ROUTE_LABEL_MAP[pathname] ?? 'Page'
 
   useEffect(() => {
@@ -68,19 +69,28 @@ export default function RouteTransition() {
       <div className="relative z-10 flex flex-col items-center justify-center w-full min-h-screen">
         <div
           className="mb-8 flex justify-center"
-          style={{ filter: 'drop-shadow(0 0 40px rgba(147,51,234,0.45))' }}
+          style={{
+            filter: 'drop-shadow(0 0 40px rgba(147,51,234,0.45))',
+            minWidth: 280,
+            minHeight: 160,
+          }}
         >
           <video
             autoPlay
             muted
             playsInline
             loop
+            preload="auto"
+            width={460}
+            height={260}
+            src={videoSrc}
             className="w-[460px] max-w-[min(90vw,460px)] h-auto block object-contain"
             style={{ mixBlendMode: 'screen', background: 'transparent' }}
             aria-hidden
-          >
-            <source src={LOADING_VIDEO_SRC} type="video/mp4" />
-          </video>
+            onError={() => {
+              if (videoSrc === LOADING_VIDEO_SRC) setVideoSrc(LOADING_VIDEO_SRC_FALLBACK)
+            }}
+          />
         </div>
         {!exiting && (
           <>

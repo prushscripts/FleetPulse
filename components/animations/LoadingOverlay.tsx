@@ -1,9 +1,10 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 
-/** Single source for all loading overlays: tab switch, page transition, company switch. */
+/** Single source for all loading overlays. Try lowercase first (public/animations). */
 export const LOADING_VIDEO_SRC = '/animations/possibleLogoLoop.mp4'
+export const LOADING_VIDEO_SRC_FALLBACK = '/Animations/possibleLogoLoop.mp4'
 
 export type LoadingOverlayProps = {
   loadingLabel: string
@@ -11,6 +12,7 @@ export type LoadingOverlayProps = {
 }
 
 export default function LoadingOverlay({ loadingLabel, isExiting = false }: LoadingOverlayProps) {
+  const [videoSrc, setVideoSrc] = useState(LOADING_VIDEO_SRC)
   const displayLabel = loadingLabel || 'Page'
   const isSwitchingCompany = displayLabel.startsWith('Switching to ')
   const textContent = isSwitchingCompany ? displayLabel : `Loading ${displayLabel}`
@@ -48,11 +50,13 @@ export default function LoadingOverlay({ loadingLabel, isExiting = false }: Load
       </div>
 
       <div className="relative z-10 flex flex-col items-center justify-center w-full min-h-screen">
-        <div className="mb-8 loading-overlay-logo-wrap flex justify-center">
+        <div className="mb-8 loading-overlay-logo-wrap flex justify-center" style={{ minHeight: 200 }}>
           <div
             className="rounded-2xl overflow-hidden loading-overlay-logo-glow flex items-center justify-center"
             style={{
               filter: 'drop-shadow(0 0 40px rgba(147,51,234,0.45))',
+              minWidth: 280,
+              minHeight: 160,
             }}
           >
             <video
@@ -60,15 +64,20 @@ export default function LoadingOverlay({ loadingLabel, isExiting = false }: Load
               muted
               playsInline
               loop
+              preload="auto"
+              width={460}
+              height={260}
               className="w-[460px] max-w-[min(90vw,460px)] h-auto block object-contain"
               style={{
                 mixBlendMode: 'screen',
                 background: 'transparent',
               }}
               aria-hidden
-            >
-              <source src={LOADING_VIDEO_SRC} type="video/mp4" />
-            </video>
+              onError={() => {
+                if (videoSrc === LOADING_VIDEO_SRC) setVideoSrc(LOADING_VIDEO_SRC_FALLBACK)
+              }}
+              src={videoSrc}
+            />
           </div>
         </div>
 

@@ -83,15 +83,15 @@ export function NavbarView(props: NavbarViewProps) {
           <Link
             href="/home"
             onClick={(e) => { e.preventDefault(); props.navigateTo('/home') }}
-            className="flex items-center flex-shrink-0 h-7 sm:h-8 w-auto max-w-[160px] rounded-md overflow-hidden"
+            className="flex items-center flex-shrink-0 h-7 sm:h-8 w-[200px] sm:w-[280px] rounded-md overflow-hidden"
             style={{ background: 'transparent', textDecoration: 'none' }}
             aria-label="FleetPulse home"
           >
             <img
               src="/branding/fleetpulse-navbar.png"
               alt="FleetPulse"
-              className="h-full w-auto object-contain object-left"
-              width={160}
+              className="h-full w-full object-contain object-left"
+              width={280}
               height={32}
             />
           </Link>
