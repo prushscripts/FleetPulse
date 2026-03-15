@@ -71,18 +71,18 @@ export default async function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
             <div className="max-w-3xl lg:max-w-4xl">
               <ScrollReveal delay={0}>
-                <div className="flex justify-center mb-6 sm:mb-8 h-20 sm:h-24 md:h-28 lg:h-32 w-full max-w-[400px] sm:max-w-[480px] md:max-w-[520px] mx-auto">
+                <div className="flex justify-center mb-6 sm:mb-8 h-14 sm:h-16 md:h-20 w-full max-w-[280px] sm:max-w-[320px] mx-auto">
                   <Image
-                    src="/branding/fleetpulse-logo.png"
-                    alt="FleetPulse"
-                    width={400}
-                    height={120}
+                    src="/branding/fleetpulse-navbar.png"
+                    alt="FleetPulse — Modern fleet management"
+                    width={320}
+                    height={80}
                     className="h-full w-full object-contain block drop-shadow-2xl select-none"
                   />
                 </div>
               </ScrollReveal>
               <ScrollReveal delay={100}>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight leading-tight drop-shadow-2xl select-none cursor-default">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight leading-tight drop-shadow-2xl select-none cursor-default text-center">
                 Modern Fleet Management
               </h1>
               </ScrollReveal>
@@ -403,6 +403,43 @@ export default async function Home() {
             </ScrollReveal>
           </div>
         </section>
+
+        {/* Footer - blended from CTA */}
+        <footer className="relative bg-gradient-to-b from-indigo-800 via-indigo-900 to-gray-900 dark:from-indigo-900 dark:via-gray-900 dark:to-gray-950 text-white overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(99,102,241,0.15),transparent)] pointer-events-none" />
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+              <div className="sm:col-span-2 lg:col-span-1">
+                <div className="flex items-center gap-2 mb-4">
+                  <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={140} height={36} className="h-9 w-auto object-contain opacity-95" />
+                </div>
+                <p className="text-sm text-indigo-200/90 max-w-xs">
+                  Modern fleet management. Track vehicles, maintenance, and keep your fleet running smoothly.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Product</h3>
+                <ul className="space-y-2">
+                  <li><Link href="/signup" className="text-sm text-indigo-200/90 hover:text-white transition-colors">Start Free Trial</Link></li>
+                  <li><Link href="/login" className="text-sm text-indigo-200/90 hover:text-white transition-colors">Sign In</Link></li>
+                  <li><a href="mailto:fleetpulse@fastmail.com" className="text-sm text-indigo-200/90 hover:text-white transition-colors">Contact Us</a></li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Legal</h3>
+                <ul className="space-y-2">
+                  <li><Link href="/privacy" className="text-sm text-indigo-200/90 hover:text-white transition-colors">Privacy</Link></li>
+                  <li><Link href="/terms" className="text-sm text-indigo-200/90 hover:text-white transition-colors">Terms</Link></li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <p className="text-xs text-indigo-300/80 text-center sm:text-left">
+                © {new Date().getFullYear()} FleetPulse. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </footer>
       </div>
     </>
   )

@@ -266,7 +266,8 @@ export default function DashboardClient(
   }
 
   const getTerritory = (vehicle: VehicleWithStats): TerritoryFilterValue => {
-    const fromMap = territoryMap[vehicle.code.toLowerCase()]
+    const code = vehicle.code?.toLowerCase()
+    const fromMap = code ? territoryMap[code] : undefined
     if (fromMap === 'New York' || fromMap === 'DMV' || fromMap === 'Other') return fromMap
     if (vehicle.group_name === 'New York' || vehicle.group_name === 'DMV') return vehicle.group_name
     return 'Other'
@@ -278,7 +279,7 @@ export default function DashboardClient(
     // Apply search filter
     if (searchQuery) {
       filtered = filtered.filter((vehicle) =>
-        vehicle.code.toLowerCase().includes(searchQuery.toLowerCase())
+        (vehicle.code?.toLowerCase() ?? '').includes(searchQuery.toLowerCase())
       )
     }
 
@@ -1173,9 +1174,9 @@ export default function DashboardClient(
                       <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
                         {getTerritory(vehicle)} • {vehicle.vehicle_type.toUpperCase()}
                       </p>
-                      {((plateMap[vehicle.code.toLowerCase()] ?? vehicle.license_plate) || '').trim() && (
+                      {((plateMap[vehicle.code?.toLowerCase() ?? ''] ?? vehicle.license_plate) || '').trim() && (
                         <p className="text-[11px] text-gray-600 dark:text-gray-300 font-mono mt-1">
-                          {(plateMap[vehicle.code.toLowerCase()] ?? vehicle.license_plate)?.trim()}
+                          {(plateMap[vehicle.code?.toLowerCase() ?? ''] ?? vehicle.license_plate)?.trim()}
                         </p>
                       )}
                     </div>

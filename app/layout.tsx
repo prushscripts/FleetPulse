@@ -49,7 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <ErrorBoundary>
             <BackgroundLayer />
-            <div className="relative z-10 min-h-full">
+            <div className="relative z-10 min-h-full overflow-x-hidden">
               <IntroAnimation>
                 <PageTransitionProvider>
                   <NavbarLayout>

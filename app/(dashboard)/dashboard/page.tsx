@@ -5,6 +5,7 @@ import { join } from 'path'
 import Papa from 'papaparse'
 import DashboardClient from './DashboardClient'
 import TabSlideTransition from '@/components/animations/TabSlideTransition'
+import DashboardErrorBoundary from './DashboardErrorBoundary'
 
 export type TerritoryKey = 'New York' | 'DMV' | 'Other'
 
@@ -80,10 +81,10 @@ export default async function DashboardPage() {
   const territoryMap = buildTerritoryMap()
 
   return (
-    <>
+    <DashboardErrorBoundary>
       <TabSlideTransition>
         <DashboardClient plateMap={plateMap} territoryMap={territoryMap} companyId={companyId} />
       </TabSlideTransition>
-    </>
+    </DashboardErrorBoundary>
   )
 }

@@ -46,8 +46,8 @@ export default function FloatingLoginCard() {
         // Only act on significant scroll movements (prevent micro-movements)
         if (scrollDelta < 5) return
 
-        // Auto-collapse when scrolling down past 150px
-        if (scrollY > 150 && isExpandedRef.current && scrollDirection === 'down') {
+        // Auto-collapse when scrolling down past 80px
+        if (scrollY > 80 && isExpandedRef.current && scrollDirection === 'down') {
           isTransitioning.current = true
           setIsAnimating(true)
           setIsExpanded(false)

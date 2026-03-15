@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 interface ScrollBlurProps {
   children: React.ReactNode
@@ -10,22 +10,18 @@ interface ScrollBlurProps {
 export default function ScrollBlur({ children, className = '' }: ScrollBlurProps) {
   const [blur, setBlur] = useState(3)
   const [opacity, setOpacity] = useState(0.6)
+  const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY
       const windowHeight = window.innerHeight
-
-      // Calculate blur based on scroll position
-      // Start with blur at top, clear as you scroll down
-      const maxBlur = 3 // Reduced from 8
-      const blurThreshold = windowHeight * 0.3 // Start clearing after 30% of viewport
+      const maxBlur = 3
+      const blurThreshold = windowHeight * 0.35
 
       if (scrollY < blurThreshold) {
-        // Gradually reduce blur as we scroll
         const blurAmount = maxBlur * (1 - scrollY / blurThreshold)
-        const opacityAmount = 0.6 + (scrollY / blurThreshold) * 0.4 // Start at 0.6 instead of 0.3
-
+        const opacityAmount = 0.6 + (scrollY / blurThreshold) * 0.4
         setBlur(Math.max(0, blurAmount))
         setOpacity(Math.min(1, opacityAmount))
       } else {
@@ -35,18 +31,40 @@ export default function ScrollBlur({ children, className = '' }: ScrollBlurProps
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // Initial call
-
+    handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Fallback: when this section enters viewport, ensure unblur (handles edge cases where window scroll isn't the scroller)
+  useEffect(() => {
+    const el = rootRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            const ratio = e.intersectionRatio
+            if (ratio >= 0.5) {
+              setBlur(0)
+              setOpacity(1)
+            }
+          }
+        }
+      },
+      { threshold: [0.25, 0.5, 0.75], rootMargin: '-20% 0px -20% 0px' }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
   }, [])
 
   return (
     <div
+      ref={rootRef}
       className={`transition-all duration-700 ease-out ${className}`}
       style={{
         filter: `blur(${blur}px)`,
         opacity: opacity,
-        transform: `scale(${0.97 + (opacity - 0.6) * 0.03})`, // Less scale change
+        transform: `scale(${0.97 + (opacity - 0.6) * 0.03})`,
       }}
     >
       {children}
