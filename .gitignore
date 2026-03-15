@@ -39,3 +39,10 @@ next-env.d.ts
 *.zip
 FleetPulse Codebase.zip
 ChatGPT Fix Response.txt
+
+# restore point - exclude heavy/generated so reference stays viewable in git
+Restore Points/FleetPulseRestoreReference/node_modules/
+Restore Points/FleetPulseRestoreReference/.next/
+Restore Points/FleetPulseRestoreReference/.git/
+Restore Points/FleetPulseRestoreReference/.env.local
+Restore Points/FleetPulseRestoreReference/.env
