@@ -4,6 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+
+const LOGIN_LOADER_VIDEO = '/animations/possibleLogoLoop.mp4'
+const LOGIN_LOADER_VIDEO_FALLBACK = '/Animations/possibleLogoLoop.mp4'
+const LOGIN_LOADER_HOLD_MS = 1200
+const LOGIN_PULSE_MS = 600
+
 type CompanyOption = { id: string; name: string; displayName?: string; roadmapOnly?: boolean }
 
 export default function LoginPage() {
@@ -11,6 +17,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loginSuccessRedirect, setLoginSuccessRedirect] = useState<string | null>(null)
+  const [showPulseBurst, setShowPulseBurst] = useState(false)
+  const [loginVideoSrc, setLoginVideoSrc] = useState(LOGIN_LOADER_VIDEO)
+  const [loginVideoReady, setLoginVideoReady] = useState(false)
   const [companies, setCompanies] = useState<CompanyOption[]>([])
   const [companiesLoading, setCompaniesLoading] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null)
@@ -18,6 +28,20 @@ export default function LoginPage() {
   const companyDropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    if (!loginSuccessRedirect) return
+    const t = setTimeout(() => {
+      setShowPulseBurst(true)
+      setTimeout(() => {
+        router.replace(loginSuccessRedirect)
+        setLoading(false)
+        setLoginSuccessRedirect(null)
+        setShowPulseBurst(false)
+      }, LOGIN_PULSE_MS)
+    }, LOGIN_LOADER_HOLD_MS)
+    return () => clearTimeout(t)
+  }, [loginSuccessRedirect, router])
 
   useEffect(() => {
     const raw = email.trim().toLowerCase()
@@ -95,8 +119,7 @@ export default function LoginPage() {
       if (sessionData?.session) {
         const isRoadmapOnly = companyToSet?.roadmapOnly || (companyToSet?.name || '').toLowerCase().includes('roadmap')
         const redirectTo = isRoadmapOnly ? '/dashboard/roadmap' : '/home'
-        setLoading(false)
-        router.replace(redirectTo)
+        setLoginSuccessRedirect(redirectTo)
       } else {
         setError('Session not established. Please try again.')
         setLoading(false)
@@ -110,6 +133,52 @@ export default function LoginPage() {
   return (
     <>
     <div className="min-h-screen min-h-[100dvh] relative overflow-hidden" style={{ backgroundColor: 'var(--fleet-navy, #0d1120)' }}>
+      {/* Login transition overlay: blur + loader card, then pulse burst */}
+      {loading && (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center pointer-events-auto">
+          <div
+            className="absolute inset-0 bg-black/30 backdrop-blur-md transition-opacity"
+            aria-hidden
+          />
+          {!showPulseBurst && (
+            <div
+              className="rounded-xl shadow-2xl border border-white/10 backdrop-blur-lg px-10 py-8 flex flex-col items-center justify-center relative z-10 transition-opacity duration-200"
+              style={{
+                background: 'rgba(15,15,25,0.9)',
+                opacity: loginVideoReady ? 1 : 0,
+              }}
+            >
+              <video
+                autoPlay
+                muted
+                playsInline
+                loop
+                preload="auto"
+                src={loginVideoSrc}
+                className="w-[150px] sm:w-[180px] h-auto object-contain opacity-90"
+                onLoadedData={() => setLoginVideoReady(true)}
+                onError={() => {
+                  if (loginVideoSrc === LOGIN_LOADER_VIDEO) setLoginVideoSrc(LOGIN_LOADER_VIDEO_FALLBACK)
+                }}
+                aria-hidden
+              />
+            </div>
+          )}
+          {showPulseBurst && (
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+              <div
+                className="rounded-full w-[120px] h-[120px] animate-login-pulse-burst"
+                style={{
+                  background: 'radial-gradient(circle, rgba(139,92,246,0.8) 0%, transparent 70%)',
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Page content — blurred when loading */}
+      <div className={`min-h-screen min-h-[100dvh] relative transition-all duration-300 ${loading ? 'blur-md' : ''}`}>
       {/* Grid background — opacity 0.08 */}
       <div
         className="absolute inset-0 z-0 min-h-screen min-h-[100dvh] animate-auth-grid"
@@ -119,13 +188,13 @@ export default function LoginPage() {
           opacity: 0.08,
         }}
       />
-      {/* Soft radial glow behind logo — purple → transparent, blur, pulse-slow */}
+      {/* Soft radial glow behind logo — purple → transparent, blur, pulse-slow (opacity 0.25) */}
       <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[200px] rounded-full pointer-events-none z-0 animate-auth-pulse-slow"
         style={{
           background: 'radial-gradient(circle, rgba(139, 92, 246, 0.35) 0%, transparent 70%)',
           filter: 'blur(120px)',
-          opacity: 0.4,
+          opacity: 0.25,
         }}
       />
       {/* Content */}
@@ -147,7 +216,7 @@ export default function LoginPage() {
               height={93}
             />
           </div>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-indigo-400/80 mb-4" style={{ letterSpacing: '3px' }}>
+          <p className="text-xs uppercase mb-4 text-indigo-400/80" style={{ letterSpacing: '0.14em', opacity: 0.85 }}>
             Modern Fleet Management
           </p>
           <h2 className="text-2xl font-bold text-white mb-1">
@@ -329,6 +398,7 @@ export default function LoginPage() {
         <p className="mt-8 text-center text-[10px] text-white/20 tracking-widest">
           Secured by 256-bit SSL · FleetPulse v2.0 · © 2025 Prush Logistics Group LLC
         </p>
+      </div>
       </div>
       </div>
     </div>

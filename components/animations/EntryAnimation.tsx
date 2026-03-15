@@ -91,7 +91,7 @@ export default function EntryAnimation({ onComplete }: { onComplete?: () => void
                 display: 'block',
               }}
             >
-              <source src="/videos/possibleLogoLoop.mp4" type="video/mp4" />
+              <source src="/animations/possibleLogoLoop.mp4" type="video/mp4" />
             </video>
           </div>
           <p

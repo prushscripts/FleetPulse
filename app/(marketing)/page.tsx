@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import dynamic from 'next/dynamic'
 import LandingThemeToggle from '@/components/marketing/LandingThemeToggle'
 import FloatingLoginCard from '@/components/marketing/FloatingLoginCard'
 import ScrollToTop from '@/components/animations/ScrollToTop'
@@ -10,8 +9,6 @@ import ScrollReveal from '@/components/animations/ScrollReveal'
 import ScrollBlur from '@/components/animations/ScrollBlur'
 import ParallaxSection from '@/components/animations/ParallaxSection'
 import HomeFeatureCards from '@/components/marketing/HomeFeatureCards'
-
-const LandingIntro = dynamic(() => import('@/components/marketing/LandingIntro'), { ssr: false })
 
 export default async function Home() {
   const supabase = await createClient()
@@ -25,7 +22,6 @@ export default async function Home() {
 
   return (
     <>
-      <LandingIntro />
       <div className="min-h-screen bg-white dark:bg-gray-900">
         {/* Top Controls */}
         <div className="fixed top-4 left-4 z-50">

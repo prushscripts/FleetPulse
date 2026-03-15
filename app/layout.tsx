@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/layout/ThemeProvider'
-import RouteTransition from '@/components/animations/RouteTransition'
 import { PageTransitionProvider } from '@/components/animations/PageTransition'
 import NavbarLayout from '@/components/layout/NavbarLayout'
+import IntroAnimation from '@/components/IntroAnimation'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -43,11 +43,7 @@ export const metadata: Metadata = {
     images: [ogImageUrl],
   },
   icons: {
-    icon: [
-      { url: '/branding/favicon.ico', sizes: 'any' },
-      { url: '/branding/fleetpulse-icon-32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/branding/fleetpulse-icon-16.png', sizes: '16x16', type: 'image/png' },
-    ],
+    icon: '/branding/favicon.ico',
     apple: '/branding/fleetpulse-icon-32.png',
   },
 }
@@ -61,12 +57,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={inter.variable}>
       <body className={`${inter.className} overflow-x-hidden`}>
         <ThemeProvider>
-          <PageTransitionProvider>
-            <RouteTransition />
-            <NavbarLayout>
-              {children}
-            </NavbarLayout>
-          </PageTransitionProvider>
+          <IntroAnimation>
+            <PageTransitionProvider>
+              <NavbarLayout>
+                {children}
+              </NavbarLayout>
+            </PageTransitionProvider>
+          </IntroAnimation>
         </ThemeProvider>
       </body>
     </html>

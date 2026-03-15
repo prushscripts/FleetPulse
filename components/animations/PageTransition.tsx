@@ -4,17 +4,10 @@ import { createContext, useContext, useState, useCallback, useRef, useEffect } f
 import { useRouter, usePathname } from 'next/navigation'
 import LoadingOverlay from './LoadingOverlay'
 
-const HREF_LABEL_MAP: Record<string, string> = {
-  '/home': 'Home',
-  '/dashboard': 'Dashboard',
-  '/dashboard/vehicles': 'Vehicles',
-  '/dashboard/drivers': 'Drivers',
-  '/dashboard/inspections': 'Inspections',
-  '/dashboard/about': 'About',
-  '/dashboard/roadmap': 'Roadmap',
-  '/dashboard/control-panel': 'Control Panel',
-  '/dashboard/settings': 'Settings',
-  '/dashboard/admin': 'Admin',
+function routeLabelFromHref(href: string): string {
+  const parts = href.split('/').filter(Boolean)
+  const segment = parts.length > 1 ? parts[parts.length - 1] : (parts[0] || 'home')
+  return segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase()
 }
 
 const DELAY_SHOW_MS = 120
@@ -68,7 +61,7 @@ export function usePageTransition() {
   }, [pathname, targetHref, isTransitioning])
 
   const navigateTo = useCallback((href: string) => {
-    const label = HREF_LABEL_MAP[href] ?? (href.startsWith('/dashboard/vehicles') ? 'Vehicles' : 'Page')
+    const label = routeLabelFromHref(href)
     setLoadingLabel(label)
     setExiting(false)
     setTargetHref(href)
