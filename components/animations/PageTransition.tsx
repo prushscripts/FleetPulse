@@ -1,7 +1,7 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import LoadingOverlay from './LoadingOverlay'
 
 const HREF_LABEL_MAP: Record<string, string> = {
@@ -17,35 +17,75 @@ const HREF_LABEL_MAP: Record<string, string> = {
   '/dashboard/admin': 'Admin',
 }
 
-const FADE_IN_MS = 150
-const MIN_VISIBLE_MS = 700
-const FADE_OUT_MS = 250
+const DELAY_SHOW_MS = 120
+const MIN_DISPLAY_MS = 800
+const FADE_OUT_MS = 350
+
+function normalizePath(href: string): string {
+  const path = href.split('?')[0]
+  return path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path
+}
 
 export function usePageTransition() {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [exiting, setExiting] = useState(false)
   const [loadingLabel, setLoadingLabel] = useState('')
+  const [targetHref, setTargetHref] = useState<string | null>(null)
+  const showTimeRef = useRef<number>(0)
+  const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const minDisplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
+  const pathname = usePathname()
 
-  const navigateTo = useCallback((href: string) => {
-    const label = HREF_LABEL_MAP[href] ?? (href.startsWith('/dashboard/vehicles') ? 'Vehicles' : 'Page')
-    setLoadingLabel(label)
-    setExiting(false)
-    setIsTransitioning(true)
-    router.push(href)
-    setTimeout(() => {
+  useEffect(() => {
+    if (!targetHref) return
+    const current = normalizePath(pathname)
+    const target = normalizePath(targetHref)
+    const isMatch = current === target || (target !== '/dashboard' && current.startsWith(target + '/'))
+    if (!isMatch) return
+    if (!isTransitioning) {
+      if (delayTimerRef.current) {
+        clearTimeout(delayTimerRef.current)
+        delayTimerRef.current = null
+      }
+      setTargetHref(null)
+      return
+    }
+    const elapsed = Date.now() - showTimeRef.current
+    const remaining = Math.max(0, MIN_DISPLAY_MS - elapsed)
+    minDisplayTimerRef.current = setTimeout(() => {
       setExiting(true)
       setLoadingLabel('')
       setTimeout(() => {
         setIsTransitioning(false)
         setExiting(false)
+        setTargetHref(null)
       }, FADE_OUT_MS)
-    }, FADE_IN_MS + MIN_VISIBLE_MS)
+    }, remaining)
+    return () => {
+      if (minDisplayTimerRef.current) clearTimeout(minDisplayTimerRef.current)
+    }
+  }, [pathname, targetHref, isTransitioning])
+
+  const navigateTo = useCallback((href: string) => {
+    const label = HREF_LABEL_MAP[href] ?? (href.startsWith('/dashboard/vehicles') ? 'Vehicles' : 'Page')
+    setLoadingLabel(label)
+    setExiting(false)
+    setTargetHref(href)
+    router.push(href)
+    if (delayTimerRef.current) clearTimeout(delayTimerRef.current)
+    delayTimerRef.current = setTimeout(() => {
+      delayTimerRef.current = null
+      showTimeRef.current = Date.now()
+      setIsTransitioning(true)
+    }, DELAY_SHOW_MS)
   }, [router])
 
   const showOverlay = useCallback((label: string) => {
     setLoadingLabel(label)
     setExiting(false)
+    setTargetHref(null)
+    showTimeRef.current = Date.now()
     setIsTransitioning(true)
   }, [])
 
@@ -55,6 +95,7 @@ export function usePageTransition() {
     setTimeout(() => {
       setIsTransitioning(false)
       setExiting(false)
+      setTargetHref(null)
     }, FADE_OUT_MS)
   }, [])
 

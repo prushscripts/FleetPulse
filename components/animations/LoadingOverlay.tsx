@@ -1,8 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
-/** Single source for all loading overlays. Try lowercase first (public/animations). */
 export const LOADING_VIDEO_SRC = '/animations/possibleLogoLoop.mp4'
 export const LOADING_VIDEO_SRC_FALLBACK = '/Animations/possibleLogoLoop.mp4'
 
@@ -11,67 +10,66 @@ export type LoadingOverlayProps = {
   isExiting?: boolean
 }
 
+const FADE_IN_MS = 250
+const FADE_OUT_MS = 350
+
 export default function LoadingOverlay({ loadingLabel, isExiting = false }: LoadingOverlayProps) {
   const [videoSrc, setVideoSrc] = useState(LOADING_VIDEO_SRC)
+  const [entered, setEntered] = useState(false)
+  const isExitingRef = useRef(false)
+  if (isExiting) isExitingRef.current = true
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setEntered(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   const displayLabel = loadingLabel || 'Page'
   const isSwitchingCompany = displayLabel.startsWith('Switching to ')
   const textContent = isSwitchingCompany ? displayLabel : `Loading ${displayLabel}`
   const showText = !isExiting
 
+  const visible = entered && !isExiting
+  const transitionMs = isExiting ? FADE_OUT_MS : FADE_IN_MS
+  const scale = visible ? 1 : isExiting ? 1.02 : 0.98
+
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center pointer-events-none min-h-screen w-full loading-overlay-root"
+      className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none min-h-screen w-full"
       style={{
-        background: 'radial-gradient(ellipse 80% 50% at 50% 45%, rgba(30, 27, 75, 0.35) 0%, transparent 50%), linear-gradient(180deg, #060810 0%, #0a0e18 40%, #080c14 100%)',
-        opacity: isExiting ? 0 : 1,
-        transition: 'opacity 0.3s ease-out',
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        opacity: visible ? 1 : 0,
+        transform: `scale(${scale})`,
+        transition: `opacity ${transitionMs}ms ease-out, transform ${transitionMs}ms ease-out`,
       }}
     >
-      {/* Full-screen subtle grid */}
-      <div
-        className="absolute inset-0 opacity-[0.06]"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(139, 92, 246, 0.12) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(139, 92, 246, 0.12) 1px, transparent 1px)
-          `,
-          backgroundSize: '24px 24px',
-        }}
-      />
-      {/* Radial glow behind video */}
-      <div className="absolute inset-0 flex items-center justify-center" aria-hidden>
+      <div className="flex flex-col items-center justify-center">
         <div
-          className="w-[min(90vw,400px)] h-[min(40vw,160px)] rounded-full opacity-25"
+          className="rounded-xl shadow-2xl border border-white/10 backdrop-blur-lg flex flex-col items-center justify-center p-6 transition-all"
           style={{
-            background: 'radial-gradient(ellipse 80% 80%, rgba(139, 92, 246, 0.3) 0%, transparent 70%)',
-            filter: 'blur(28px)',
+            background: 'rgba(15,15,25,0.85)',
+            boxShadow: '0 0 40px rgba(139,92,246,0.12)',
           }}
-        />
-      </div>
-
-      <div className="relative z-10 flex flex-col items-center justify-center w-full min-h-screen">
-        <div className="mb-8 loading-overlay-logo-wrap flex justify-center" style={{ minHeight: 200 }}>
-          <div
-            className="rounded-2xl overflow-hidden loading-overlay-logo-glow flex items-center justify-center"
-            style={{
-              filter: 'drop-shadow(0 0 40px rgba(147,51,234,0.45))',
-              minWidth: 280,
-              minHeight: 160,
-            }}
-          >
+        >
+          <div className="relative flex items-center justify-center mb-4">
+            <div
+              className="absolute inset-0 rounded-lg opacity-40"
+              style={{
+                background: 'radial-gradient(circle, rgba(139,92,246,0.35) 0%, transparent 70%)',
+                filter: 'blur(20px)',
+              }}
+              aria-hidden
+            />
             <video
               autoPlay
               muted
               playsInline
               loop
               preload="auto"
-              width={460}
-              height={260}
-              className="w-[460px] max-w-[min(90vw,460px)] h-auto block object-contain"
-              style={{
-                mixBlendMode: 'screen',
-                background: 'transparent',
-              }}
+              className="relative z-10 w-[140px] sm:w-[180px] h-auto object-contain opacity-90"
+              style={{ background: 'transparent' }}
               aria-hidden
               onError={() => {
                 if (videoSrc === LOADING_VIDEO_SRC) setVideoSrc(LOADING_VIDEO_SRC_FALLBACK)
@@ -79,18 +77,12 @@ export default function LoadingOverlay({ loadingLabel, isExiting = false }: Load
               src={videoSrc}
             />
           </div>
-        </div>
-
-        {showText && (
-          <>
-            <p className="loading-overlay-text text-sm font-light uppercase tracking-[0.32em] text-purple-300/90 text-center">
+          {showText && (
+            <p className="text-xs font-light uppercase tracking-widest text-purple-300/90 text-center">
               {textContent}
             </p>
-            <div className="mt-3 w-32 h-0.5 rounded-full bg-gray-700/60 overflow-hidden">
-              <div className="h-full rounded-full bg-purple-400/80 loading-overlay-progress" />
-            </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )

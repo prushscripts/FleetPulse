@@ -6,7 +6,7 @@ const INTRO_STORAGE_KEY = 'fleetpulse-intro-seen'
 const VIDEO_PATH = '/animations/officialFPAnimation.mp4'
 const VIDEO_PATH_FALLBACK = '/Animations/officialFPAnimation.mp4'
 const MIN_DISPLAY_MS = 2500
-const TRANSITION_MS = 800
+const TRANSITION_MS = 1200
 
 export default function LandingIntro() {
   const [visible, setVisible] = useState<boolean | null>(null)
@@ -48,21 +48,30 @@ export default function LandingIntro() {
     <div
       className="fixed inset-0 z-[10000] flex flex-col items-center justify-center overflow-hidden"
       style={{
-        background: 'linear-gradient(180deg, #060810 0%, #0a0e18 50%, #080c14 100%)',
+        background: 'linear-gradient(180deg, #050810 0%, #0a0e1a 40%, #080c14 100%)',
         backdropFilter: 'blur(12px)',
       }}
     >
       <div
-        className="absolute inset-0 flex items-center justify-center transition-all duration-[800ms] ease-out"
+        className="absolute inset-0 opacity-60"
         style={{
+          background: 'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(139, 92, 246, 0.2) 0%, transparent 60%)',
+        }}
+      />
+      <div
+        className="absolute inset-0 flex items-center justify-center transition-all ease-out"
+        style={{
+          transitionDuration: `${TRANSITION_MS}ms`,
           opacity: transitioning ? 0 : 1,
-          transform: transitioning ? 'scale(1.08)' : 'scale(1)',
+          transform: transitioning ? 'scale(1.05)' : 'scale(1)',
+          filter: transitioning ? 'blur(10px)' : 'blur(0)',
         }}
       >
         <div
-          className="absolute inset-0 transition-opacity duration-[800ms]"
+          className="absolute inset-0 transition-opacity"
           style={{
-            background: 'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 60%)',
+            transitionDuration: `${TRANSITION_MS}ms`,
+            background: 'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(139, 92, 246, 0.18) 0%, transparent 60%)',
             opacity: transitioning ? 0 : 1,
           }}
         />

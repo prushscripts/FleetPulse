@@ -59,46 +59,37 @@ export default function RouteTransition() {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center pointer-events-none min-h-screen w-full"
+      className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none min-h-screen w-full"
       style={{
-        background: 'radial-gradient(ellipse 80% 50% at 50% 45%, rgba(30, 27, 75, 0.35) 0%, transparent 50%), linear-gradient(180deg, #060810 0%, #0a0e18 40%, #080c14 100%)',
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         opacity: exiting ? 0 : 1,
         transition: `opacity ${FADE_OUT_MS}ms ease-out`,
       }}
     >
-      <div className="relative z-10 flex flex-col items-center justify-center w-full min-h-screen">
-        <div
-          className="mb-8 flex justify-center"
-          style={{
-            filter: 'drop-shadow(0 0 40px rgba(147,51,234,0.45))',
-            minWidth: 280,
-            minHeight: 160,
-          }}
-        >
+      <div className="flex flex-col items-center justify-center">
+        <div className="rounded-xl shadow-2xl border border-white/10 backdrop-blur-lg p-6 flex flex-col items-center" style={{ background: 'rgba(15,15,25,0.85)' }}>
           <video
             autoPlay
             muted
             playsInline
             loop
             preload="auto"
-            width={460}
-            height={260}
             src={videoSrc}
-            className="w-[460px] max-w-[min(90vw,460px)] h-auto block object-contain"
-            style={{ mixBlendMode: 'screen', background: 'transparent' }}
+            className="w-[140px] sm:w-[180px] h-auto object-contain opacity-90"
+            style={{ background: 'transparent' }}
             aria-hidden
             onError={() => {
               if (videoSrc === LOADING_VIDEO_SRC) setVideoSrc(LOADING_VIDEO_SRC_FALLBACK)
             }}
           />
-        </div>
-        {!exiting && (
-          <>
-            <p className="text-sm font-light uppercase tracking-[0.32em] text-purple-300/90 text-center">
+          {!exiting && (
+            <p className="mt-4 text-xs font-light uppercase tracking-widest text-purple-300/90 text-center">
               Loading {loadingLabel}
             </p>
-          </>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )

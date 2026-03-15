@@ -110,41 +110,41 @@ export default function LoginPage() {
   return (
     <>
     <div className="min-h-screen min-h-[100dvh] relative overflow-hidden" style={{ backgroundColor: 'var(--fleet-navy, #0d1120)' }}>
-      {/* Background layers: z-0 so they sit behind content; visible on mobile */}
+      {/* Grid background — opacity 0.08 */}
       <div
         className="absolute inset-0 z-0 min-h-screen min-h-[100dvh] animate-auth-grid"
         style={{
-          backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% 50%, rgba(99, 102, 241, 0.35), transparent 70%), radial-gradient(ellipse 60% 40% at 80% 20%, rgba(139, 92, 246, 0.18), transparent 50%)',
-          backgroundSize: '100% 100%',
-          animationDuration: '20s',
-          opacity: 0.12,
+          backgroundImage: 'linear-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.12) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+          opacity: 0.08,
         }}
       />
+      {/* Soft radial glow behind logo — purple → transparent, blur, pulse-slow */}
       <div
-        className="absolute inset-0 z-0 min-h-screen min-h-[100dvh] animate-auth-grid"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[200px] rounded-full pointer-events-none z-0 animate-auth-pulse-slow"
         style={{
-          backgroundImage: 'linear-gradient(rgba(99, 102, 241, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.08) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-          opacity: 0.1,
+          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.35) 0%, transparent 70%)',
+          filter: 'blur(120px)',
+          opacity: 0.4,
         }}
       />
       {/* Content */}
       <div className="relative z-10 min-h-screen min-h-[100dvh] flex flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm flex flex-col flex-1 justify-center min-h-0">
+      <div className="w-full max-w-[380px] flex flex-col flex-1 justify-center min-h-0">
         <div className="text-center mb-6 relative flex flex-col items-center">
-          {/* Pulse rings behind logo — responsive, visible on mobile */}
+          {/* 3 concentric pulse rings — scale 1 → 1.2, opacity fade, 6s infinite */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(280px,85vw)] h-[120px] min-h-[100px] flex items-center justify-center pointer-events-none z-0" style={{ marginTop: '-0.5rem' }}>
-            <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.35)] animate-auth-pulse-ring" />
-            <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.3)] animate-auth-pulse-ring animate-auth-pulse-ring-2" />
-            <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.25)] animate-auth-pulse-ring animate-auth-pulse-ring-3" />
+            <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.4)] animate-auth-pulse-ring-slow" />
+            <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.35)] animate-auth-pulse-ring-slow animate-auth-pulse-ring-slow-2" />
+            <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.3)] animate-auth-pulse-ring-slow animate-auth-pulse-ring-slow-3" />
           </div>
           <div className="relative z-10 mx-auto mb-2 flex items-center justify-center">
             <img
               src="/branding/fleetpulse-logo.png"
               alt="FleetPulse"
-              className="max-w-[240px] w-full h-auto object-contain block"
-              width={240}
-              height={80}
+              className="max-w-[280px] w-full h-auto object-contain block"
+              width={280}
+              height={93}
             />
           </div>
           <p className="text-[11px] uppercase tracking-[0.2em] text-indigo-400/80 mb-4" style={{ letterSpacing: '3px' }}>
@@ -158,8 +158,8 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Login Card — glassy */}
-        <div className="rounded-xl p-5 backdrop-blur-[12px]" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(139,92,246,0.12)', boxShadow: '0 0 60px rgba(109,40,217,0.08)' }}>
+        {/* Login Card — glassmorphism */}
+        <div className="rounded-xl p-5 bg-white/5 backdrop-blur-lg border border-white/10 shadow-xl">
           <form onSubmit={handleLogin} className="space-y-4">
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-sm flex items-start gap-2">
@@ -182,7 +182,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                className="w-full px-3 py-2.5 min-h-[44px] text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
                 placeholder="you@example.com"
               />
             </div>
@@ -206,7 +206,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowCompanyDropdown((v) => !v)}
-                      className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-sm text-left border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2.5 min-h-[44px] text-sm text-left border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
                     >
                       <span className="truncate">
                         {selectedCompany ? (selectedCompany.displayName || selectedCompany.name) : 'Select company'}
@@ -256,7 +256,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                className="w-full px-3 py-2.5 min-h-[44px] text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
                 placeholder="••••••••"
               />
             </div>
@@ -282,7 +282,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center items-center gap-2 py-2.5 px-3 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 ease-out hover:brightness-105 hover:scale-[1.02] disabled:hover:brightness-100 disabled:hover:scale-100"
+              className="w-full flex justify-center items-center gap-2 min-h-[44px] py-2.5 px-3 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 ease-out hover:brightness-105 hover:scale-[1.02] disabled:hover:brightness-100 disabled:hover:scale-100"
             >
               {loading ? (
                 <>
