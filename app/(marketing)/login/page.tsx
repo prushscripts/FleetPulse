@@ -4,8 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import EntryAnimation from '@/components/animations/EntryAnimation'
-
 type CompanyOption = { id: string; name: string; displayName?: string; roadmapOnly?: boolean }
 
 export default function LoginPage() {
@@ -13,8 +11,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [showEntry, setShowEntry] = useState(false)
-  const [redirectOnComplete, setRedirectOnComplete] = useState<string | null>(null)
   const [companies, setCompanies] = useState<CompanyOption[]>([])
   const [companiesLoading, setCompaniesLoading] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null)
@@ -97,11 +93,10 @@ export default function LoginPage() {
       const { data: sessionData } = await supabase.auth.getSession()
 
       if (sessionData?.session) {
-        setLoading(false)
-        setShowEntry(true)
         const isRoadmapOnly = companyToSet?.roadmapOnly || (companyToSet?.name || '').toLowerCase().includes('roadmap')
         const redirectTo = isRoadmapOnly ? '/dashboard/roadmap' : '/home'
-        setRedirectOnComplete(redirectTo)
+        setLoading(false)
+        router.replace(redirectTo)
       } else {
         setError('Session not established. Please try again.')
         setLoading(false)
@@ -114,41 +109,34 @@ export default function LoginPage() {
 
   return (
     <>
-      {showEntry && redirectOnComplete && (
-        <EntryAnimation
-          onComplete={() => {
-            router.push(redirectOnComplete)
-            window.location.href = redirectOnComplete
-          }}
-        />
-      )}
-    <div className={`min-h-screen relative overflow-hidden ${showEntry ? 'pointer-events-none' : ''}`} style={{ backgroundColor: 'var(--fleet-navy, #0d1120)' }}>
-      {/* Subtle animated background: slow-moving radial gradient + faint grid */}
+    <div className="min-h-screen min-h-[100dvh] relative overflow-hidden" style={{ backgroundColor: 'var(--fleet-navy, #0d1120)' }}>
+      {/* Background layers: z-0 so they sit behind content; visible on mobile */}
       <div
-        className="absolute inset-0 opacity-[0.07] animate-auth-grid"
+        className="absolute inset-0 z-0 min-h-screen min-h-[100dvh] animate-auth-grid"
         style={{
-          backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% 50%, rgba(99, 102, 241, 0.4), transparent 70%), radial-gradient(ellipse 60% 40% at 80% 20%, rgba(139, 92, 246, 0.2), transparent 50%)',
+          backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% 50%, rgba(99, 102, 241, 0.35), transparent 70%), radial-gradient(ellipse 60% 40% at 80% 20%, rgba(139, 92, 246, 0.18), transparent 50%)',
           backgroundSize: '100% 100%',
           animationDuration: '20s',
+          opacity: 0.12,
         }}
       />
       <div
-        className="absolute inset-0 animate-auth-grid"
+        className="absolute inset-0 z-0 min-h-screen min-h-[100dvh] animate-auth-grid"
         style={{
-          backgroundImage: 'linear-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.06) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(rgba(99, 102, 241, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.08) 1px, transparent 1px)',
           backgroundSize: '48px 48px',
-          opacity: 0.06,
+          opacity: 0.1,
         }}
       />
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm flex flex-col flex-1 justify-center">
+      <div className="relative z-10 min-h-screen min-h-[100dvh] flex flex-col items-center justify-center px-4 py-10">
+      <div className="w-full max-w-sm flex flex-col flex-1 justify-center min-h-0">
         <div className="text-center mb-6 relative flex flex-col items-center">
-          {/* Pulse rings behind logo */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[120px] flex items-center justify-center pointer-events-none" style={{ marginTop: '-0.5rem' }}>
-            <span className="absolute w-32 h-32 rounded-full border border-[rgba(139,92,246,0.15)] animate-auth-pulse-ring" />
-            <span className="absolute w-32 h-32 rounded-full border border-[rgba(139,92,246,0.15)] animate-auth-pulse-ring animate-auth-pulse-ring-2" />
-            <span className="absolute w-32 h-32 rounded-full border border-[rgba(139,92,246,0.15)] animate-auth-pulse-ring animate-auth-pulse-ring-3" />
+          {/* Pulse rings behind logo — responsive, visible on mobile */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(280px,85vw)] h-[120px] min-h-[100px] flex items-center justify-center pointer-events-none z-0" style={{ marginTop: '-0.5rem' }}>
+            <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.35)] animate-auth-pulse-ring" />
+            <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.3)] animate-auth-pulse-ring animate-auth-pulse-ring-2" />
+            <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.25)] animate-auth-pulse-ring animate-auth-pulse-ring-3" />
           </div>
           <div className="relative z-10 mx-auto mb-2 flex items-center justify-center" style={{ width: '280px', background: 'transparent', border: 'none', padding: 0 }}>
             <video

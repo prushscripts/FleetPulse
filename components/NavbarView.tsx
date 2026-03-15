@@ -79,7 +79,7 @@ export function NavbarView(props: NavbarViewProps) {
   return (
     <div className="navbar-root overflow-visible">
       <nav style={navStyle}>
-        <div className="max-w-7xl mx-auto w-full flex justify-between items-center" style={{ height: '100%' }}>
+        <div className="max-w-7xl mx-auto w-full max-w-[100vw] flex justify-between items-center" style={{ height: '100%' }}>
           <Link
             href="/home"
             onClick={(e) => { e.preventDefault(); props.navigateTo('/home') }}
@@ -227,8 +227,11 @@ export function NavbarView(props: NavbarViewProps) {
         </div>
 
         {props.mobileOpen && (
-          <div className="sm:hidden pb-3 animate-fade-in-scale overflow-y-auto max-h-[100vh]">
-            <div className="rounded-2xl border border-white/10 bg-gray-900/95 backdrop-blur-md shadow-xl p-3 space-y-2">
+          <div
+            className="sm:hidden pb-3 pt-2 animate-fade-in-scale overflow-y-auto overflow-x-hidden max-h-[calc(100vh-64px)] max-w-[100vw] w-full mx-auto"
+            style={{ maxWidth: '100vw' }}
+          >
+            <div className="rounded-2xl border border-white/10 bg-gray-900/95 backdrop-blur-md shadow-xl p-3 space-y-2 w-full max-w-[100%] box-border mx-auto">
               {props.showCompanySwitcher && (
                 <div className="mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
                   <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-2 block mb-2">Company</span>
