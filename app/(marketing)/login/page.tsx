@@ -118,7 +118,7 @@ export default function LoginPage() {
 
       if (sessionData?.session) {
         const isRoadmapOnly = companyToSet?.roadmapOnly || (companyToSet?.name || '').toLowerCase().includes('roadmap')
-        const redirectTo = isRoadmapOnly ? '/dashboard/roadmap' : '/home'
+        const redirectTo = isRoadmapOnly ? '/dashboard/roadmap' : '/dashboard/home'
         setLoginSuccessRedirect(redirectTo)
       } else {
         setError('Session not established. Please try again.')
