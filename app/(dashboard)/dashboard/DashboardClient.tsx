@@ -1088,7 +1088,7 @@ export default function DashboardClient(
         </div>
 
         {viewMode === 'list' ? (
-          <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+          <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
             <div className="overflow-x-auto -mx-4 sm:mx-0">
               <div className="inline-block min-w-full align-middle px-4 sm:px-0">
                 <table className="min-w-full">

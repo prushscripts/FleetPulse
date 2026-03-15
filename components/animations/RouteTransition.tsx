@@ -28,7 +28,7 @@ const ROUTE_LABEL_MAP: Record<string, string> = {
 }
 
 const FADE_IN_MS = 150
-const MIN_VISIBLE_MS = 400
+const MIN_VISIBLE_MS = 700
 const FADE_OUT_MS = 300
 
 export default function RouteTransition() {
@@ -66,13 +66,16 @@ export default function RouteTransition() {
       }}
     >
       <div className="relative z-10 flex flex-col items-center justify-center w-full min-h-screen">
-        <div className="mb-8 flex justify-center">
+        <div
+          className="mb-8 flex justify-center"
+          style={{ filter: 'drop-shadow(0 0 40px rgba(147,51,234,0.45))' }}
+        >
           <video
             autoPlay
             muted
             playsInline
             loop
-            className="max-w-[min(85vw,340px)] w-full h-auto block object-contain"
+            className="w-[460px] max-w-[min(90vw,460px)] h-auto block object-contain"
             style={{ mixBlendMode: 'screen', background: 'transparent' }}
             aria-hidden
           >

@@ -3,7 +3,8 @@
 import React from 'react'
 
 /** Single source for all loading overlays: tab switch, page transition, company switch. */
-export const LOADING_VIDEO_SRC = '/videos/possibleLogoLoop.mp4'
+/** Use /Animations/ to match public/Animations/ folder. */
+export const LOADING_VIDEO_SRC = '/Animations/possibleLogoLoop.mp4'
 
 export type LoadingOverlayProps = {
   loadingLabel: string
@@ -49,13 +50,18 @@ export default function LoadingOverlay({ loadingLabel, isExiting = false }: Load
 
       <div className="relative z-10 flex flex-col items-center justify-center w-full min-h-screen">
         <div className="mb-8 loading-overlay-logo-wrap flex justify-center">
-          <div className="rounded-2xl overflow-hidden loading-overlay-logo-glow flex items-center justify-center">
+          <div
+            className="rounded-2xl overflow-hidden loading-overlay-logo-glow flex items-center justify-center"
+            style={{
+              filter: 'drop-shadow(0 0 40px rgba(147,51,234,0.45))',
+            }}
+          >
             <video
               autoPlay
               muted
               playsInline
               loop
-              className="max-w-[min(85vw,340px)] w-full h-auto block object-contain"
+              className="w-[460px] max-w-[min(90vw,460px)] h-auto block object-contain"
               style={{
                 mixBlendMode: 'screen',
                 background: 'transparent',

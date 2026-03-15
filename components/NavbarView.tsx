@@ -67,6 +67,14 @@ export function NavbarView(props: NavbarViewProps) {
       return () => document.removeEventListener('mousedown', onOutside)
     }
   }, [profileOpen])
+
+  useEffect(() => {
+    if (props.mobileOpen) {
+      const prev = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = prev }
+    }
+  }, [props.mobileOpen])
   const profileInitial = (props.currentCompanyName || 'U').charAt(0).toUpperCase()
   return (
     <div className="navbar-root overflow-visible">
@@ -107,7 +115,7 @@ export function NavbarView(props: NavbarViewProps) {
                 >
                   {active && (
                     <motion.span
-                      layoutId="navbar-underline"
+                      layoutId="nav-indicator"
                       className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[rgba(139,92,246,0.9)]"
                       transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                     />
@@ -117,54 +125,56 @@ export function NavbarView(props: NavbarViewProps) {
               )
             })}
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-2 sm:ml-6">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-2 sm:ml-6 w-[88px] sm:w-auto justify-end">
             <button
               type="button"
               onClick={() => props.setMobileOpen((v) => !v)}
-              className="sm:hidden p-2 rounded-full bg-white/5 border border-white/10 text-white/80 hover:text-white hover:border-white/20 transition-all w-8 h-8 flex items-center justify-center"
+              className="sm:hidden p-2 rounded-full bg-white/5 border border-white/10 text-white/80 hover:text-white hover:border-white/20 transition-all w-8 h-8 flex items-center justify-center flex-shrink-0"
               aria-label="Toggle menu"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            {props.showCompanySwitcher && (
-              <div className="relative hidden sm:block">
-                <button
-                  type="button"
-                  onClick={() => props.setCompanySwitcherOpen((v) => !v)}
-                  className="flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 text-xs font-medium text-white/80 hover:text-white hover:border-white/20 transition-all"
-                  aria-label="Switch company"
-                >
-                  <span className="max-w-[140px] truncate">{truncateName(props.currentCompanyName || 'Company', 14)}</span>
-                  <svg className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${props.companySwitcherOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {props.companySwitcherOpen && (
-                  <>
-                    <div className="fixed inset-0 z-30" aria-hidden onClick={() => props.setCompanySwitcherOpen(false)} />
-                    <div className="absolute right-0 top-full mt-1.5 z-40 min-w-[200px] py-1.5 rounded-xl border border-white/10 bg-gray-900/95 backdrop-blur-md shadow-xl">
-                      {props.companies.map((c) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => props.handleSwitchCompany(c)}
-                          className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm text-white/90 hover:bg-white/10 transition-colors"
-                        >
-                          {c.id === props.currentCompanyId ? (
-                            <span className="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0" aria-hidden />
-                          ) : (
-                            <span className="w-2 h-2 flex-shrink-0" aria-hidden />
-                          )}
-                          <span className="truncate flex-1">{c.displayName ?? c.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
+            <div
+              className="relative hidden sm:block min-w-[180px] flex-shrink-0"
+              style={props.showCompanySwitcher ? undefined : { opacity: 0, pointerEvents: 'none' }}
+              aria-hidden={!props.showCompanySwitcher}
+            >
+              <button
+                type="button"
+                onClick={() => props.setCompanySwitcherOpen((v) => !v)}
+                className="flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 text-xs font-medium text-white/80 hover:text-white hover:border-white/20 transition-all w-full min-w-[180px]"
+                aria-label="Switch company"
+              >
+                <span className="max-w-[140px] truncate">{truncateName(props.currentCompanyName || 'Company', 14)}</span>
+                <svg className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${props.companySwitcherOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {props.companySwitcherOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" aria-hidden onClick={() => props.setCompanySwitcherOpen(false)} />
+                  <div className="absolute right-0 top-full mt-1.5 z-40 min-w-[200px] py-1.5 rounded-xl border border-white/10 bg-gray-900/95 backdrop-blur-md shadow-xl">
+                    {props.companies.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => props.handleSwitchCompany(c)}
+                        className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm text-white/90 hover:bg-white/10 transition-colors"
+                      >
+                        {c.id === props.currentCompanyId ? (
+                          <span className="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0" aria-hidden />
+                        ) : (
+                          <span className="w-2 h-2 flex-shrink-0" aria-hidden />
+                        )}
+                        <span className="truncate flex-1">{c.displayName ?? c.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
             <Link
               href="/dashboard/settings"
               onClick={(e) => { e.preventDefault(); props.navigateTo('/dashboard/settings') }}
@@ -217,7 +227,7 @@ export function NavbarView(props: NavbarViewProps) {
         </div>
 
         {props.mobileOpen && (
-          <div className="sm:hidden pb-3 animate-fade-in-scale">
+          <div className="sm:hidden pb-3 animate-fade-in-scale overflow-y-auto max-h-[100vh]">
             <div className="rounded-2xl border border-white/10 bg-gray-900/95 backdrop-blur-md shadow-xl p-3 space-y-2">
               {props.showCompanySwitcher && (
                 <div className="mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">

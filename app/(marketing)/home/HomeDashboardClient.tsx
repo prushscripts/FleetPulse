@@ -417,8 +417,8 @@ export default function HomeDashboardClient({
           </div>
         </div>
 
-        {/* Stat cards */}
-        <section className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10 ${isCompact ? 'gap-3 mb-8' : ''} ${isExecutive ? 'gap-8 mb-12' : ''}`}>
+        {/* Stat cards — below md: full width stacked with spacing */}
+        <section className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-8 md:mb-10 ${isCompact ? 'gap-3 mb-6 md:mb-8' : ''} ${isExecutive ? 'gap-6 md:gap-8 mb-10 md:mb-12' : ''}`}>
           <StatCard
             title="Total Vehicles"
             value={stats.totalVehicles}
@@ -449,8 +449,8 @@ export default function HomeDashboardClient({
           />
         </section>
 
-        {/* Oil + Inspection panels */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+        {/* Oil + Inspection panels — below md: stack vertically */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8 md:mb-10">
           <div className="bg-white/90 dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/70 p-6">
             <h2 className="text-base font-semibold tracking-tight text-gray-900 dark:text-white mb-4">
               Oil Change Status
@@ -541,7 +541,7 @@ export default function HomeDashboardClient({
           <h2 className="text-base font-semibold tracking-tight text-gray-900 dark:text-white mb-4">
             Vehicle Status Breakdown
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
             <motion.div
               className="rounded-2xl p-5 bg-gradient-to-br from-green-50 to-emerald-50/80 dark:from-green-900/20 dark:to-emerald-900/10 border border-green-200/60 dark:border-green-800/40 text-center"
               initial={{ opacity: 0, y: 8 }}
