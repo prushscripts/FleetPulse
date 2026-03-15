@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import LandingThemeToggle from '@/components/marketing/LandingThemeToggle'
 import FloatingLoginCard from '@/components/marketing/FloatingLoginCard'
 import ScrollToTop from '@/components/animations/ScrollToTop'
@@ -9,6 +10,8 @@ import ScrollReveal from '@/components/animations/ScrollReveal'
 import ScrollBlur from '@/components/animations/ScrollBlur'
 import ParallaxSection from '@/components/animations/ParallaxSection'
 import HomeFeatureCards from '@/components/marketing/HomeFeatureCards'
+
+const LandingIntro = dynamic(() => import('@/components/marketing/LandingIntro'), { ssr: false })
 
 export default async function Home() {
   const supabase = await createClient()
@@ -22,6 +25,7 @@ export default async function Home() {
 
   return (
     <>
+      <LandingIntro />
       <div className="min-h-screen bg-white dark:bg-gray-900">
         {/* Top Controls */}
         <div className="fixed top-4 left-4 z-50">
@@ -72,9 +76,13 @@ export default async function Home() {
             <div className="max-w-3xl lg:max-w-4xl">
               <ScrollReveal delay={0}>
                 <div className="flex justify-center mb-6 sm:mb-8 h-20 sm:h-24 md:h-28 lg:h-32 w-full max-w-[400px] sm:max-w-[480px] md:max-w-[520px] mx-auto">
-                  <video autoPlay muted loop playsInline aria-label="FleetPulse" className="h-full w-full object-contain block drop-shadow-2xl select-none" style={{ background: 'transparent' }}>
-                    <source src="/videos/fleetpulse_logo_loop.mp4" type="video/mp4" />
-                  </video>
+                  <Image
+                    src="/branding/fleetpulse-logo.png"
+                    alt="FleetPulse"
+                    width={400}
+                    height={120}
+                    className="h-full w-full object-contain block drop-shadow-2xl select-none"
+                  />
                 </div>
               </ScrollReveal>
               <ScrollReveal delay={100}>
@@ -367,9 +375,13 @@ export default async function Home() {
             <ScrollReveal delay={0}>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 py-8">
                 <div className="flex justify-center mb-6 h-16 sm:h-20 md:h-24 w-full max-w-[340px] sm:max-w-[380px] mx-auto">
-                  <video autoPlay muted loop playsInline aria-label="FleetPulse" className="h-full w-full object-contain block drop-shadow-xl select-none" style={{ background: 'transparent' }}>
-                    <source src="/videos/fleetpulse_logo_loop.mp4" type="video/mp4" />
-                  </video>
+                  <Image
+                    src="/branding/fleetpulse-logo.png"
+                    alt="FleetPulse"
+                    width={340}
+                    height={100}
+                    className="h-full w-full object-contain block drop-shadow-xl select-none"
+                  />
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 drop-shadow-lg select-none cursor-default">
                   Ready to streamline your fleet management?

@@ -3,8 +3,7 @@
 import React from 'react'
 
 /** Single source for all loading overlays: tab switch, page transition, company switch. */
-/** Use /Animations/ to match public/Animations/ folder. */
-export const LOADING_VIDEO_SRC = '/Animations/possibleLogoLoop.mp4'
+export const LOADING_VIDEO_SRC = '/animations/possibleLogoLoop.mp4'
 
 export type LoadingOverlayProps = {
   loadingLabel: string

@@ -83,25 +83,17 @@ export function NavbarView(props: NavbarViewProps) {
           <Link
             href="/home"
             onClick={(e) => { e.preventDefault(); props.navigateTo('/home') }}
-            className="flex items-center flex-shrink-0 h-[32px] w-[160px] rounded-md overflow-hidden"
-            style={{
-              background: 'transparent',
-              textDecoration: 'none',
-              maskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
-            }}
+            className="flex items-center flex-shrink-0 h-7 sm:h-8 w-auto max-w-[160px] rounded-md overflow-hidden"
+            style={{ background: 'transparent', textDecoration: 'none' }}
+            aria-label="FleetPulse home"
           >
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              aria-label="FleetPulse logo"
-              className="w-full h-full object-contain object-left"
-              style={{ mixBlendMode: 'screen', background: 'transparent' }}
-            >
-              <source src="/videos/fleetpulse_logo_loop.mp4" type="video/mp4" />
-            </video>
+            <img
+              src="/branding/fleetpulse-navbar.png"
+              alt="FleetPulse"
+              className="h-full w-auto object-contain object-left"
+              width={160}
+              height={32}
+            />
           </Link>
           <div className="hidden sm:flex sm:flex-1 sm:justify-center sm:items-center sm:gap-1">
             {props.navItems.map((item) => {

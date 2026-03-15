@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"
+     role="img" aria-label="FleetPulse icon">
+  <title>FleetPulse</title>
+  <!--
+    FleetPulse Hub-and-Spoke Icon
+    ─────────────────────────────
+    Geometry:
+      Center:      50, 50
+      Hub radius:  11
+      Node radius: 6.5
+      Arm length:  26  (center-to-node center, diagonal 45°)
+      Line width:  4.5
+
+    Node positions (45° diagonals):
+      NE: 68.38, 31.62
+      NW: 31.62, 31.62
+      SW: 31.62, 68.38
+      SE: 68.38, 68.38
+
+    Color: #581C87 (rich purple) — swap to #1E1B4B for deep navy
+    Usage: Scale freely. At 16px+, all geometry remains readable.
+  -->
+
+  <!-- Background: dark rounded square (comment out for transparent version) -->
+  <rect width="100" height="100" rx="22" ry="22" fill="#0A0814"/>
+
+  <!-- Connector lines (drawn first, under circles) -->
+  <g stroke="#581C87" stroke-width="4.5" stroke-linecap="round">
+    <line x1="50" y1="50" x2="68.38" y2="31.62"/>
+    <line x1="50" y1="50" x2="31.62" y2="31.62"/>
+    <line x1="50" y1="50" x2="31.62" y2="68.38"/>
+    <line x1="50" y1="50" x2="68.38" y2="68.38"/>
+  </g>
+
+  <!-- Outer nodes -->
+  <g fill="#581C87">
+    <circle cx="68.38" cy="31.62" r="6.5"/>
+    <circle cx="31.62" cy="31.62" r="6.5"/>
+    <circle cx="31.62" cy="68.38" r="6.5"/>
+    <circle cx="68.38" cy="68.38" r="6.5"/>
+  </g>
+
+  <!-- Central hub -->
+  <circle cx="50" cy="50" r="11" fill="#581C87"/>
+
+</svg>

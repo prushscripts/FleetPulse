@@ -138,18 +138,14 @@ export default function LoginPage() {
             <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.3)] animate-auth-pulse-ring animate-auth-pulse-ring-2" />
             <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.25)] animate-auth-pulse-ring animate-auth-pulse-ring-3" />
           </div>
-          <div className="relative z-10 mx-auto mb-2 flex items-center justify-center" style={{ width: '280px', background: 'transparent', border: 'none', padding: 0 }}>
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              aria-label="FleetPulse"
-              onCanPlay={(e) => e.currentTarget.play()}
-              style={{ width: '100%', mixBlendMode: 'screen', background: 'transparent', display: 'block' }}
-            >
-              <source src="/videos/fleetpulse_logo_loop.mp4" type="video/mp4" />
-            </video>
+          <div className="relative z-10 mx-auto mb-2 flex items-center justify-center">
+            <img
+              src="/branding/fleetpulse-logo.png"
+              alt="FleetPulse"
+              className="max-w-[240px] w-full h-auto object-contain block"
+              width={240}
+              height={80}
+            />
           </div>
           <p className="text-[11px] uppercase tracking-[0.2em] text-indigo-400/80 mb-4" style={{ letterSpacing: '3px' }}>
             Modern Fleet Management
