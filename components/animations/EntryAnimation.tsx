@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { LOGO_LOOP_VIDEO } from '@/lib/animation-paths'
 
 const STAGE1_MS = 500
 const STAGE2_MIN_MS = 2000
@@ -81,6 +82,7 @@ export default function EntryAnimation({ onComplete }: { onComplete?: () => void
               autoPlay
               muted
               playsInline
+              preload="auto"
               aria-label="FleetPulse"
               onCanPlay={(e) => e.currentTarget.play()}
               onEnded={handleVideoEnded}
@@ -91,7 +93,7 @@ export default function EntryAnimation({ onComplete }: { onComplete?: () => void
                 display: 'block',
               }}
             >
-              <source src="/animations/possibleLogoLoop.mp4" type="video/mp4" />
+              <source src={LOGO_LOOP_VIDEO} type="video/mp4" />
             </video>
           </div>
           <p
