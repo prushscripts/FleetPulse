@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/components/layout/ThemeProvider'
 import { NavbarView } from '@/components/NavbarView'
 import { usePageTransitionContext } from '@/components/animations/PageTransition'
+import { isPreviewPath } from '@/lib/preview-routes'
 
 export type Company = { id: string; name: string; displayName?: string; logoUrl?: string; roadmapOnly?: boolean }
 
@@ -15,10 +16,25 @@ type CompanySetting = {
   customTemplate?: { tabs?: string[] }
 }
 
+/** Preview path equivalents for dashboard routes (temporary no-login view). */
+const DASHBOARD_TO_PREVIEW: Record<string, string> = {
+  '/dashboard': '/vehicles',
+  '/dashboard/drivers': '/drivers',
+  '/dashboard/inspections': '/inspections',
+  '/dashboard/about': '/about',
+  '/dashboard/roadmap': '/roadmap',
+  '/dashboard/control-panel': '/control-panel',
+  '/dashboard/admin': '/admin',
+}
+
 function isTabActive(pathname: string, href: string): boolean {
   if (href === '/home') return pathname.startsWith('/home')
-  if (href === '/dashboard') {
-    return pathname === '/dashboard' || pathname.startsWith('/dashboard/vehicles')
+  if (href === '/vehicles' || href === '/dashboard') {
+    return pathname === '/dashboard' || pathname.startsWith('/dashboard/vehicles') || pathname === '/vehicles'
+  }
+  const previewHref = DASHBOARD_TO_PREVIEW[href] ?? href
+  if (previewHref !== href) {
+    return pathname.startsWith(href) || pathname === previewHref
   }
   return pathname.startsWith(href)
 }
@@ -261,9 +277,22 @@ export default function Navbar() {
     navItems.push({ label: configCustomLabels?.admin ?? 'Admin', href: '/dashboard/admin' })
   }
 
+  // When on preview routes, show all tabs with preview URLs (admin-style view)
+  const usePreviewHrefs = isPreviewPath(pathname)
+  const previewNavItems: { label: string; href: string }[] = [
+    { label: 'Vehicles', href: '/vehicles' },
+    { label: 'Drivers', href: '/drivers' },
+    { label: 'Inspections', href: '/inspections' },
+    { label: 'About', href: '/about' },
+    { label: 'Roadmap', href: '/roadmap' },
+    { label: 'Control Panel', href: '/control-panel' },
+    { label: 'Admin', href: '/admin' },
+  ]
+  const finalNavItems = usePreviewHrefs ? previewNavItems : navItems
+
   return (
     <NavbarView
-      navItems={navItems}
+      navItems={finalNavItems}
       pathname={pathname}
       isTabActive={(href) => isTabActive(pathname, href)}
       mobileOpen={mobileOpen}

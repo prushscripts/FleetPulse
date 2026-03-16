@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import CustomCheckbox from '@/components/ui/CustomCheckbox'
@@ -17,7 +16,6 @@ export default function FloatingLoginCard() {
   const isTransitioning = useRef(false)
   const isExpandedRef = useRef(true) // Keep ref in sync
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const router = useRouter()
   const supabase = createClient()
 
   // Keep ref in sync with state
@@ -121,12 +119,8 @@ export default function FloatingLoginCard() {
 
       if (sessionData?.session) {
         setLoading(false)
-        // Use router.push first, then fallback to window.location if needed
-        router.push('/dashboard')
-        // Force a full page reload after a short delay to ensure server-side can read cookies
-        setTimeout(() => {
-          window.location.href = '/dashboard'
-        }, 100)
+        // Full reload only (no router.push) to avoid React #310 from briefly mounting dashboard then reloading
+        window.location.href = '/dashboard'
       } else {
         setError('Session not established. Please try again.')
         setLoading(false)
@@ -202,7 +196,7 @@ export default function FloatingLoginCard() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleLogin} className="p-5 space-y-4">
+        <form onSubmit={handleLogin} action="#" method="get" className="p-5 space-y-4">
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-3 py-2.5 rounded-lg text-xs flex items-start gap-2 animate-fade-in">
               <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">

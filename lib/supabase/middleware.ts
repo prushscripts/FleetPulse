@@ -1,7 +1,14 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isPreviewPath } from '@/lib/preview-routes'
 
 export async function updateSession(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  // Temporary: allow unauthenticated access to preview routes (e.g. /vehicles, /drivers)
+  if (isPreviewPath(pathname)) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
