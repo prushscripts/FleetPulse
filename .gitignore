@@ -46,3 +46,15 @@ Restore Points/FleetPulseRestoreReference/.next/
 Restore Points/FleetPulseRestoreReference/.git/
 Restore Points/FleetPulseRestoreReference/.env.local
 Restore Points/FleetPulseRestoreReference/.env
+
+public/videos
+public/animations
+*.mp4
+*.mov
+*.webm
+Restore Points
+docs
+data
+1-TruckInformation
+phase2-backup
+.phase2-backup

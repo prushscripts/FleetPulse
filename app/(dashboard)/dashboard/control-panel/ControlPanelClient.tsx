@@ -56,6 +56,10 @@ export default function ControlPanelClient({
   const [authKey] = useState(initialCompanyConfig?.auth_key ?? '')
   const [importResult, setImportResult] = useState<{ success: number; error: number; message?: string } | null>(null)
   const [copyToast, setCopyToast] = useState(false)
+  const [requirePreTrip, setRequirePreTrip] = useState(false)
+  const [requirePostTrip, setRequirePostTrip] = useState(false)
+  const [randomCheckins, setRandomCheckins] = useState(false)
+  const [checkinFrequency, setCheckinFrequency] = useState<'daily' | 'every_3_days' | 'weekly'>('daily')
   const supabase = createClient()
 
   useEffect(() => {
@@ -248,7 +252,7 @@ export default function ControlPanelClient({
           Copied to clipboard
         </div>
       )}
-      <div className="px-4 md:px-6 py-6 page-enter max-w-3xl mx-auto">
+      <div className="px-4 md:px-6 py-6 page-enter max-w-6xl mx-auto">
         <div className="mb-6">
           <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mb-1">Settings · Control Panel</p>
           <h1 className="text-2xl md:text-3xl font-display font-bold text-white">Control Panel</h1>
@@ -275,8 +279,20 @@ export default function ControlPanelClient({
           </div>
         )}
 
-        <form onSubmit={handleSave} className="space-y-4">
-          <section className="card-glass rounded-2xl overflow-hidden mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <aside className="card-glass rounded-2xl p-3 h-fit lg:sticky lg:top-20">
+            <nav className="space-y-1">
+              <a href="#general" className="block px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/[0.05]">General</a>
+              <a href="#appearance" className="block px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/[0.05]">Appearance</a>
+              <a href="#navigation" className="block px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/[0.05]">Navigation</a>
+              <Link href="/dashboard/control-panel/dashboard-builder" className="block px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/[0.05]">Dashboard</Link>
+              <a href="#inspections" className="block px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/[0.05]">Inspections</a>
+              <Link href="/dashboard/control-panel/templates" className="block px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/[0.05]">Templates</Link>
+            </nav>
+          </aside>
+
+          <form onSubmit={handleSave} className="space-y-4 lg:col-span-3">
+          <section id="general" className="card-glass rounded-2xl overflow-hidden mb-4">
             <div className="px-5 sm:px-6 py-4 border-b border-white/[0.06]">
               <h2 className="text-sm font-semibold text-white">Company Configuration</h2>
               <p className="text-xs text-slate-400 mt-0.5">Tab visibility, custom labels, and import.</p>
@@ -389,7 +405,7 @@ export default function ControlPanelClient({
             </div>
           </section>
 
-          <section className="card-glass rounded-2xl overflow-hidden mb-4">
+          <section id="appearance" className="card-glass rounded-2xl overflow-hidden mb-4">
             <div className="px-5 sm:px-6 py-4 border-b border-white/[0.06]">
               <h2 className="text-sm font-semibold text-white">Template</h2>
               <p className="text-xs text-slate-400 mt-0.5">Choose dashboard layout.</p>
@@ -433,7 +449,7 @@ export default function ControlPanelClient({
             </div>
           </section>
 
-          <section className="card-glass rounded-2xl overflow-hidden mb-4">
+          <section id="inspections" className="card-glass rounded-2xl overflow-hidden mb-4">
             <div className="px-5 sm:px-6 py-4 border-b border-white/[0.06]">
               <h2 className="text-sm font-semibold text-white">Features</h2>
               <p className="text-xs text-slate-400 mt-0.5">Inspections and roadmap.</p>
@@ -455,6 +471,54 @@ export default function ControlPanelClient({
                     Show Inspections tab and inspection tracking. Turn off if you don’t use inspections.
                   </p>
                 </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="card-glass rounded-2xl overflow-hidden mb-4">
+            <div className="px-5 py-4 border-b border-white/[0.06]">
+              <h2 className="text-sm font-semibold text-white">Inspection Settings</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Configure how inspections work for your fleet</p>
+            </div>
+            <div className="px-5 py-5 space-y-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm text-white">Enable inspection system</p>
+                  <p className="text-xs text-slate-500">Show inspections tab and allow drivers to submit reports</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={inspectionsEnabled}
+                  onClick={() => setInspectionsEnabled(!inspectionsEnabled)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${inspectionsEnabled ? 'bg-blue-500' : 'bg-white/10'}`}
+                >
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ${inspectionsEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm text-slate-300">Require pre-trip inspection</p>
+                <input type="checkbox" checked={requirePreTrip} onChange={(e) => setRequirePreTrip(e.target.checked)} />
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm text-slate-300">Require post-trip inspection</p>
+                <input type="checkbox" checked={requirePostTrip} onChange={(e) => setRequirePostTrip(e.target.checked)} />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm text-slate-300">Random driver check-ins</p>
+                  <input type="checkbox" checked={randomCheckins} onChange={(e) => setRandomCheckins(e.target.checked)} />
+                </div>
+                {randomCheckins && (
+                  <div className="ml-4 p-4 bg-white/[0.02] rounded-xl border border-white/[0.06]">
+                    <label className="text-xs text-slate-500 mb-1.5 block">Check-in frequency</label>
+                    <select className="input-field text-sm" value={checkinFrequency} onChange={(e) => setCheckinFrequency(e.target.value as any)}>
+                      <option value="daily">Daily</option>
+                      <option value="every_3_days">Every 3 days</option>
+                      <option value="weekly">Weekly</option>
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -487,7 +551,8 @@ export default function ControlPanelClient({
               {saving ? 'Saving…' : 'Save changes'}
             </button>
           </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   )

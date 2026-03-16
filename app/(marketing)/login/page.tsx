@@ -96,6 +96,11 @@ export default function LoginPage() {
       await new Promise((resolve) => setTimeout(resolve, 100))
       const { data: sessionData } = await supabase.auth.getSession()
       if (sessionData?.session) {
+        const role = (data.user?.user_metadata?.role as string | undefined) || 'owner'
+        if (role === 'driver') {
+          setLoginSuccessRedirect('/driver')
+          return
+        }
         const isRoadmapOnly = companyToSet?.roadmapOnly || (companyToSet?.name || '').toLowerCase().includes('roadmap')
         setLoginSuccessRedirect(isRoadmapOnly ? '/dashboard/roadmap' : '/dashboard/home')
       } else {

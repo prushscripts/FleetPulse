@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 interface AdminClientProps {
   user: User
@@ -69,6 +70,7 @@ export default function AdminClient({ user, initialData }: AdminClientProps) {
   })
 
   const supabase = createClient()
+  const { confirm } = useConfirm()
 
   useEffect(() => {
     if (initialData) {
@@ -193,7 +195,13 @@ export default function AdminClient({ user, initialData }: AdminClientProps) {
   }
 
   const handleDeleteCardMapping = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this card mapping?')) return
+    const confirmed = await confirm({
+      title: 'Delete card mapping?',
+      description: 'This removes the Voyager card-to-vehicle link.',
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    })
+    if (!confirmed) return
 
     try {
       const { error } = await supabase

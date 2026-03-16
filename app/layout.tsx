@@ -6,6 +6,8 @@ import { PageTransitionProvider } from '@/components/animations/PageTransition'
 import NavbarLayout from '@/components/layout/NavbarLayout'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import BackgroundLayer from '@/components/BackgroundLayer'
+import ToastProvider from '@/components/ui/ToastProvider'
+import ConfirmProvider from '@/components/ui/ConfirmProvider'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -47,14 +49,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} overflow-x-hidden min-h-full`}>
         <ThemeProvider>
           <ErrorBoundary>
-            <BackgroundLayer />
-            <div className="relative z-10 min-h-full overflow-x-hidden">
-              <PageTransitionProvider>
-                <NavbarLayout>
-                  <main>{children}</main>
-                </NavbarLayout>
-              </PageTransitionProvider>
-            </div>
+            <ToastProvider>
+              <ConfirmProvider>
+                <BackgroundLayer />
+                <div className="relative z-10 min-h-full overflow-x-hidden">
+                  <PageTransitionProvider>
+                    <NavbarLayout>
+                      <main>{children}</main>
+                    </NavbarLayout>
+                  </PageTransitionProvider>
+                </div>
+              </ConfirmProvider>
+            </ToastProvider>
           </ErrorBoundary>
         </ThemeProvider>
       </body>

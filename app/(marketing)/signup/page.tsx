@@ -17,6 +17,8 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [companyKey, setCompanyKey] = useState('')
+  const [role, setRole] = useState<'manager' | 'driver'>('manager')
+  const [nickname, setNickname] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [showEntry, setShowEntry] = useState(false)
@@ -37,7 +39,20 @@ export default function SignupPage() {
     }
     setLoading(true)
     try {
-      const { error: signUpError } = await supabase.auth.signUp({ email, password })
+      const formattedNickname = nickname.trim()
+        ? nickname.trim().charAt(0).toUpperCase() + nickname.trim().slice(1)
+        : ''
+
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            role,
+            ...(formattedNickname ? { nickname: formattedNickname } : {}),
+          },
+        },
+      })
       if (signUpError) {
         setError(signUpError.message || 'An error occurred during signup')
         setLoading(false)
@@ -62,18 +77,26 @@ export default function SignupPage() {
         }
         if (company) {
           await supabase.auth.updateUser({
-            data: { company_id: company.id, company_name: company.name, companies: [{ id: company.id, name: company.name }] },
+            data: {
+              company_id: company.id,
+              company_name: company.name,
+              companies: [{ id: company.id, name: company.name }],
+              role,
+              ...(formattedNickname ? { nickname: formattedNickname } : {}),
+            },
           })
-          setRedirectOnComplete('/home')
+          setRedirectOnComplete(role === 'driver' ? '/driver' : '/home')
           setShowEntry(true)
         } else {
-          setRedirectOnComplete('/dashboard/welcome')
+          setRedirectOnComplete(role === 'driver' ? '/driver' : '/dashboard/welcome')
           setShowEntry(true)
         }
       } else {
-        setRedirectOnComplete('/dashboard/welcome')
+        setRedirectOnComplete(role === 'driver' ? '/driver' : '/dashboard/welcome')
         setShowEntry(true)
       }
+      // Sync role and company_id to profiles so RLS and driver portal layout work
+      await fetch('/api/sync-profile', { method: 'POST', credentials: 'include' })
       setLoading(false)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred during signup')
@@ -152,6 +175,48 @@ export default function SignupPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Confirm password</label>
                 <input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className={inputClass} />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">I am a...</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRole('manager')}
+                    className={`px-3 py-2 rounded-xl border text-sm ${
+                      role === 'manager'
+                        ? 'border-blue-500/40 bg-blue-500/10 text-white'
+                        : 'border-white/[0.1] bg-white/[0.03] text-slate-400'
+                    }`}
+                  >
+                    Fleet Manager
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole('driver')}
+                    className={`px-3 py-2 rounded-xl border text-sm ${
+                      role === 'driver'
+                        ? 'border-blue-500/40 bg-blue-500/10 text-white'
+                        : 'border-white/[0.1] bg-white/[0.03] text-slate-400'
+                    }`}
+                  >
+                    Driver
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Name / nickname</label>
+                <input
+                  id="nickname"
+                  name="nickname"
+                  type="text"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="e.g. James"
+                  maxLength={30}
+                  className={inputClass}
+                />
               </div>
 
               <div className="space-y-1.5">

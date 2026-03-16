@@ -20,6 +20,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     supabase.auth.getUser()
       .then(({ data: { user } }) => {
         if (cancelled) return
+        const role = (user?.user_metadata?.role as string | undefined) || 'owner'
+        if (role === 'driver') {
+          router.replace('/driver')
+          return
+        }
         const companyId = user?.user_metadata?.company_id
         if (user && !companyId) {
           router.replace('/dashboard/welcome')

@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { getUserDisplayName } from '@/lib/user-utils'
+import DriverAssignmentTab from '@/components/vehicles/DriverAssignmentTab'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 interface Vehicle {
   id: string
@@ -74,8 +76,8 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
   const [issues, setIssues] = useState<Issue[]>([])
   const [documents, setDocuments] = useState<Document[]>([])
   const [mileageHistory, setMileageHistory] = useState<MileageHistory[]>([])
-  const [drivers, setDrivers] = useState<Array<{ id: string; first_name: string; last_name: string }>>([])
-  const [activeTab, setActiveTab] = useState<'details' | 'service' | 'issues' | 'documents'>('details')
+  const [drivers, setDrivers] = useState<Array<{ id: string; first_name: string; last_name: string; email?: string | null; location?: string | null; is_ny_driver?: boolean | null; is_dmv_driver?: boolean | null }>>([])
+  const [activeTab, setActiveTab] = useState<'details' | 'service' | 'issues' | 'documents' | 'inspections' | 'driver'>('details')
   const [showServiceModal, setShowServiceModal] = useState(false)
   const [showIssueModal, setShowIssueModal] = useState(false)
   const [showDocumentModal, setShowDocumentModal] = useState(false)
@@ -94,6 +96,7 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
   const supabase = createClient()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { confirm } = useConfirm()
 
   useEffect(() => {
     loadVehicleData()
@@ -101,7 +104,7 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
 
   useEffect(() => {
     const tab = searchParams.get('tab')
-    if (tab === 'details' || tab === 'service' || tab === 'issues' || tab === 'documents') {
+    if (tab === 'details' || tab === 'service' || tab === 'issues' || tab === 'documents' || tab === 'inspections' || tab === 'driver') {
       setActiveTab(tab)
     }
   }, [searchParams])
@@ -121,7 +124,7 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
       // Load drivers
       const { data: driversData } = await supabase
         .from('drivers')
-        .select('id, first_name, last_name')
+        .select('id, first_name, last_name, email, location, is_ny_driver, is_dmv_driver')
         .eq('active', true)
         .order('last_name', { ascending: true })
       setDrivers(driversData || [])
@@ -250,7 +253,13 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
   }
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!confirm('Delete this comment?')) return
+    const ok = await confirm({
+      title: 'Delete comment?',
+      description: 'This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    })
+    if (!ok) return
     try {
       const { error } = await supabase.from('vehicle_comments').delete().eq('id', commentId)
       if (error) throw error
@@ -266,6 +275,24 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
         window.setTimeout(() => setToast(null), 250)
       }, 4200)
     }
+  }
+
+  const handleAssignDriver = async (driverId: string) => {
+    const res = await fetch(`/api/vehicles/${vehicleId}/assign-driver`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ driverId }),
+    })
+    if (!res.ok) throw new Error('Failed to assign driver')
+    await loadVehicleData()
+  }
+
+  const handleUnassignDriver = async () => {
+    const res = await fetch(`/api/vehicles/${vehicleId}/unassign-driver`, {
+      method: 'POST',
+    })
+    if (!res.ok) throw new Error('Failed to unassign driver')
+    await loadVehicleData()
   }
 
   const handleUpdateVehicle = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -628,7 +655,7 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
           {/* Tabs */}
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex -mb-px">
-              {(['details', 'service', 'issues', 'documents'] as const).map((tab) => (
+              {(['details', 'service', 'issues', 'documents', 'inspections', 'driver'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -1191,6 +1218,51 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
                   <p className="text-gray-600 dark:text-gray-400">No documents uploaded.</p>
                 )}
               </div>
+            )}
+
+            {activeTab === 'inspections' && (
+              <div className="card-glass rounded-xl p-5">
+                <p className="text-sm text-slate-400">
+                  Inspection history for this vehicle is available in the Inspections workspace.
+                </p>
+                <Link href="/dashboard/inspections" className="btn-primary inline-flex mt-4 px-4 py-2 text-sm">
+                  Open Inspections
+                </Link>
+              </div>
+            )}
+
+            {activeTab === 'driver' && (
+              <DriverAssignmentTab
+                vehicle={{
+                  id: vehicle.id,
+                  location: vehicle.code?.toLowerCase().includes('dmv') ? 'DMV' : 'New York',
+                  assignedDriverId: vehicle.driver_id,
+                  assignedDriver: (() => {
+                    const d = drivers.find((driver) => driver.id === vehicle.driver_id)
+                    if (!d) return null
+                    return {
+                      id: d.id,
+                      name: `${d.first_name} ${d.last_name}`,
+                      nickname: null,
+                      email: d.email ?? null,
+                      location: d.location ?? null,
+                      isNYDriver: !!d.is_ny_driver,
+                      isDMVDriver: !!d.is_dmv_driver,
+                    }
+                  })(),
+                }}
+                allDrivers={drivers.map((d) => ({
+                  id: d.id,
+                  name: `${d.first_name} ${d.last_name}`,
+                  nickname: null,
+                  email: d.email ?? null,
+                  location: d.location ?? null,
+                  isNYDriver: !!d.is_ny_driver,
+                  isDMVDriver: !!d.is_dmv_driver,
+                }))}
+                onAssign={handleAssignDriver}
+                onUnassign={handleUnassignDriver}
+              />
             )}
           </div>
         </div>

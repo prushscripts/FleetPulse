@@ -6,10 +6,11 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Papa from 'papaparse'
-import { Search, Upload, Plus, FileText, Edit2, Truck, CheckCircle, AlertTriangle, Wrench, ClipboardCheck, ArrowRight } from 'lucide-react'
+import { Search, Upload, Plus, FileText, Edit2, Truck, CheckCircle, AlertTriangle, Wrench, ClipboardCheck, ArrowRight, UserPlus } from 'lucide-react'
 import { normalizeTier, SubscriptionTier, TIER_CONFIG } from '@/lib/tiers'
 import { getUserDisplayName } from '@/lib/user-utils'
 import type { VehicleWithStats } from '@/lib/dashboard-types'
+import QuickAssignPopover from '@/components/vehicles/QuickAssignPopover'
 
 type SortField = 'code' | 'current_mileage' | 'oil_status' | 'status'
 type SortDirection = 'asc' | 'desc'
@@ -71,6 +72,8 @@ export default function DashboardClient(
   const [tier, setTier] = useState<SubscriptionTier>('professional')
   const [lastVehicleId, setLastVehicleId] = useState<string | null>(null)
   const [hiddenVehicles, setHiddenVehicles] = useState<string[]>([])
+  const [allDrivers, setAllDrivers] = useState<Array<{ id: string; name: string; email?: string | null; location?: string | null; isNYDriver?: boolean; isDMVDriver?: boolean }>>([])
+  const [quickAssignVehicleId, setQuickAssignVehicleId] = useState<string | null>(null)
   const filterMenuRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
   const router = useRouter()
@@ -180,7 +183,7 @@ export default function DashboardClient(
       if (vehiclesError) throw vehiclesError
 
       // Fetch drivers (scoped by company when multi-tenant)
-      let driversQuery = supabase.from('drivers').select('id, first_name, last_name')
+      let driversQuery = supabase.from('drivers').select('id, first_name, last_name, email, location, is_ny_driver, is_dmv_driver')
       if (companyId) driversQuery = driversQuery.eq('company_id', companyId)
       const { data: driversData } = await driversQuery
 
@@ -205,6 +208,14 @@ export default function DashboardClient(
       driversData?.forEach((driver) => {
         driversMap.set(driver.id, `${driver.first_name} ${driver.last_name}`)
       })
+      setAllDrivers((driversData || []).map((d: any) => ({
+        id: d.id,
+        name: `${d.first_name} ${d.last_name}`,
+        email: d.email ?? null,
+        location: d.location ?? null,
+        isNYDriver: !!d.is_ny_driver,
+        isDMVDriver: !!d.is_dmv_driver,
+      })))
 
       const vehiclesWithStats: VehicleWithStats[] = (vehiclesData || []).map((vehicle) => {
         const openIssues = (issuesData || []).filter(
@@ -568,6 +579,16 @@ export default function DashboardClient(
     setIssueDescription('')
     setIssuePriority('medium')
     setShowAddIssueModal(true)
+  }
+
+  const assignDriverToVehicle = async (vehicleId: string, driverId: string) => {
+    const res = await fetch(`/api/vehicles/${vehicleId}/assign-driver`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ driverId }),
+    })
+    if (!res.ok) throw new Error('Unable to assign driver')
+    await loadVehicles()
   }
 
   const handleCreateIssue = async () => {
@@ -1248,6 +1269,38 @@ export default function DashboardClient(
                       <div className="font-mono text-sm text-white">{(vehicle.current_mileage ?? 0).toLocaleString()} mi</div>
                       <div className="text-[11px] text-slate-500">current</div>
                     </div>
+                    {vehicle.driver_name ? (
+                      <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06] flex-shrink-0">
+                        <div className="w-4 h-4 rounded-full bg-blue-500/30 flex items-center justify-center text-[9px] font-bold text-blue-300">
+                          {vehicle.driver_name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-xs text-slate-300 max-w-[80px] truncate">
+                          {vehicle.driver_name}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="relative hidden sm:block">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setQuickAssignVehicleId((prev) => prev === vehicle.id ? null : vehicle.id) }}
+                          className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-lg border border-dashed border-white/10 text-slate-600 hover:border-blue-500/30 hover:text-blue-400 transition-all text-xs flex-shrink-0"
+                          title="Assign driver"
+                        >
+                          <UserPlus size={11} />
+                          <span>Assign</span>
+                        </button>
+                        <QuickAssignPopover
+                          open={quickAssignVehicleId === vehicle.id}
+                          vehicleLocation={getTerritory(vehicle)}
+                          drivers={allDrivers}
+                          onAssign={async (driverId) => {
+                            await assignDriverToVehicle(vehicle.id, driverId)
+                            setQuickAssignVehicleId(null)
+                            showToast('Driver assigned', `Assigned driver to ${vehicle.code}.`)
+                          }}
+                          onClose={() => setQuickAssignVehicleId(null)}
+                        />
+                      </div>
+                    )}
                     <div className="flex-shrink-0">
                       {oilStatus.status === 'overdue' ? (
                         (() => {

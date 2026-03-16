@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { getUserDisplayName } from '@/lib/user-utils'
+import { Check } from 'lucide-react'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 interface Driver {
   id: string
@@ -19,6 +21,9 @@ interface Driver {
   hire_date: string | null
   signed_citation_policy: boolean
   location: string | null
+  is_ny_driver?: boolean | null
+  is_dmv_driver?: boolean | null
+  assigned_vehicle_id?: string | null
 }
 
 interface Writeup {
@@ -31,16 +36,9 @@ interface Writeup {
 }
 
 const DRIVER_LOCATIONS = [
-  'DENWIZ',
-  'HBGOSH',
-  'ADVHUN',
-  'ELIRIM',
-  'AUDQNS',
-  'STRHYN',
-  'KOLJLR',
-  'HEMTOY',
-  'MASTOY',
-  'FLEET',
+  'New York',
+  'DMV',
+  'Other',
 ] as const
 
 type ToastState = {
@@ -81,9 +79,12 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
     hire_date: '',
     signed_citation_policy: false,
     location: '',
+    is_ny_driver: false,
+    is_dmv_driver: false,
   })
   const [toast, setToast] = useState<ToastState | null>(null)
   const supabase = createClient()
+  const { confirm } = useConfirm()
 
   useEffect(() => {
     loadDrivers()
@@ -187,6 +188,8 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
         license_expiration: formData.license_expiration || null,
         hire_date: formData.hire_date || null,
         location: formData.location || null,
+        is_ny_driver: !!formData.is_ny_driver,
+        is_dmv_driver: !!formData.is_dmv_driver,
         ...(companyId && !editingDriver && { company_id: companyId }),
       }
 
@@ -215,6 +218,8 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
         hire_date: '',
         signed_citation_policy: false,
         location: '',
+        is_ny_driver: false,
+        is_dmv_driver: false,
       })
       loadDrivers()
       showToast(
@@ -241,13 +246,21 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
       hire_date: driver.hire_date || '',
       signed_citation_policy: driver.signed_citation_policy || false,
       location: driver.location || '',
+      is_ny_driver: !!driver.is_ny_driver,
+      is_dmv_driver: !!driver.is_dmv_driver,
     })
     setShowModal(true)
   }
 
   const handleDelete = async (id: string) => {
     const driver = drivers.find((d) => d.id === id)
-    if (!confirm('Are you sure you want to delete this driver?')) return
+    const confirmed = await confirm({
+      title: 'Delete driver?',
+      description: `This will permanently remove ${driver?.first_name || 'this'} ${driver?.last_name || 'driver'}.`,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    })
+    if (!confirmed) return
 
     try {
       const { error } = await supabase.from('drivers').delete().eq('id', id)
@@ -475,6 +488,8 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                   hire_date: '',
                   signed_citation_policy: false,
                   location: '',
+                  is_ny_driver: false,
+                  is_dmv_driver: false,
                 })
                 setShowModal(true)
               }}
@@ -1063,13 +1078,46 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 >
-                  <option value="">Select Location</option>
-                  {DRIVER_LOCATIONS.map((loc) => (
-                    <option key={loc} value={loc}>
-                      {loc}
-                    </option>
-                  ))}
+                  <option value="">Select location...</option>
+                  <option value="New York">New York</option>
+                  <option value="DMV">DMV (DC/MD/VA)</option>
+                  <option value="Other">Other</option>
                 </select>
+                <div className="flex items-center gap-4 mt-3">
+                  <label className="flex items-center gap-2.5 cursor-pointer group">
+                    <div
+                      onClick={() => setFormData({ ...formData, is_ny_driver: !formData.is_ny_driver })}
+                      className={`w-4 h-4 rounded border transition-all flex items-center justify-center cursor-pointer ${
+                        formData.is_ny_driver
+                          ? 'bg-blue-500 border-blue-500'
+                          : 'border-white/20 hover:border-white/40'
+                      }`}
+                    >
+                      {formData.is_ny_driver && <Check size={10} className="text-white" />}
+                    </div>
+                    <span className="text-sm text-slate-300 group-hover:text-white transition-colors">
+                      New York driver
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2.5 cursor-pointer group">
+                    <div
+                      onClick={() => setFormData({ ...formData, is_dmv_driver: !formData.is_dmv_driver })}
+                      className={`w-4 h-4 rounded border transition-all flex items-center justify-center cursor-pointer ${
+                        formData.is_dmv_driver
+                          ? 'bg-violet-500 border-violet-500'
+                          : 'border-white/20 hover:border-white/40'
+                      }`}
+                    >
+                      {formData.is_dmv_driver && <Check size={10} className="text-white" />}
+                    </div>
+                    <span className="text-sm text-slate-300 group-hover:text-white transition-colors">
+                      DMV driver
+                    </span>
+                  </label>
+                </div>
+                <p className="text-xs text-slate-600 mt-2">
+                  These tags filter which drivers appear when assigning to a vehicle.
+                </p>
               </div>
               </div>
               <div className="md:col-span-2">
