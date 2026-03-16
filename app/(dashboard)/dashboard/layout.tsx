@@ -35,23 +35,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => { cancelled = true }
   }, [pathname, router])
 
-  // Avoid flash of dashboard content before activation redirect
-  if (!activationChecked && pathname !== '/dashboard/activate' && pathname !== '/dashboard/welcome' && pathname !== '/dashboard/about') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-gray-500 dark:text-gray-400 text-sm">Loading…</div>
-      </div>
-    )
-  }
-
   useEffect(() => {
     if (activationChecked && (pathname === '/dashboard' || pathname?.startsWith('/dashboard/'))) {
       if (typeof console !== 'undefined') console.log('[FleetPulse] dashboard rendered')
     }
   }, [activationChecked, pathname])
 
+  const showLoadingOverlay =
+    !activationChecked &&
+    pathname !== '/dashboard/activate' &&
+    pathname !== '/dashboard/welcome' &&
+    pathname !== '/dashboard/about'
+
   return (
-    <div className="w-full pt-[64px]">
+    <div className="w-full pt-[64px] relative">
+      {showLoadingOverlay && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-50 dark:bg-gray-900 min-h-screen">
+          <div className="text-gray-500 dark:text-gray-400 text-sm">Loading…</div>
+        </div>
+      )}
       <div key={pathname} className="animate-tab-enter">
         {children}
       </div>
