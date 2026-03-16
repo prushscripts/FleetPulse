@@ -36,9 +36,10 @@ export default function Navbar() {
             <Image
               src="/branding/fleetpulse-navbar.png"
               alt="FleetPulse"
-              width={120}
-              height={28}
-              className="h-7 w-auto"
+              width={1600}
+              height={410}
+              className="h-10 w-auto"
+              priority
             />
           </Link>
 

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import React, { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import type { Company } from '@/components/layout/Navbar'
@@ -87,13 +88,14 @@ export function NavbarView(props: NavbarViewProps) {
             style={{ background: 'transparent', textDecoration: 'none' }}
             aria-label="FleetPulse home"
           >
-            <img
+            <Image
               src="/branding/fleetpulse-navbar.png"
               alt="FleetPulse"
-              className="h-full w-auto max-w-[260px] object-contain object-left"
+              width={1600}
+              height={410}
+              className="h-10 w-auto object-contain object-left"
               style={{ filter: 'drop-shadow(0 0 10px rgba(147,51,234,0.35))' }}
-              width={260}
-              height={44}
+              priority
             />
           </Link>
           <div className="hidden sm:flex sm:flex-1 sm:justify-center sm:items-center sm:gap-1">

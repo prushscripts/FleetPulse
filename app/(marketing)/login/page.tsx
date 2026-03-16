@@ -8,46 +8,12 @@ import Image from 'next/image'
 import { Eye, EyeOff, ArrowRight, Lock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { LOGO_LOOP_VIDEO } from '@/lib/animation-paths'
+import ConstellationBackground from '@/components/animations/ConstellationBackground'
 
 const LOGIN_LOADER_HOLD_MS = 1200
 const LOGIN_PULSE_MS = 600
 
 type CompanyOption = { id: string; name: string; displayName?: string; roadmapOnly?: boolean }
-
-function GridBackground() {
-  const dots = Array.from({ length: 48 }, (_, i) => ({
-    id: i,
-    x: (i % 8) * 12.5,
-    y: Math.floor(i / 8) * 16.66,
-    delay: Math.random() * 3,
-    duration: 2 + Math.random() * 2,
-  }))
-
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      <div
-        className="absolute inset-0 opacity-[0.06]"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(59,130,246,1) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,1) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-        }}
-      />
-      {dots.slice(0, 12).map((dot) => (
-        <motion.div
-          key={dot.id}
-          className="absolute w-1.5 h-1.5 rounded-full bg-blue-400"
-          style={{ left: dot.x + '%', top: dot.y + '%' }}
-          animate={{ opacity: [0.2, 0.8, 0.2], scale: [0.8, 1.2, 0.8] }}
-          transition={{ duration: dot.duration, delay: dot.delay, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      ))}
-      <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl opacity-20"
-        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.6), transparent)' }}
-      />
-    </div>
-  )
-}
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -163,9 +129,9 @@ export default function LoginPage() {
 
       {/* LEFT PANEL — only on large screens */}
       <div className={`hidden lg:flex lg:w-[42%] xl:w-[45%] relative bg-[#0F1629] border-r border-white/[0.06] flex-col justify-between p-12 overflow-hidden min-h-screen ${loading ? 'blur-sm' : ''}`}>
-        <GridBackground />
+        <ConstellationBackground />
         <div className="relative z-10">
-          <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={140} height={32} className="h-8 w-auto" />
+          <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={1600} height={410} className="h-10 w-auto" />
         </div>
         <div className="relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card-glass p-6 rounded-2xl mb-6">
@@ -192,7 +158,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="w-full">
             <div className="lg:hidden mb-8 flex justify-center">
-              <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={120} height={28} className="h-7 w-auto" />
+              <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={1600} height={410} className="h-10 w-auto" />
             </div>
 
             <div className="mb-8">
