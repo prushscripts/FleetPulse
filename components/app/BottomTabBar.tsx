@@ -6,8 +6,8 @@ import { LayoutDashboard, Activity, Truck, Users, ClipboardCheck } from 'lucide-
 import { motion } from 'framer-motion'
 
 const tabs = [
-  { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { href: '/dashboard/fleet-health', label: 'Health', icon: Activity },
+  { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { href: '/dashboard', label: 'Vehicles', icon: Truck },
   { href: '/dashboard/drivers', label: 'Drivers', icon: Users },
   { href: '/dashboard/inspections', label: 'Inspections', icon: ClipboardCheck },

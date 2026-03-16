@@ -5,20 +5,26 @@ import { useEffect, useState } from 'react'
 
 interface Props {
   onComplete: () => void
+  /** When true, call onComplete when ready and do not run exit animation — overlay stays until redirect. */
+  redirectOnComplete?: boolean
 }
 
-export default function LoginTransition({ onComplete }: Props) {
+export default function LoginTransition({ onComplete, redirectOnComplete }: Props) {
   const [phase, setPhase] = useState<'enter' | 'scanning' | 'ready' | 'exit'>('enter')
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('scanning'), 600)
     const t2 = setTimeout(() => setPhase('ready'), 1800)
+    if (redirectOnComplete) {
+      const t3 = setTimeout(onComplete, 2600)
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+    }
     const t3 = setTimeout(() => setPhase('exit'), 2600)
     const t4 = setTimeout(onComplete, 3200)
     return () => {
       ;[t1, t2, t3, t4].forEach(clearTimeout)
     }
-  }, [onComplete])
+  }, [onComplete, redirectOnComplete])
 
   return (
     <motion.div
@@ -131,7 +137,7 @@ export default function LoginTransition({ onComplete }: Props) {
               >
                 <div className="w-1 h-1 rounded-full bg-blue-400 animate-pulse" />
                 <span className="text-xs font-mono text-slate-500 tracking-widest">
-                  LOADING FLEET DATA
+                  LOADING SYSTEM
                 </span>
               </motion.div>
             )}

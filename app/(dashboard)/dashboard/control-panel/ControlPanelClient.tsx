@@ -20,7 +20,6 @@ const TAB_KEYS = [
   { key: 'drivers', label: 'Drivers' },
   { key: 'inspections', label: 'Inspections' },
   { key: 'about', label: 'About' },
-  { key: 'roadmap', label: 'Roadmap' },
 ] as const
 
 type CompanyConfig = {
@@ -28,7 +27,6 @@ type CompanyConfig = {
   enabled_tabs?: string[]
   custom_tab_labels?: Record<string, string>
   inspections_enabled?: boolean
-  roadmap_only?: boolean
 } | null
 
 export default function ControlPanelClient({
@@ -452,7 +450,7 @@ export default function ControlPanelClient({
           <section id="inspections" className="card-glass rounded-2xl overflow-hidden mb-4">
             <div className="px-5 sm:px-6 py-4 border-b border-white/[0.06]">
               <h2 className="text-sm font-semibold text-white">Features</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Inspections and roadmap.</p>
+              <p className="text-xs text-slate-400 mt-0.5">Inspections.</p>
             </div>
             <div className="px-5 sm:px-6 py-5">
               <div className="flex items-center gap-3">

@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import ConstellationBackground from '@/components/animations/ConstellationBackground'
 import LoginTransition from '@/components/animations/LoginTransition'
 
-type CompanyOption = { id: string; name: string; displayName?: string; roadmapOnly?: boolean }
+type CompanyOption = { id: string; name: string; displayName?: string }
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [showLoginTransition, setShowLoginTransition] = useState(false)
-  const [loginRedirectUrl, setLoginRedirectUrl] = useState<string>('/dashboard/home')
+  const [loginRedirectUrl, setLoginRedirectUrl] = useState<string>('/dashboard/fleet-health')
   const [companies, setCompanies] = useState<CompanyOption[]>([])
   const [companiesLoading, setCompaniesLoading] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null)
@@ -84,8 +84,7 @@ export default function LoginPage() {
           setShowLoginTransition(true)
           return
         }
-        const isRoadmapOnly = companyToSet?.roadmapOnly || (companyToSet?.name || '').toLowerCase().includes('roadmap')
-        setLoginRedirectUrl(isRoadmapOnly ? '/dashboard/roadmap' : '/dashboard/home')
+        setLoginRedirectUrl('/dashboard/fleet-health')
         setShowLoginTransition(true)
       } else {
         setError('Session not established. Please try again.')
@@ -101,10 +100,12 @@ export default function LoginPage() {
     <div className="min-h-screen min-h-[100dvh] bg-[#0A0F1E] flex flex-row">
       {showLoginTransition && (
         <LoginTransition
+          redirectOnComplete
           onComplete={() => {
-            setTimeout(() => {
-              window.location.href = loginRedirectUrl
-            }, 500)
+            if (typeof window !== 'undefined' && loginRedirectUrl === '/dashboard/fleet-health') {
+              try { sessionStorage.setItem('fleetpulse-login-landing', '1') } catch {}
+            }
+            window.location.href = loginRedirectUrl
           }}
         />
       )}

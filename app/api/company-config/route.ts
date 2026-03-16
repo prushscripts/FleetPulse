@@ -14,7 +14,6 @@ export type CompanyConfigRow = {
   enabled_tabs?: string[] | null
   custom_tab_labels?: Record<string, string> | null
   inspections_enabled?: boolean | null
-  roadmap_only?: boolean | null
   [key: string]: unknown
 }
 

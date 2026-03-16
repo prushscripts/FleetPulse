@@ -93,7 +93,6 @@ export const DEFAULT_NAV_TAB_KEYS = [
   'drivers',
   'inspections',
   'about',
-  'roadmap',
   'control_panel',
 ] as const
 
@@ -103,7 +102,6 @@ export const NAV_TAB_OPTIONS: { key: string; label: string }[] = [
   { key: 'drivers', label: 'Drivers' },
   { key: 'inspections', label: 'Inspections' },
   { key: 'about', label: 'About' },
-  { key: 'roadmap', label: 'Roadmap' },
   { key: 'control_panel', label: 'Control Panel' },
 ]
 

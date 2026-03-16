@@ -6,7 +6,6 @@ type Body = {
   enabled_tabs?: string[]
   custom_tab_labels?: Record<string, string>
   inspections_enabled?: boolean
-  roadmap_only?: boolean
 }
 
 export async function POST(request: Request) {
@@ -22,7 +21,6 @@ export async function POST(request: Request) {
     if (Array.isArray(body.enabled_tabs)) updates.enabled_tabs = body.enabled_tabs
     if (body.custom_tab_labels !== undefined) updates.custom_tab_labels = body.custom_tab_labels
     if (typeof body.inspections_enabled === 'boolean') updates.inspections_enabled = body.inspections_enabled
-    if (typeof body.roadmap_only === 'boolean') updates.roadmap_only = body.roadmap_only
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ ok: true })

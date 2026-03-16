@@ -9,7 +9,6 @@ const OLD_TO_NEW: Record<string, string> = {
   '/control-panel': '/dashboard/control-panel',
   '/home': '/dashboard/home',
   '/about': '/dashboard/about',
-  '/roadmap': '/dashboard/roadmap',
 }
 
 export async function middleware(request: NextRequest) {

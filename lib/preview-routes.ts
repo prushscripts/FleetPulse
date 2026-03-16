@@ -7,7 +7,6 @@ export const PREVIEW_PATHS = [
   '/vehicles',
   '/drivers',
   '/inspections',
-  '/roadmap',
   '/about',
   '/admin',
   '/control-panel',

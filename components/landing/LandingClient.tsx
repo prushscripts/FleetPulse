@@ -5,7 +5,6 @@ import { motion } from 'framer-motion'
 import IntroAnimation from '@/components/animations/IntroAnimation'
 import HeroSection from '@/components/landing/HeroSection'
 import FeaturesSection from '@/components/landing/FeaturesSection'
-import PricingSection from '@/components/landing/PricingSection'
 import CtaSection from '@/components/landing/CtaSection'
 import Footer from '@/components/landing/Footer'
 
@@ -50,7 +49,6 @@ export default function LandingClient() {
       >
         <HeroSection />
         <FeaturesSection />
-        <PricingSection />
         <CtaSection />
         <Footer />
       </motion.div>

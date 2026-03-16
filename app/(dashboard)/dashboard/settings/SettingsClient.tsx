@@ -20,7 +20,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   const [tier, setTier] = useState<SubscriptionTier>('professional')
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState<string | null>(null)
-  type CompanyEntry = { id: string; name: string; displayName?: string; logoUrl?: string; roadmapOnly?: boolean }
+  type CompanyEntry = { id: string; name: string; displayName?: string; logoUrl?: string }
   const [companies, setCompanies] = useState<CompanyEntry[]>([])
   const [logoUploadingId, setLogoUploadingId] = useState<string | null>(null)
   const [logoUploadForId, setLogoUploadForId] = useState<string | null>(null)
@@ -148,7 +148,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
       setCompanies(merged)
       setCompanyKeyInput('')
       setMessage({ type: 'success', text: 'Company activated. Redirecting…' })
-      setTimeout(() => { window.location.href = '/home' }, 400)
+      setTimeout(() => { window.location.href = '/dashboard' }, 400)
     } catch (err: any) {
       setCompanyError(err?.message || 'Activation failed.')
     } finally {
@@ -290,10 +290,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     setAddCompanyLoading(true)
     setAddCompanyError(null)
     try {
-      const configRes = await fetch(`/api/company-config?company_id=${encodeURIComponent(resolved.id)}`)
-      const config = configRes.ok ? await configRes.json() : {}
-      const roadmapOnly = !!config.roadmap_only
-      const merged: CompanyEntry[] = [...companies, { id: resolved.id, name: resolved.name, displayName: resolved.name, roadmapOnly }]
+      const merged: CompanyEntry[] = [...companies, { id: resolved.id, name: resolved.name, displayName: resolved.name }]
       const { error: updateError } = await supabase.auth.updateUser({
         data: { company_id: resolved.id, company_name: resolved.name, companies: merged },
       })
@@ -305,7 +302,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
       setPendingAddCompany(null)
       setMessage({ type: 'success', text: `Added "${resolved.name}". Redirecting…` })
       setTimeout(() => {
-        window.location.href = roadmapOnly ? '/dashboard/roadmap' : '/home'
+        window.location.href = '/dashboard'
       }, 400)
     } catch (err: any) {
       setAddCompanyError(err?.message || 'Failed to add company.')

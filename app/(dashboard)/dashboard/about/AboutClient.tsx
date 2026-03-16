@@ -1,9 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { normalizeTier, SubscriptionTier } from '@/lib/tiers'
 import {
   Truck,
   Users,
@@ -14,21 +11,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 
-export default function AboutClient({ displayName }: { displayName: string }) {
-  const [userTier, setUserTier] = useState<SubscriptionTier>('professional')
-  const supabase = createClient()
-
-  useEffect(() => {
-    const loadTier = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
-        setUserTier(normalizeTier(user.user_metadata?.subscription_tier))
-      }
-    }
-    loadTier()
-  }, [supabase])
+export default function AboutClient() {
 
   const features = [
     {
@@ -78,65 +61,6 @@ export default function AboutClient({ displayName }: { displayName: string }) {
       icon: AlertTriangle,
       color: 'text-orange-400',
       bg: 'bg-orange-500/10',
-    },
-  ]
-
-  const tiers: Array<{
-    name: string
-    tagline: string
-    price: string
-    period: string
-    billingNote: string
-    maxVehicles: number
-    features: string[]
-    popular?: boolean
-  }> = [
-    {
-      name: 'Starter',
-      tagline: 'For smaller fleets to organize vehicle inventory & manage inspections',
-      price: '$3',
-      period: 'per vehicle, per month',
-      billingNote: 'Billed annually or $4 billed monthly',
-      maxVehicles: 25,
-      features: [
-        'Basic vehicle tracking',
-        'Service records',
-        'Issue tracking',
-        'Email support',
-      ],
-    },
-    {
-      name: 'Professional',
-      tagline: 'For growing fleets to improve service tracking, communication & reporting',
-      price: '$6',
-      period: 'per vehicle, per month',
-      billingNote: 'Billed annually only',
-      maxVehicles: 100,
-      features: [
-        'Everything in Starter',
-        'Driver management',
-        'Digital inspections',
-        'Fleet health dashboard',
-        'CSV import/export',
-        'Priority support',
-      ],
-      popular: true,
-    },
-    {
-      name: 'Premium',
-      tagline: 'For advanced fleets to integrate fleet systems & customize workflows',
-      price: '$9',
-      period: 'per vehicle, per month',
-      billingNote: 'Billed annually only',
-      maxVehicles: Infinity,
-      features: [
-        'Everything in Professional',
-        'Advanced analytics',
-        'API access',
-        'Custom integrations',
-        'Dedicated support',
-        'SLA guarantee',
-      ],
     },
   ]
 
@@ -200,58 +124,6 @@ export default function AboutClient({ displayName }: { displayName: string }) {
               <div className="text-xs text-slate-500 uppercase tracking-wider">{label}</div>
             </div>
           ))}
-        </div>
-
-        {/* Pricing */}
-        <div className="mb-16">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl font-display font-bold text-white mb-2">Pricing</h2>
-            <p className="text-slate-400 text-sm">Same plans as on the landing page.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {tiers.map((tier) => {
-              const isPopular = !!tier.popular
-              return (
-                <div
-                  key={tier.name}
-                  className={`card-glass rounded-2xl p-6 relative ${
-                    isPopular ? 'ring-1 ring-blue-500/30' : ''
-                  }`}
-                >
-                  {isPopular && (
-                    <div className="absolute top-4 right-4 text-[10px] font-medium text-blue-400 uppercase tracking-wider">
-                      Popular
-                    </div>
-                  )}
-                  <h3 className="text-xl font-display font-bold text-white mb-1">{tier.name}</h3>
-                  <p className="text-xs text-slate-500 mb-4">{tier.tagline}</p>
-                  <div className="mb-2">
-                    <span className="text-3xl font-mono font-bold text-white">{tier.price}</span>
-                    <span className="text-sm text-slate-500 ml-1">{tier.period}</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 mb-4">{tier.billingNote}</p>
-                  <p className="text-[11px] text-slate-600 mb-6">
-                    {tier.maxVehicles === Infinity
-                      ? 'Unlimited vehicles'
-                      : `Up to ${tier.maxVehicles} vehicles`}
-                  </p>
-                  <ul className="space-y-3 mb-6">
-                    {tier.features.map((f) => (
-                      <li key={f} className="flex items-start text-sm gap-2">
-                        <span className="text-emerald-400 mt-0.5 flex-shrink-0">✓</span>
-                        <span className="text-slate-400">{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="pt-4 border-t border-white/[0.06] text-center">
-                    <span className="text-xs text-slate-500">
-                      {userTier === tier.name.toLowerCase() ? '✓ Your current tier' : ''}
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
         </div>
 
         {/* CTA */}

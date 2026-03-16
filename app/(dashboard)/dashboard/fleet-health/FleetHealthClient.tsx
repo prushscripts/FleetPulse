@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import {
   Droplets,
   AlertCircle,
@@ -13,6 +14,8 @@ import {
   Truck,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+
+const LOGIN_LANDING_KEY = 'fleetpulse-login-landing'
 
 type VehicleRow = {
   id: string
@@ -59,7 +62,17 @@ export default function FleetHealthClient() {
   const [inspections, setInspections] = useState<InspectionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [companyId, setCompanyId] = useState<string | null>(null)
+  const [justLandedFromLogin, setJustLandedFromLogin] = useState(false)
   const supabase = createClient()
+
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && sessionStorage.getItem(LOGIN_LANDING_KEY)) {
+        sessionStorage.removeItem(LOGIN_LANDING_KEY)
+        setJustLandedFromLogin(true)
+      }
+    } catch {}
+  }, [])
 
   useEffect(() => {
     const run = async () => {
@@ -335,7 +348,7 @@ export default function FleetHealthClient() {
   const oilCompliancePct = activeCount > 0 ? Math.round(((activeCount - overdueCount) / activeCount) * 100) : 0
   const issueFreePct = totalCount > 0 ? Math.round((vehiclesNoIssues / totalCount) * 100) : 0
 
-  return (
+  const content = (
     <div className="page-fade-in px-4 md:px-6 py-6 max-w-7xl mx-auto">
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
@@ -615,4 +628,22 @@ export default function FleetHealthClient() {
       </div>
     </div>
   )
+
+  if (justLandedFromLogin) {
+    return (
+      <motion.div
+        initial={{ scale: 1.08, opacity: 0.92 }}
+        animate={{ scale: [1.08, 1.02, 1], opacity: 1 }}
+        transition={{
+          duration: 0.55,
+          ease: [0.25, 0.46, 0.45, 0.94] as const,
+        }}
+        className="min-h-full origin-center"
+      >
+        {content}
+      </motion.div>
+    )
+  }
+
+  return content
 }

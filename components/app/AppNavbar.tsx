@@ -24,8 +24,8 @@ import { createClient } from '@/lib/supabase/client'
 type NavItemKey = 'home' | 'health' | 'vehicles' | 'drivers' | 'inspections'
 
 const BASE_NAV_ITEMS: { key: NavItemKey; href: string; label: string; icon: typeof LayoutDashboard }[] = [
-  { key: 'home', href: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { key: 'health', href: '/dashboard/fleet-health', label: 'Health', icon: Activity },
+  { key: 'home', href: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { key: 'vehicles', href: '/dashboard', label: 'Vehicles', icon: Truck },
   { key: 'drivers', href: '/dashboard/drivers', label: 'Drivers', icon: Users },
   { key: 'inspections', href: '/dashboard/inspections', label: 'Inspections', icon: ClipboardCheck },
@@ -96,7 +96,7 @@ export default function AppNavbar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-[#0A0F1E]/90 backdrop-blur-md border-b border-white/[0.06] flex items-center px-4 md:px-6">
-      <Link href="/dashboard/home" className="flex items-center gap-2 mr-8 flex-shrink-0">
+      <Link href="/dashboard/fleet-health" className="flex items-center gap-2 mr-8 flex-shrink-0">
         <Image
           src="/branding/fleetpulse-navbar.png"
           alt="FleetPulse"
@@ -199,14 +199,6 @@ export default function AppNavbar() {
                   >
                     <Shield size={14} className="text-slate-500" />
                     Admin
-                  </Link>
-                  <Link
-                    href="/dashboard/roadmap"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors"
-                  >
-                    <ClipboardCheck size={14} className="text-slate-500" />
-                    Roadmap
                   </Link>
                   <button
                     type="button"
