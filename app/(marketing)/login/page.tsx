@@ -7,7 +7,8 @@ import Image from 'next/image'
 import { Eye, EyeOff, ArrowRight, Lock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import ConstellationBackground from '@/components/animations/ConstellationBackground'
-import LoginTransition from '@/components/animations/LoginTransition'
+
+const LOGIN_REDIRECT_DELAY_MS = 1200
 
 type CompanyOption = { id: string; name: string; displayName?: string; roadmapOnly?: boolean }
 
@@ -18,7 +19,6 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [loginSuccessRedirect, setLoginSuccessRedirect] = useState<string | null>(null)
-  const [showLoginTransition, setShowLoginTransition] = useState(false)
   const [companies, setCompanies] = useState<CompanyOption[]>([])
   const [companiesLoading, setCompaniesLoading] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null)
@@ -26,14 +26,16 @@ export default function LoginPage() {
   const companyDropdownRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
-  const handleLoginTransitionComplete = () => {
-    if (loginSuccessRedirect) {
-      window.location.href = loginSuccessRedirect
-    }
-    setLoading(false)
-    setLoginSuccessRedirect(null)
-    setShowLoginTransition(false)
-  }
+  useEffect(() => {
+    if (!loginSuccessRedirect) return
+    const t = setTimeout(() => {
+      const url = loginSuccessRedirect
+      setLoginSuccessRedirect(null)
+      setLoading(false)
+      window.location.href = url
+    }, LOGIN_REDIRECT_DELAY_MS)
+    return () => clearTimeout(t)
+  }, [loginSuccessRedirect])
 
   useEffect(() => {
     const raw = email.trim().toLowerCase()
@@ -89,12 +91,10 @@ export default function LoginPage() {
         const role = (data.user?.user_metadata?.role as string | undefined) || 'owner'
         if (role === 'driver') {
           setLoginSuccessRedirect('/driver')
-          setShowLoginTransition(true)
           return
         }
         const isRoadmapOnly = companyToSet?.roadmapOnly || (companyToSet?.name || '').toLowerCase().includes('roadmap')
         setLoginSuccessRedirect(isRoadmapOnly ? '/dashboard/roadmap' : '/dashboard/home')
-        setShowLoginTransition(true)
       } else {
         setError('Session not established. Please try again.')
         setLoading(false)
@@ -107,13 +107,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-[#0A0F1E] flex flex-row">
-      {showLoginTransition && loginSuccessRedirect && (
-        <LoginTransition onComplete={handleLoginTransitionComplete} />
-      )}
-      {loading && !showLoginTransition && (
+      {loading && (
         <div className="fixed inset-0 z-[9998] flex items-center justify-center pointer-events-auto">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-md" aria-hidden />
-          <div className="rounded-xl shadow-2xl border border-white/10 backdrop-blur-lg px-10 py-8 flex flex-col items-center justify-center relative z-10 bg-navy-800/95">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden />
+          <div className="rounded-xl shadow-2xl border border-white/10 px-10 py-8 flex flex-col items-center justify-center relative z-10 bg-[#0A0F1E]/95">
             <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             <p className="text-sm text-slate-400 mt-3">Signing in…</p>
           </div>

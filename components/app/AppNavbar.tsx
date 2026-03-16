@@ -17,13 +17,15 @@ import {
   Bell,
   LayoutDashboard,
   User as UserIcon,
+  Activity,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-type NavItemKey = 'home' | 'vehicles' | 'drivers' | 'inspections'
+type NavItemKey = 'home' | 'health' | 'vehicles' | 'drivers' | 'inspections'
 
 const BASE_NAV_ITEMS: { key: NavItemKey; href: string; label: string; icon: typeof LayoutDashboard }[] = [
   { key: 'home', href: '/dashboard', label: 'Home', icon: LayoutDashboard },
+  { key: 'health', href: '/dashboard/fleet-health', label: 'Health', icon: Activity },
   { key: 'vehicles', href: '/dashboard', label: 'Vehicles', icon: Truck },
   { key: 'drivers', href: '/dashboard/drivers', label: 'Drivers', icon: Users },
   { key: 'inspections', href: '/dashboard/inspections', label: 'Inspections', icon: ClipboardCheck },

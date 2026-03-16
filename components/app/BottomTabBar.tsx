@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Truck, Users, ClipboardCheck } from 'lucide-react'
+import { LayoutDashboard, Activity, Truck, Users, ClipboardCheck } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 const tabs = [
   { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
+  { href: '/dashboard/fleet-health', label: 'Health', icon: Activity },
   { href: '/dashboard', label: 'Vehicles', icon: Truck },
   { href: '/dashboard/drivers', label: 'Drivers', icon: Users },
   { href: '/dashboard/inspections', label: 'Inspections', icon: ClipboardCheck },
@@ -26,7 +27,7 @@ export default function BottomTabBar() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="absolute -top-6 left-0 right-0 h-6 bg-gradient-to-t from-[#0A0F1E]/80 to-transparent pointer-events-none" />
-      <div className="grid grid-cols-4 h-16">
+      <div className="grid grid-cols-5 h-16">
         {tabs.map(({ href, label, icon: Icon }) => {
           const active = isActive(href)
           return (
