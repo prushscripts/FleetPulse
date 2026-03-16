@@ -82,8 +82,11 @@ export default function AppNavbar() {
 
   const handleLogout = async () => {
     setUserMenuOpen(false)
-    await supabase.auth.signOut()
-    window.location.href = '/login'
+    try {
+      await supabase.auth.signOut()
+    } finally {
+      window.location.href = '/'
+    }
   }
 
   const isActive = (href: string) => {
@@ -207,7 +210,7 @@ export default function AppNavbar() {
                   </Link>
                   <button
                     type="button"
-                    onClick={handleLogout}
+                    onClick={() => void handleLogout()}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/[0.08] rounded-lg transition-colors"
                   >
                     <LogOut size={14} />
