@@ -102,7 +102,9 @@ export default function LoginPage() {
       {showLoginTransition && (
         <LoginTransition
           onComplete={() => {
-            window.location.href = loginRedirectUrl
+            setTimeout(() => {
+              window.location.href = loginRedirectUrl
+            }, 500)
           }}
         />
       )}
@@ -119,6 +121,42 @@ export default function LoginPage() {
       {/* LEFT PANEL — only on large screens */}
       <div className={`hidden lg:flex lg:w-[42%] xl:w-[45%] relative bg-[#0F1629] border-r border-white/[0.06] flex-col justify-between p-12 overflow-hidden min-h-screen ${loading ? 'blur-sm' : ''}`}>
         <ConstellationBackground />
+
+        {/* Fleet stats card — centered in left panel */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 z-10">
+          <div className="card-glass rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs text-slate-400 uppercase tracking-widest font-medium">
+                Live fleet network
+              </span>
+            </div>
+            <div className="space-y-4">
+              {[
+                { label: 'Vehicles tracked', value: '12,847', sub: '+124 today' },
+                { label: 'Inspections logged', value: '94,231', sub: '+18 today' },
+                { label: 'Miles monitored', value: '2.4M', sub: 'this month' },
+                { label: 'Platform uptime', value: '99.9%', sub: 'last 30 days' },
+              ].map(({ label, value, sub }) => (
+                <div key={label} className="flex items-center justify-between py-3 border-b border-white/[0.05] last:border-0">
+                  <span className="text-xs text-slate-500">{label}</span>
+                  <div className="text-right">
+                    <div className="text-sm font-mono font-semibold text-white">{value}</div>
+                    <div className="text-[10px] text-slate-600">{sub}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-5 pt-4 border-t border-white/[0.05]">
+              {['Vehicle tracking', 'Inspections', 'Driver management', 'Fleet analytics'].map((f) => (
+                <span key={f} className="px-2 py-0.5 rounded-md text-[10px] bg-white/[0.04] border border-white/[0.06] text-slate-600">
+                  {f}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="relative z-10">
           <Link href="/">
             <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={1600} height={410} className="h-10 w-auto" />
@@ -126,7 +164,8 @@ export default function LoginPage() {
         </div>
         <div className="relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card-glass p-6 rounded-2xl mb-6">
-            <p className="text-sm text-slate-300 leading-relaxed mb-4">
+            <div className="text-amber-400 text-sm mb-2">★★★★★</div>
+            <p className="text-sm text-slate-300 leading-relaxed mb-4 italic">
               &quot;FleetPulse transformed how we manage our 57-vehicle New York fleet. Oil tracking alone saves us thousands in missed service costs.&quot;
             </p>
             <div className="flex items-center gap-3">

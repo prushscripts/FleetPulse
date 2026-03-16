@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import IntroAnimation from '@/components/animations/IntroAnimation'
-import Navbar from '@/components/Navbar'
 import HeroSection from '@/components/landing/HeroSection'
 import FeaturesSection from '@/components/landing/FeaturesSection'
 import PricingSection from '@/components/landing/PricingSection'
@@ -49,7 +48,6 @@ export default function LandingClient() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="min-h-screen w-full"
       >
-        <Navbar />
         <HeroSection />
         <FeaturesSection />
         <PricingSection />

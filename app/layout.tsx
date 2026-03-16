@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/layout/ThemeProvider'
 import { PageTransitionProvider } from '@/components/animations/PageTransition'
-import NavbarLayout from '@/components/layout/NavbarLayout'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import BackgroundLayer from '@/components/BackgroundLayer'
 import ToastProvider from '@/components/ui/ToastProvider'
@@ -54,9 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <BackgroundLayer />
                 <div className="relative z-10 min-h-full overflow-x-hidden">
                   <PageTransitionProvider>
-                    <NavbarLayout>
-                      <main>{children}</main>
-                    </NavbarLayout>
+                    {children}
                   </PageTransitionProvider>
                 </div>
               </ConfirmProvider>

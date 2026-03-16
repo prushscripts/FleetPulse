@@ -46,15 +46,19 @@ export default function IntroAnimation({
           transition={{ duration: 0.8 }}
           className="fixed inset-0 z-[9999] bg-[#0A0F1E] flex items-center justify-center overflow-hidden"
         >
+          {/* Video truly fullscreen — no container constraints */}
           <video
             ref={videoRef}
             src="/Animations/officialFPAnimation.mp4"
             autoPlay
             muted
             playsInline
-            className="absolute inset-0 w-full h-full object-cover opacity-90"
-            onCanPlay={() => {}}
-            onError={finish}
+            className="fixed inset-0 w-full h-full object-cover"
+            onError={(e) => {
+              console.error('Intro video failed:', e)
+              finish()
+            }}
+            aria-hidden
           />
 
           <motion.div

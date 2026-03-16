@@ -45,13 +45,13 @@ export default function LoginTransition({ onComplete }: Props) {
               <motion.div
                 key={delay}
                 initial={{ scale: 0, opacity: 0.6 }}
-                animate={{ scale: 4, opacity: 0 }}
+                animate={{ scale: 6, opacity: 0 }}
                 transition={{
                   duration: 1.2,
                   delay,
                   ease: 'easeOut',
                 }}
-                className="absolute w-32 h-32 rounded-full border border-blue-500/60"
+                className="absolute w-48 h-48 rounded-full border-2 border-blue-500/40"
               />
             ))}
           </>
@@ -59,20 +59,20 @@ export default function LoginTransition({ onComplete }: Props) {
       </AnimatePresence>
 
       <div className="relative">
-        <div className="absolute inset-0 blur-3xl opacity-30 bg-blue-500 rounded-full scale-75" />
+        <div className="absolute inset-0 blur-[80px] opacity-40 bg-blue-500 rounded-full scale-150" />
         <video
           src="/Animations/possibleLogoLoop.mp4"
           autoPlay
           muted
           loop
           playsInline
-          className="relative w-[280px] h-[280px] md:w-[360px] md:h-[360px] object-contain"
+          className="relative w-[480px] h-[480px] md:w-[600px] md:h-[600px] object-contain"
           onError={() => {}}
           aria-hidden
         />
       </div>
 
-      <div className="flex flex-col items-center gap-2 h-16">
+      <div className="flex flex-col items-center gap-2 h-16 mt-8">
         <AnimatePresence mode="wait">
           <motion.p
             key={messageIndex}
@@ -80,7 +80,7 @@ export default function LoginTransition({ onComplete }: Props) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3 }}
-            className={`text-sm font-mono tracking-widest ${
+            className={`font-mono text-sm tracking-[0.3em] ${
               messageIndex === 2 ? 'text-emerald-400' : 'text-slate-400'
             }`}
           >
