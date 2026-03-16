@@ -2,122 +2,86 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X } from 'lucide-react'
-import { INTRO_VIDEO } from '@/lib/animation-paths'
+import Image from 'next/image'
 
-const MAX_PLAY_MS = 3000
-const TRANSITION_DURATION_MS = 600
-const LOAD_TIMEOUT_MS = 1500
-
-function isMobile(): boolean {
-  if (typeof window === 'undefined') return false
-  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768
-}
-
-/**
- * Full-screen intro video — plays once per session (fp_intro_shown).
- * Graceful fallback: if video is missing (e.g. *.mp4 gitignored on Vercel), skip video and do CSS transition only.
- */
-export default function IntroAnimation({ onComplete }: { onComplete: () => void }) {
+export default function IntroAnimation({
+  onComplete,
+}: {
+  onComplete: () => void
+}) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const doneRef = useRef(false)
-  const [phase, setPhase] = useState<'playing' | 'transition' | 'done'>('playing')
-  const [videoUnavailable, setVideoUnavailable] = useState(false)
-  const [mobile] = useState(() => isMobile())
+  const [done, setDone] = useState(false)
 
-  useEffect(() => {
-    if (mobile) {
-      const t = setTimeout(() => { setPhase('done'); onComplete() }, 100)
-      return () => clearTimeout(t)
-    }
-
-    const video = videoRef.current
-    if (!video) return
-
-    const goToTransition = () => {
-      if (doneRef.current) return
-      doneRef.current = true
-      setVideoUnavailable(true)
-      setPhase('transition')
-      setTimeout(() => { setPhase('done'); onComplete() }, TRANSITION_DURATION_MS)
-    }
-
-    video.play().catch(goToTransition)
-
-    const maxPlayTimer = setTimeout(goToTransition, MAX_PLAY_MS)
-    const loadTimeout = setTimeout(() => {
-      if (video.readyState < 2) goToTransition()
-    }, LOAD_TIMEOUT_MS)
-
-    const handleEnded = goToTransition
-    const handleError = goToTransition
-
-    video.addEventListener('ended', handleEnded)
-    video.addEventListener('error', handleError)
-    return () => {
-      clearTimeout(maxPlayTimer)
-      clearTimeout(loadTimeout)
-      video.removeEventListener('ended', handleEnded)
-      video.removeEventListener('error', handleError)
-    }
-  }, [mobile, onComplete])
-
-  const handleSkip = () => {
-    setPhase('transition')
-    setTimeout(() => {
-      setPhase('done')
-      onComplete()
-    }, TRANSITION_DURATION_MS)
+  const finish = () => {
+    if (done) return
+    setDone(true)
+    sessionStorage.setItem('fp_intro_shown', 'true')
+    setTimeout(onComplete, 800)
   }
 
-  if (phase === 'done') return null
-  if (mobile) return null
+  useEffect(() => {
+    const fallback = setTimeout(finish, 5000)
+
+    const video = videoRef.current
+    if (video) {
+      video.addEventListener('ended', finish)
+      video.addEventListener('error', finish)
+      const maxDuration = setTimeout(finish, 4000)
+      return () => {
+        clearTimeout(fallback)
+        clearTimeout(maxDuration)
+        video.removeEventListener('ended', finish)
+        video.removeEventListener('error', finish)
+      }
+    }
+    return () => clearTimeout(fallback)
+  }, [done])
 
   return (
     <AnimatePresence>
-      <motion.div
-        key="intro"
-        className="fixed inset-0 z-[200] flex items-center justify-center bg-[#0A0F1E]"
-        animate={
-          phase === 'transition'
-            ? { opacity: 0, scale: 1.05 }
-            : { opacity: 1, scale: 1 }
-        }
-        transition={
-          phase === 'transition'
-            ? { duration: TRANSITION_DURATION_MS / 1000, ease: 'easeOut' }
-            : {}
-        }
-      >
-        <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-          {!videoUnavailable && (
-            <video
-              ref={videoRef}
-              src={INTRO_VIDEO}
-              muted
-              playsInline
-              preload="auto"
-              className="w-full h-full object-cover"
-              aria-label="FleetPulse intro"
-            />
-          )}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: 'radial-gradient(ellipse at center, transparent 40%, #0A0F1E 100%)',
-            }}
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={handleSkip}
-          className="absolute top-4 right-4 z-10 p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-          aria-label="Skip intro"
+      {!done && (
+        <motion.div
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0, filter: 'blur(12px)' }}
+          transition={{ duration: 0.8 }}
+          className="fixed inset-0 z-[9999] bg-[#0A0F1E] flex items-center justify-center overflow-hidden"
         >
-          <X size={20} />
-        </button>
-      </motion.div>
+          <video
+            ref={videoRef}
+            src="/Animations/officialFPAnimation.mp4"
+            autoPlay
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover opacity-90"
+            onCanPlay={() => {}}
+            onError={finish}
+          />
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="relative z-10 flex flex-col items-center gap-4"
+          >
+            <Image
+              src="/branding/fleetpulse-logo.png"
+              alt="FleetPulse"
+              width={220}
+              height={50}
+              className="w-48 md:w-56 h-auto"
+              priority
+            />
+          </motion.div>
+
+          <button
+            type="button"
+            onClick={finish}
+            className="absolute top-6 right-6 z-20 text-xs text-white/40 hover:text-white/80 transition-colors px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/20"
+          >
+            Skip
+          </button>
+        </motion.div>
+      )}
     </AnimatePresence>
   )
 }

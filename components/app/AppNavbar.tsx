@@ -93,7 +93,7 @@ export default function AppNavbar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-[#0A0F1E]/90 backdrop-blur-md border-b border-white/[0.06] flex items-center px-4 md:px-6">
-      <Link href="/home" className="flex items-center gap-2 mr-8 flex-shrink-0">
+      <Link href="/dashboard/home" className="flex items-center gap-2 mr-8 flex-shrink-0">
         <Image
           src="/branding/fleetpulse-navbar.png"
           alt="FleetPulse"

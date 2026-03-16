@@ -5,22 +5,19 @@ import Navbar from '@/components/layout/Navbar'
 import MobileBottomNav from '@/components/layout/MobileBottomNav'
 import PageTransitionWrapper from '@/components/animations/PageTransitionWrapper'
 import RouteTransition from '@/components/animations/RouteTransition'
-import { isPreviewPath } from '@/lib/preview-routes'
 
-const NAV_ROUTES = ['/home', '/dashboard']
-const DASHBOARD_ROUTES = ['/home', '/dashboard']
+const LANDING_PATHS = ['/', '/login', '/signup', '/privacy', '/terms']
+const DASHBOARD_ROUTES = ['/dashboard', '/driver']
 
 /**
- * Renders nav for app: on dashboard routes use AppShell (inside dashboard layout);
- * on preview routes use legacy Navbar + MobileBottomNav.
- * RouteTransition runs on all route changes.
+ * Renders nav: on dashboard/driver use AppShell (inside their layout);
+ * on landing paths only use legacy Navbar + MobileBottomNav.
  */
 export default function NavbarLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isDashboard = DASHBOARD_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'))
+  const isDashboardOrDriver = DASHBOARD_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'))
   const showLegacyNav =
-    !isDashboard &&
-    (NAV_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/')) || isPreviewPath(pathname))
+    !isDashboardOrDriver && LANDING_PATHS.some((p) => pathname === p || (p !== '/' && pathname.startsWith(p + '/')))
 
   return (
     <>

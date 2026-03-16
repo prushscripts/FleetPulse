@@ -50,6 +50,7 @@ Restore Points/FleetPulseRestoreReference/.env
 public/videos
 public/animations
 *.mp4
+!public/Animations/*.mp4
 *.mov
 *.webm
 Restore Points

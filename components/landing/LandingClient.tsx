@@ -38,16 +38,16 @@ export default function LandingClient() {
   }
 
   return (
-    <main className="bg-[#0A0F1E] min-h-screen">
+    <main className="bg-[#0A0F1E] min-h-screen" role="main">
       {shouldShowIntro && (
         <IntroAnimation onComplete={handleIntroComplete} />
       )}
 
       <motion.div
-        initial={{ opacity: 0, scale: 1.05 }}
-        animate={{ opacity: introComplete ? 1 : 0, scale: introComplete ? 1 : 1.05 }}
+        initial={{ opacity: introComplete ? 1 : 0, scale: introComplete ? 1 : 1.02 }}
+        animate={{ opacity: introComplete ? 1 : 0, scale: introComplete ? 1 : 1.02 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="min-h-screen"
+        className="min-h-screen w-full"
       >
         <Navbar />
         <HeroSection />
