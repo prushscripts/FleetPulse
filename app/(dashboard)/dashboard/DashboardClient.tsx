@@ -6,30 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import Papa from 'papaparse'
 import { normalizeTier, SubscriptionTier, TIER_CONFIG } from '@/lib/tiers'
-
-interface Vehicle {
-  id: string
-  code: string
-  make: string | null
-  model: string | null
-  year: number | null
-  current_mileage: number
-  oil_change_due_mileage: number
-  license_plate: string | null
-  vin: string | null
-  notes: string | null
-  status: string | null
-  driver_id: string | null
-}
-
-interface VehicleWithStats extends Vehicle {
-  open_issues_count: number
-  expired_documents_count: number
-  documents_count: number
-  driver_name: string | null
-  group_name: 'New York' | 'DMV'
-  vehicle_type: string
-}
+import type { VehicleWithStats } from '@/lib/dashboard-types'
 
 type SortField = 'code' | 'current_mileage' | 'oil_status' | 'status'
 type SortDirection = 'asc' | 'desc'
@@ -42,11 +19,11 @@ type ToastState = {
 }
 
 export default function DashboardClient(
-  { plateMap = {}, territoryMap = {}, companyId }: { plateMap?: Record<string, string>; territoryMap?: Record<string, string>; companyId?: string }
+  { plateMap = {}, territoryMap = {}, companyId, initialVehicles }: { plateMap?: Record<string, string>; territoryMap?: Record<string, string>; companyId?: string; initialVehicles?: VehicleWithStats[] }
 ) {
-  const [vehicles, setVehicles] = useState<VehicleWithStats[]>([])
-  const [filteredVehicles, setFilteredVehicles] = useState<VehicleWithStats[]>([])
-  const [loading, setLoading] = useState(true)
+  const [vehicles, setVehicles] = useState<VehicleWithStats[]>(initialVehicles ?? [])
+  const [filteredVehicles, setFilteredVehicles] = useState<VehicleWithStats[]>(initialVehicles ?? [])
+  const [loading, setLoading] = useState(initialVehicles === undefined)
   const [searchQuery, setSearchQuery] = useState('')
   const [territoryFilter, setTerritoryFilter] = useState<TerritoryFilterValue>('all')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -95,6 +72,11 @@ export default function DashboardClient(
   const router = useRouter()
 
   useEffect(() => {
+    if (initialVehicles !== undefined) {
+      setVehicles(initialVehicles)
+      setLoading(false)
+      return
+    }
     loadVehicles()
   }, [])
 

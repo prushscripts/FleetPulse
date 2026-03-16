@@ -6,6 +6,7 @@ import { User } from '@supabase/supabase-js'
 
 interface AdminClientProps {
   user: User
+  initialData?: AdminInitialData
 }
 
 interface VoyagerCardMapping {
@@ -32,12 +33,19 @@ interface Company {
   auth_key: string
 }
 
-export default function AdminClient({ user }: AdminClientProps) {
+export type AdminInitialData = {
+  company: Company | null
+  vehicles: Array<{ id: string; code: string }>
+  cardMappings: VoyagerCardMapping[]
+  apiConfig: VoyagerApiConfig | null
+}
+
+export default function AdminClient({ user, initialData }: AdminClientProps) {
   const [activeTab, setActiveTab] = useState<'company' | 'cards' | 'api'>('company')
-  const [company, setCompany] = useState<Company | null>(null)
-  const [cardMappings, setCardMappings] = useState<VoyagerCardMapping[]>([])
-  const [vehicles, setVehicles] = useState<Array<{ id: string; code: string }>>([])
-  const [loading, setLoading] = useState(true)
+  const [company, setCompany] = useState<Company | null>(initialData?.company ?? null)
+  const [cardMappings, setCardMappings] = useState<VoyagerCardMapping[]>(initialData?.cardMappings ?? [])
+  const [vehicles, setVehicles] = useState<Array<{ id: string; code: string }>>(initialData?.vehicles ?? [])
+  const [loading, setLoading] = useState(!initialData)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   
@@ -52,17 +60,33 @@ export default function AdminClient({ user }: AdminClientProps) {
   })
 
   // API config form
-  const [apiConfig, setApiConfig] = useState<VoyagerApiConfig | null>(null)
+  const [apiConfig, setApiConfig] = useState<VoyagerApiConfig | null>(initialData?.apiConfig ?? null)
   const [apiForm, setApiForm] = useState({
-    api_key: '',
-    api_endpoint: '',
-    account_id: '',
-    enabled: false,
+    api_key: initialData?.apiConfig?.api_key ?? '',
+    api_endpoint: initialData?.apiConfig?.api_endpoint ?? '',
+    account_id: initialData?.apiConfig?.account_id ?? '',
+    enabled: initialData?.apiConfig?.enabled ?? false,
   })
 
   const supabase = createClient()
 
   useEffect(() => {
+    if (initialData) {
+      setCompany(initialData.company)
+      setVehicles(initialData.vehicles)
+      setCardMappings(initialData.cardMappings)
+      setApiConfig(initialData.apiConfig)
+      if (initialData.apiConfig) {
+        setApiForm({
+          api_key: initialData.apiConfig.api_key || '',
+          api_endpoint: initialData.apiConfig.api_endpoint || '',
+          account_id: initialData.apiConfig.account_id || '',
+          enabled: initialData.apiConfig.enabled || false,
+        })
+      }
+      setLoading(false)
+      return
+    }
     loadData()
   }, [])
 
