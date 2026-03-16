@@ -917,7 +917,7 @@ export default function VehicleDetailClient({ vehicleId }: { vehicleId: string }
                               <div className="flex items-start justify-between mb-2">
                                 <div>
                                   <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-                                    {comment.author_name || comment.author_email?.split('@')[0] || 'Unknown user'}
+                                    {comment.author_name || comment.author_email || 'Unknown user'}
                                   </span>
                                   <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
                                     {format(new Date(comment.created_at), 'MMM d, yyyy')} at {format(new Date(comment.created_at), 'h:mm a')}

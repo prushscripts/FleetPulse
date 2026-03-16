@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-export default function ActivateClient({ userEmail }: { userEmail: string }) {
+export default function ActivateClient({ userDisplayName }: { userDisplayName: string }) {
   const [companyKey, setCompanyKey] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -73,7 +73,7 @@ export default function ActivateClient({ userEmail }: { userEmail: string }) {
 
           <div className="mb-6 p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Signed in as</p>
-            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{userEmail}</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{userDisplayName}</p>
             <Link
               href="/dashboard/settings"
               className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-1 inline-block"

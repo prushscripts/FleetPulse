@@ -16,17 +16,17 @@ import {
   LogOut,
   Bell,
   LayoutDashboard,
-  User as UserIcon,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-type NavItemKey = 'home' | 'vehicles' | 'drivers' | 'inspections'
+type NavItemKey = 'home' | 'vehicles' | 'drivers' | 'inspections' | 'about'
 
 const BASE_NAV_ITEMS: { key: NavItemKey; href: string; label: string; icon: typeof LayoutDashboard }[] = [
   { key: 'home', href: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { key: 'vehicles', href: '/dashboard', label: 'Vehicles', icon: Truck },
   { key: 'drivers', href: '/dashboard/drivers', label: 'Drivers', icon: Users },
   { key: 'inspections', href: '/dashboard/inspections', label: 'Inspections', icon: ClipboardCheck },
+  { key: 'about', href: '/dashboard/about', label: 'About', icon: Info },
 ]
 
 export default function AppNavbar() {
@@ -43,9 +43,7 @@ export default function AppNavbar() {
       if (!u) return
       const companyName = (u.user_metadata?.company_name as string) || (u.user_metadata?.company_id as string) || 'Account'
       const plan = (u.user_metadata?.subscription_tier as string) || 'Professional'
-      const nickname = (u.user_metadata?.nickname as string | undefined) || ''
-      const baseInitial = (nickname || u.email || 'U').trim()
-      const initial = baseInitial.charAt(0).toUpperCase()
+      const initial = (companyName || u.email || 'U').charAt(0).toUpperCase()
       setUser({
         email: u.email,
         companyName,
@@ -91,7 +89,7 @@ export default function AppNavbar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-[#0A0F1E]/90 backdrop-blur-md border-b border-white/[0.06] flex items-center px-4 md:px-6">
-      <Link href="/home" className="flex items-center gap-2 mr-8 flex-shrink-0">
+      <Link href="/dashboard" className="flex items-center gap-2 mr-8 flex-shrink-0">
         <Image
           src="/branding/fleetpulse-navbar.png"
           alt="FleetPulse"
@@ -144,7 +142,7 @@ export default function AppNavbar() {
             className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/[0.06] transition-all min-h-[44px]"
           >
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-xs font-bold text-white">
-              {(user?.initial ?? 'U').charAt(0).toUpperCase()}
+              {user?.initial ?? 'U'}
             </div>
             <ChevronDown size={13} className={`text-slate-500 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -164,14 +162,6 @@ export default function AppNavbar() {
                 </div>
                 <div className="p-1">
                   <Link
-                    href="/profile"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors"
-                  >
-                    <UserIcon size={14} className="text-slate-500" />
-                    Profile &amp; Settings
-                  </Link>
-                  <Link
                     href="/dashboard/control-panel"
                     onClick={() => setUserMenuOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors"
@@ -180,28 +170,12 @@ export default function AppNavbar() {
                     Control Panel
                   </Link>
                   <Link
-                    href="/dashboard/about"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors"
-                  >
-                    <Info size={14} className="text-slate-500" />
-                    About
-                  </Link>
-                  <Link
                     href="/dashboard/admin"
                     onClick={() => setUserMenuOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors"
                   >
                     <Shield size={14} className="text-slate-500" />
                     Admin
-                  </Link>
-                  <Link
-                    href="/dashboard/roadmap"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors"
-                  >
-                    <ClipboardCheck size={14} className="text-slate-500" />
-                    Roadmap
                   </Link>
                   <button
                     type="button"

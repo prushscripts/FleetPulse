@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import ActivateClient from './ActivateClient'
+import { getUserDisplayName } from '@/lib/user-utils'
 
 export default async function ActivatePage() {
   const supabase = await createClient()
@@ -17,5 +18,5 @@ export default async function ActivatePage() {
     redirect('/dashboard')
   }
 
-  return <ActivateClient userEmail={user.email ?? ''} />
+  return <ActivateClient userDisplayName={getUserDisplayName(user)} />
 }

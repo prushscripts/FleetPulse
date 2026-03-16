@@ -6,8 +6,9 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Papa from 'papaparse'
-import { Search, Upload, Plus, FileText, Edit2, Truck, CheckCircle, AlertTriangle, Wrench, ClipboardCheck } from 'lucide-react'
+import { Search, Upload, Plus, FileText, Edit2, Truck, CheckCircle, AlertTriangle, Wrench, ClipboardCheck, ArrowRight } from 'lucide-react'
 import { normalizeTier, SubscriptionTier, TIER_CONFIG } from '@/lib/tiers'
+import { getUserDisplayName } from '@/lib/user-utils'
 import type { VehicleWithStats } from '@/lib/dashboard-types'
 
 type SortField = 'code' | 'current_mileage' | 'oil_status' | 'status'
@@ -65,7 +66,7 @@ export default function DashboardClient(
   const [quickSaving, setQuickSaving] = useState(false)
   const [showUnsavedModal, setShowUnsavedModal] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
-  const [userEmail, setUserEmail] = useState<string>('Unknown user')
+  const [userDisplayName, setUserDisplayName] = useState<string>('Unknown user')
   const [companyName, setCompanyName] = useState<string>('Your Company')
   const [tier, setTier] = useState<SubscriptionTier>('professional')
   const [lastVehicleId, setLastVehicleId] = useState<string | null>(null)
@@ -109,8 +110,12 @@ export default function DashboardClient(
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      setUserEmail(user?.email || 'Unknown user')
-      setCompanyName((user?.user_metadata?.company_name as string) || (user?.user_metadata?.company_id as string) || 'Your Company')
+      setUserDisplayName(getUserDisplayName(user))
+      setCompanyName(
+        (user?.user_metadata?.company_name as string) ||
+          (user?.user_metadata?.company_id as string) ||
+          'Your Company',
+      )
       setTier(normalizeTier(user?.user_metadata?.subscription_tier))
       // Load hidden vehicles from user metadata
       if (user?.user_metadata?.hidden_vehicles && Array.isArray(user.user_metadata.hidden_vehicles)) {
@@ -571,7 +576,7 @@ export default function DashboardClient(
     try {
       const fullDescription = `${
         issueDescription.trim() ? `${issueDescription.trim()}\n\n` : ''
-      }Opened by: ${userEmail}`
+      }Opened by: ${userDisplayName}`
 
       const { error } = await supabase.from('issues').insert({
         vehicle_id: issueVehicle.id,
@@ -830,8 +835,18 @@ export default function DashboardClient(
               placeholder="Search vehicles..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all min-h-[44px]"
+              className="w-full pl-9 pr-10 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all min-h-[44px]"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.08] transition-colors"
+                aria-label="Clear search"
+              >
+                <span className="text-xs">&times;</span>
+              </button>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none mb-4">
@@ -1235,10 +1250,19 @@ export default function DashboardClient(
                     </div>
                     <div className="flex-shrink-0">
                       {oilStatus.status === 'overdue' ? (
-                        <span className="badge badge-danger flex items-center gap-1.5">
-                          <span className="status-dot danger" style={{ width: '5px', height: '5px' }} />
-                          Oil overdue
-                        </span>
+                        (() => {
+                          const current = vehicle.current_mileage ?? 0
+                          const due = vehicle.oil_change_due_mileage ?? 0
+                          const overdueMiles = current - due
+                          return (
+                            <span className="badge badge-danger flex items-center gap-1.5">
+                              <span className="status-dot danger" style={{ width: '5px', height: '5px' }} />
+                              {overdueMiles > 0
+                                ? `Oil +${overdueMiles.toLocaleString()} mi overdue`
+                                : 'Oil overdue'}
+                            </span>
+                          )
+                        })()
                       ) : (
                         <span className="badge badge-active flex items-center gap-1.5">
                           <span className="status-dot active" style={{ width: '5px', height: '5px' }} />
@@ -1263,6 +1287,9 @@ export default function DashboardClient(
                       >
                         <Edit2 size={13} />
                       </button>
+                      <span className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                        Open <ArrowRight size={11} />
+                      </span>
                     </div>
                   </motion.div>
                 )
@@ -1641,7 +1668,7 @@ export default function DashboardClient(
               Add Issue - {issueVehicle.code}
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-5">
-              Opened by {userEmail} • Status will default to Open
+              Opened by {userDisplayName} • Status will default to Open
             </p>
             <div className="space-y-4">
               <div>

@@ -4,15 +4,11 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import AppNavbar from './AppNavbar'
 import BottomTabBar from './BottomTabBar'
-import NicknamePromptModal from './NicknamePromptModal'
-import { createClient } from '@/lib/supabase/client'
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [loading, setLoading] = useState(false)
   const [key, setKey] = useState(pathname)
-  const [showNicknamePrompt, setShowNicknamePrompt] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
     setLoading(true)
@@ -22,25 +18,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }, 150)
     return () => clearTimeout(t)
   }, [pathname])
-
-  useEffect(() => {
-    let cancelled = false
-    supabase.auth
-      .getUser()
-      .then(({ data: { user } }) => {
-        if (cancelled) return
-        const nickname = (user?.user_metadata?.nickname as string | undefined) || ''
-        if (user && !nickname.trim()) {
-          setShowNicknamePrompt(true)
-        }
-      })
-      .catch(() => {
-        if (cancelled) return
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [supabase])
 
   return (
     <div className="min-h-screen bg-[#0A0F1E] text-white">
@@ -62,15 +39,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </main>
 
       <BottomTabBar />
-
-      <NicknamePromptModal
-        open={showNicknamePrompt}
-        onSave={async (nickname) => {
-          await supabase.auth.updateUser({ data: { nickname } })
-          setShowNicknamePrompt(false)
-        }}
-      />
     </div>
   )
 }
-

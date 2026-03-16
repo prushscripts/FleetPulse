@@ -8,7 +8,7 @@ export function capitalizeFirst(str: string): string {
 
 /**
  * Gets the user's display name from user metadata
- * Returns nickname (capitalized) if available, otherwise email username (capitalized)
+ * Returns nickname (capitalized) if available, otherwise full email
  */
 export function getUserDisplayName(user: { user_metadata?: { nickname?: string }; email?: string | null } | null): string {
   if (!user) return 'Unknown user'
@@ -18,8 +18,7 @@ export function getUserDisplayName(user: { user_metadata?: { nickname?: string }
   }
   
   if (user.email) {
-    const emailUsername = user.email.split('@')[0]
-    return capitalizeFirst(emailUsername)
+    return user.email
   }
   
   return 'Unknown user'

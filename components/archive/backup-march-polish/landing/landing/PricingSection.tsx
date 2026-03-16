@@ -16,7 +16,7 @@ export default function PricingSection() {
   const inView = useInView(ref, { once: true, margin: '-80px' })
 
   return (
-    <section id="pricing" className="py-20 sm:py-32 px-4 sm:px-6 max-w-6xl mx-auto">
+    <section id="pricing" className="py-20 sm:py-32 px-4">
       <div className="max-w-6xl mx-auto">
         <motion.div
           ref={ref}
@@ -36,16 +36,16 @@ export default function PricingSection() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+        <div className="flex flex-col sm:grid sm:grid-cols-3 gap-4 overflow-x-auto pb-4 sm:overflow-visible sm:pb-0 snap-x snap-mandatory sm:snap-none scroll-smooth">
           {plans.map((plan, i) => (
             <motion.div
               key={plan.name}
               initial={{ opacity: 0, y: 24 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: i * 0.1 }}
-              className={`relative card-glass p-6 sm:p-8 flex flex-col rounded-2xl w-full ${
+              className={`relative flex-shrink-0 w-72 sm:w-auto snap-start sm:snap-align-none card-glass p-6 sm:p-8 flex flex-col min-w-0 ${
                 plan.featured
-                  ? 'border-blue-500/40 shadow-[0_0_40px_rgba(59,130,246,0.12)] md:-mt-4 md:-mb-4'
+                  ? 'border-blue-500/40 shadow-[0_0_40px_rgba(59,130,246,0.12)]'
                   : ''
               }`}
             >

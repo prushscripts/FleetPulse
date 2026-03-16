@@ -70,7 +70,9 @@ export default function Navbar() {
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
           >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            <motion.div animate={{ rotate: mobileOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </motion.div>
           </button>
         </div>
       </nav>
@@ -78,32 +80,64 @@ export default function Navbar() {
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="fixed top-16 left-0 right-0 z-40 bg-navy-800/95 backdrop-blur-md border-b border-white/[0.08]"
+            key="mobile-menu-shell"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 1 }}
+            className="md:hidden"
           >
-            <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="px-4 py-3 min-h-[44px] flex items-center text-sm text-slate-300 hover:text-white hover:bg-white/[0.04] rounded-lg transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <div className="pt-3 border-t border-white/[0.06] flex flex-col gap-2 mt-2">
-                <Link href="/login" onClick={() => setMobileOpen(false)} className="btn-ghost text-sm text-center py-3 min-h-[44px] flex items-center justify-center">
-                  Sign in
-                </Link>
-                <Link href="/signup" onClick={() => setMobileOpen(false)} className="btn-primary text-sm text-center py-3 min-h-[44px] flex items-center justify-center">
-                  Start free trial
-                </Link>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
+              onClick={() => setMobileOpen(false)}
+            />
+            {/* Sliding menu */}
+            <motion.div
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.22 }}
+              className="fixed top-16 left-0 right-0 z-50 bg-navy-800/98 backdrop-blur-md border-b border-white/[0.08] md:hidden"
+            >
+              <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-1">
+                {navLinks.map((link, index) => (
+                  <motion.div
+                    key={link.href}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <Link
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="px-4 py-3 min-h-[44px] flex items-center text-sm text-slate-300 hover:text-white hover:bg-white/[0.02] border-l-0 hover:border-l-2 hover:border-l-blue-500/60 hover:pl-5 rounded-lg transition-all"
+                    >
+                      {link.label}
+                    </Link>
+                  </motion.div>
+                ))}
+                <div className="pt-3 border-t border-white/[0.06] flex flex-col gap-2 mt-2">
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="btn-ghost text-sm text-center py-3 min-h-[44px] flex items-center justify-center"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setMobileOpen(false)}
+                    className="btn-primary text-sm text-center py-3 min-h-[44px] flex items-center justify-center"
+                  >
+                    Start free trial
+                  </Link>
+                </div>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
