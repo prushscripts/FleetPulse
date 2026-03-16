@@ -48,9 +48,6 @@ Restore Points/FleetPulseRestoreReference/.env.local
 Restore Points/FleetPulseRestoreReference/.env
 
 public/videos
-public/animations
-*.mp4
-!public/Animations/*.mp4
 *.mov
 *.webm
 Restore Points
@@ -59,3 +56,8 @@ data
 1-TruckInformation
 phase2-backup
 .phase2-backup
+
+# Allow animation MP4s specifically
+!public/animations/
+!public/animations/officialfpanimation.mp4
+!public/animations/possiblelogoloop.mp4
