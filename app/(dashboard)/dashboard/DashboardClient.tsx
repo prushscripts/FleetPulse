@@ -295,7 +295,9 @@ export default function DashboardClient(
 
     if (oilFilter.length > 0) {
       filtered = filtered.filter((vehicle) => {
-        const overdue = vehicle.current_mileage >= vehicle.oil_change_due_mileage
+        const current = vehicle.current_mileage ?? 0
+        const due = vehicle.oil_change_due_mileage ?? 0
+        const overdue = due > 0 && current >= due
         if (oilFilter.includes('overdue') && oilFilter.includes('ok')) return true
         if (oilFilter.includes('overdue')) return overdue
         if (oilFilter.includes('ok')) return !overdue
@@ -327,8 +329,10 @@ export default function DashboardClient(
       let bValue: any
 
       if (sortField === 'oil_status') {
-        const aOverdue = a.current_mileage >= a.oil_change_due_mileage
-        const bOverdue = b.current_mileage >= b.oil_change_due_mileage
+        const aDue = (a.oil_change_due_mileage ?? 0)
+        const bDue = (b.oil_change_due_mileage ?? 0)
+        const aOverdue = aDue > 0 && (a.current_mileage ?? 0) >= aDue
+        const bOverdue = bDue > 0 && (b.current_mileage ?? 0) >= bDue
         aValue = aOverdue ? 1 : 0
         bValue = bOverdue ? 1 : 0
       } else if (sortField === 'status') {
@@ -357,7 +361,9 @@ export default function DashboardClient(
   }
 
   const getOilStatus = (vehicle: VehicleWithStats) => {
-    const isOverdue = vehicle.current_mileage >= vehicle.oil_change_due_mileage
+    const current = vehicle.current_mileage ?? 0
+    const due = vehicle.oil_change_due_mileage ?? 0
+    const isOverdue = due > 0 && current >= due
     return {
       status: isOverdue ? 'overdue' : 'ok',
       color: isOverdue
@@ -1092,9 +1098,9 @@ export default function DashboardClient(
                       {getVehicleStatusLabel(vehicle.status)}
                     </span>
                     <span className="px-2 py-0.5 rounded-md bg-white/[0.06] dark:bg-gray-700/50 text-xs text-slate-400 dark:text-gray-400 uppercase shrink-0">{vehicle.vehicle_type}</span>
-                    <span className="text-sm font-mono text-gray-700 dark:text-gray-300 shrink-0">{vehicle.current_mileage.toLocaleString()} mi</span>
+                    <span className="text-sm font-mono text-gray-700 dark:text-gray-300 shrink-0">{(vehicle.current_mileage ?? 0).toLocaleString()} mi</span>
                     <span className={`shrink-0 ${oilStatus.status === 'overdue' ? 'badge badge-danger' : 'badge badge-active'}`}>
-                      {oilStatus.status === 'overdue' ? '⚠ Oil Overdue' : '✓ Oil OK'} {vehicle.oil_change_due_mileage.toLocaleString()}
+                      {oilStatus.status === 'overdue' ? '⚠ Oil Overdue' : '✓ Oil OK'} {(vehicle.oil_change_due_mileage ?? 0).toLocaleString()}
                     </span>
                     {vehicle.open_issues_count > 0 && (
                       <span className="inline-flex items-center gap-0.5 text-xs font-medium text-amber-600 dark:text-amber-400 shrink-0" title="Open issues">
@@ -1224,7 +1230,7 @@ export default function DashboardClient(
                         Current Mileage
                       </span>
                       <span className="font-mono text-sm font-semibold text-gray-900 dark:text-white">
-                        {vehicle.current_mileage.toLocaleString()}
+                        {(vehicle.current_mileage ?? 0).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-1.5 px-2 rounded-md bg-gray-50 dark:bg-gray-900/50">
@@ -1235,7 +1241,7 @@ export default function DashboardClient(
                         Oil Change Due
                       </span>
                       <span className="font-mono text-sm font-semibold text-gray-900 dark:text-white">
-                        {vehicle.oil_change_due_mileage.toLocaleString()}
+                        {(vehicle.oil_change_due_mileage ?? 0).toLocaleString()}
                       </span>
                     </div>
                     {vehicle.make && vehicle.model && (
