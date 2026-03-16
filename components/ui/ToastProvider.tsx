@@ -44,7 +44,7 @@ const TOAST_PROGRESS: Record<ToastType, string> = {
   warning: 'from-amber-500 to-amber-300',
 }
 
-const TOAST_ICON: Record<ToastType, ComponentType<{ size?: number; className?: string }>> = {
+const TOAST_ICON: Record<ToastType, ComponentType<{ size?: number | string; className?: string }>> = {
   success: CheckCircle2,
   error: AlertCircle,
   info: Info,
