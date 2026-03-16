@@ -10,7 +10,7 @@ import PricingSection from '@/components/landing/PricingSection'
 import CtaSection from '@/components/landing/CtaSection'
 import Footer from '@/components/landing/Footer'
 
-const INTRO_STORAGE_KEY = 'fp_intro_seen'
+const INTRO_STORAGE_KEY = 'fp_intro_shown'
 
 /**
  * Client wrapper for the landing page. Shows intro video once per session,
@@ -44,8 +44,8 @@ export default function LandingClient() {
       )}
 
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: introComplete ? 1 : 0 }}
+        initial={{ opacity: 0, scale: 1.05 }}
+        animate={{ opacity: introComplete ? 1 : 0, scale: introComplete ? 1 : 1.05 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="min-h-screen"
       >

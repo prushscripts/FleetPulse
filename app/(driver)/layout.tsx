@@ -11,7 +11,8 @@ export default async function DriverLayout({ children }: { children: React.React
     redirect('/login')
   }
 
-  const role = (user.user_metadata?.role as string | undefined) || 'owner'
+  // Only allow driver portal when role is explicitly 'driver'; undefined/null → main dashboard
+  const role = user.user_metadata?.role as string | undefined
   if (role !== 'driver') {
     redirect('/dashboard')
   }

@@ -6,11 +6,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Eye, EyeOff, ArrowRight, Lock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { LOGO_LOOP_VIDEO } from '@/lib/animation-paths'
 import ConstellationBackground from '@/components/animations/ConstellationBackground'
-
-const LOGIN_LOADER_HOLD_MS = 1200
-const LOGIN_PULSE_MS = 600
+import LoginTransition from '@/components/animations/LoginTransition'
 
 type CompanyOption = { id: string; name: string; displayName?: string; roadmapOnly?: boolean }
 
@@ -21,8 +18,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [loginSuccessRedirect, setLoginSuccessRedirect] = useState<string | null>(null)
-  const [showPulseBurst, setShowPulseBurst] = useState(false)
-  const [loginVideoReady, setLoginVideoReady] = useState(false)
+  const [showLoginTransition, setShowLoginTransition] = useState(false)
   const [companies, setCompanies] = useState<CompanyOption[]>([])
   const [companiesLoading, setCompaniesLoading] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null)
@@ -30,20 +26,14 @@ export default function LoginPage() {
   const companyDropdownRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
-  useEffect(() => {
-    if (!loginSuccessRedirect) return
-    const t = setTimeout(() => {
-      setShowPulseBurst(true)
-      setTimeout(() => {
-        setLoading(false)
-        setLoginSuccessRedirect(null)
-        setShowPulseBurst(false)
-        // Full page redirect so session cookies are sent and we avoid 405/client transition errors
-        window.location.href = loginSuccessRedirect
-      }, LOGIN_PULSE_MS)
-    }, LOGIN_LOADER_HOLD_MS)
-    return () => clearTimeout(t)
-  }, [loginSuccessRedirect])
+  const handleLoginTransitionComplete = () => {
+    if (loginSuccessRedirect) {
+      window.location.href = loginSuccessRedirect
+    }
+    setLoading(false)
+    setLoginSuccessRedirect(null)
+    setShowLoginTransition(false)
+  }
 
   useEffect(() => {
     const raw = email.trim().toLowerCase()
@@ -99,10 +89,12 @@ export default function LoginPage() {
         const role = (data.user?.user_metadata?.role as string | undefined) || 'owner'
         if (role === 'driver') {
           setLoginSuccessRedirect('/driver')
+          setShowLoginTransition(true)
           return
         }
         const isRoadmapOnly = companyToSet?.roadmapOnly || (companyToSet?.name || '').toLowerCase().includes('roadmap')
         setLoginSuccessRedirect(isRoadmapOnly ? '/dashboard/roadmap' : '/dashboard/home')
+        setShowLoginTransition(true)
       } else {
         setError('Session not established. Please try again.')
         setLoading(false)
@@ -115,19 +107,16 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-[#0A0F1E] flex flex-row">
-      {loading && (
+      {showLoginTransition && loginSuccessRedirect && (
+        <LoginTransition onComplete={handleLoginTransitionComplete} />
+      )}
+      {loading && !showLoginTransition && (
         <div className="fixed inset-0 z-[9998] flex items-center justify-center pointer-events-auto">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-md" aria-hidden />
-          {!showPulseBurst && (
-            <div className="rounded-xl shadow-2xl border border-white/10 backdrop-blur-lg px-10 py-8 flex flex-col items-center justify-center relative z-10 transition-opacity duration-200 bg-navy-800/95" style={{ opacity: loginVideoReady ? 1 : 0 }}>
-              <video autoPlay muted playsInline loop preload="auto" src={LOGO_LOOP_VIDEO} className="w-[150px] sm:w-[180px] h-auto object-contain opacity-90" onLoadedData={() => setLoginVideoReady(true)} aria-hidden />
-            </div>
-          )}
-          {showPulseBurst && (
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              <div className="rounded-full w-[120px] h-[120px] animate-login-pulse-burst" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.8) 0%, transparent 70%)' }} />
-            </div>
-          )}
+          <div className="rounded-xl shadow-2xl border border-white/10 backdrop-blur-lg px-10 py-8 flex flex-col items-center justify-center relative z-10 bg-navy-800/95">
+            <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <p className="text-sm text-slate-400 mt-3">Signing in…</p>
+          </div>
         </div>
       )}
 

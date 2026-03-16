@@ -17,16 +17,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
     let cancelled = false
     const supabase = createClient()
+    // Safety: stop blocking after 2.5s so we never show a permanent blank screen
+    const timeoutId = window.setTimeout(() => {
+      if (!cancelled) setActivationChecked(true)
+    }, 2500)
     supabase.auth.getUser()
       .then(({ data: { user } }) => {
         if (cancelled) return
-        const role = (user?.user_metadata?.role as string | undefined) || 'owner'
+        // If no user on client, don't block — server already validated auth for this route
+        if (!user) {
+          setActivationChecked(true)
+          return
+        }
+        // Only send to driver portal when role is explicitly 'driver' (not undefined/null)
+        const role = user.user_metadata?.role as string | undefined
         if (role === 'driver') {
           router.replace('/driver')
           return
         }
-        const companyId = user?.user_metadata?.company_id
-        if (user && !companyId) {
+        const companyId = user.user_metadata?.company_id
+        if (!companyId) {
           router.replace('/dashboard/welcome')
           return
         }
@@ -37,7 +47,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         if (typeof console !== 'undefined') console.error('[FleetPulse] dashboard layout auth check failed:', err)
         setActivationChecked(true)
       })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
   }, [pathname, router])
 
   const showLoadingOverlay =
