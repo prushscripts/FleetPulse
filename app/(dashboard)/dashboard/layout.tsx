@@ -27,7 +27,7 @@ const pageVariants = {
     opacity: 0,
     scale: 1.01,
     filter: 'blur(2px)',
-    transition: { duration: 0.15, ease: 'easeIn' },
+    transition: { duration: 0.15, ease: 'easeIn' as const },
   },
 }
 
