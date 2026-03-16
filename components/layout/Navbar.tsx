@@ -94,6 +94,7 @@ export default function Navbar() {
   const [companySwitcherOpen, setCompanySwitcherOpen] = useState(false)
   const supabase = createClient()
   const { theme, toggleTheme } = useTheme()
+  const [userEmail, setUserEmail] = useState<string | null>(null)
 
   const showCompanySwitcher =
     (pathname.startsWith('/dashboard') || pathname.startsWith('/home')) &&
@@ -106,6 +107,7 @@ export default function Navbar() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setIsAdmin(user?.user_metadata?.is_admin === true)
+      setUserEmail(user?.email ?? null)
       const list = user?.user_metadata?.companies as Company[] | undefined
       const cid = user?.user_metadata?.company_id as string | undefined
       const cname = user?.user_metadata?.company_name as string | undefined
@@ -199,7 +201,8 @@ export default function Navbar() {
 
   const currentCompany = companies.find((c) => c.id === currentCompanyId)
   const currentCompanyName = currentCompany?.displayName ?? currentCompany?.name ?? ''
-  const showRoadmap = /prush/i.test(currentCompanyName)
+  const showRoadmapForCompany = /prush/i.test(currentCompanyName)
+  const isJames = userEmail === 'james@wheelzup.com'
 
   const inspectionsEnabled = companySettings?.inspectionsEnabled !== false
   const template = companySettings?.template ?? 'default'
@@ -224,7 +227,8 @@ export default function Navbar() {
   const configInspections = companyConfig?.inspections_enabled as boolean | undefined
   const configRoadmap = companyConfig?.roadmap_only as boolean | undefined
   const inspectionsEnabledFromConfig = configInspections !== undefined ? configInspections : companySettings?.inspectionsEnabled !== false
-  const showRoadmapFromConfig = configRoadmap !== undefined ? configRoadmap : showRoadmap
+  // Roadmap tab is only visible to James, even if enabled in config.
+  const showRoadmapFromConfig = isJames && (configRoadmap !== undefined ? configRoadmap : showRoadmapForCompany)
 
   let navItems: { label: string; href: string }[]
   if (configEnabledTabs?.length) {

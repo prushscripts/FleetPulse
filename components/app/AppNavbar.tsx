@@ -19,12 +19,14 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-const navItems = [
-  { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
-  { href: '/dashboard', label: 'Vehicles', icon: Truck },
-  { href: '/dashboard/drivers', label: 'Drivers', icon: Users },
-  { href: '/dashboard/inspections', label: 'Inspections', icon: ClipboardCheck },
-  { href: '/dashboard/about', label: 'About', icon: Info },
+type NavItemKey = 'home' | 'vehicles' | 'drivers' | 'inspections' | 'about'
+
+const BASE_NAV_ITEMS: { key: NavItemKey; href: string; label: string; icon: typeof LayoutDashboard }[] = [
+  { key: 'home', href: '/dashboard', label: 'Home', icon: LayoutDashboard },
+  { key: 'vehicles', href: '/dashboard', label: 'Vehicles', icon: Truck },
+  { key: 'drivers', href: '/dashboard/drivers', label: 'Drivers', icon: Users },
+  { key: 'inspections', href: '/dashboard/inspections', label: 'Inspections', icon: ClipboardCheck },
+  { key: 'about', href: '/dashboard/about', label: 'About', icon: Info },
 ]
 
 export default function AppNavbar() {
@@ -33,6 +35,7 @@ export default function AppNavbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const [user, setUser] = useState<{ email?: string; companyName?: string; plan?: string; initial?: string } | null>(null)
+  const [customLabels, setCustomLabels] = useState<Record<string, string> | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -47,6 +50,19 @@ export default function AppNavbar() {
         plan: plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase() + ' Plan',
         initial,
       })
+      const companyId = u.user_metadata?.company_id as string | undefined
+      if (companyId) {
+        fetch(`/api/company-config?company_id=${encodeURIComponent(companyId)}`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((config) => {
+            if (config?.custom_tab_labels && typeof config.custom_tab_labels === 'object') {
+              setCustomLabels(config.custom_tab_labels as Record<string, string>)
+            }
+          })
+          .catch(() => {
+            setCustomLabels(null)
+          })
+      }
     })
   }, [supabase])
 
@@ -84,18 +100,19 @@ export default function AppNavbar() {
       </Link>
 
       <div className="hidden md:flex items-center gap-1 flex-1">
-        {navItems.map(({ href, label, icon: Icon }) => {
+        {BASE_NAV_ITEMS.map(({ href, label, key, icon: Icon }) => {
+          const effectiveLabel = customLabels?.[key] ?? label
           const active = isActive(href)
           return (
             <Link
-              key={href + label}
+              key={href + key}
               href={href}
               className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 group min-h-[44px] min-w-[44px] ${
                 active ? 'text-white bg-white/[0.06]' : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
               }`}
             >
               <Icon size={15} className={active ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'} />
-              {label}
+              {effectiveLabel}
               {active && (
                 <motion.div
                   layoutId="nav-indicator"
