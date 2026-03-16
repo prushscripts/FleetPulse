@@ -266,8 +266,9 @@ export default function ControlPanelClient({
         )}
 
         <form onSubmit={handleSave} className="space-y-8">
-          <section className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Company Configuration</h2>
+          <section className="card-glass p-6 sm:p-8 rounded-2xl mb-6">
+            <h2 className="text-lg font-display font-semibold text-gray-900 dark:text-white mb-1">Company Configuration</h2>
+            <p className="text-sm text-slate-500 dark:text-gray-400 mb-6">Tab visibility, custom labels, and import.</p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Configure your company&apos;s FleetPulse experience. Tabs and labels apply to the navbar for all members.
             </p>
@@ -377,8 +378,9 @@ export default function ControlPanelClient({
             </div>
           </section>
 
-          <section className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Template</h2>
+          <section className="card-glass p-6 sm:p-8 rounded-2xl mb-6">
+            <h2 className="text-lg font-display font-semibold text-gray-900 dark:text-white mb-1">Template</h2>
+            <p className="text-sm text-slate-500 dark:text-gray-400 mb-6">Choose dashboard layout.</p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Choose a layout style for your dashboard. More templates (and CSV import) coming soon.
             </p>
@@ -411,8 +413,9 @@ export default function ControlPanelClient({
             </div>
           </section>
 
-          <section className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Features</h2>
+          <section className="card-glass p-6 sm:p-8 rounded-2xl mb-6">
+            <h2 className="text-lg font-display font-semibold text-gray-900 dark:text-white mb-1">Features</h2>
+            <p className="text-sm text-slate-500 dark:text-gray-400 mb-6">Inspections and roadmap.</p>
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -429,8 +432,9 @@ export default function ControlPanelClient({
             </label>
           </section>
 
-          <section className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Home dashboard segments</h2>
+          <section className="card-glass p-6 sm:p-8 rounded-2xl mb-6">
+            <h2 className="text-lg font-display font-semibold text-gray-900 dark:text-white mb-1">Home dashboard segments</h2>
+            <p className="text-sm text-slate-500 dark:text-gray-400 mb-6">Territory segments for home view.</p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
               Optional labels for territory/region tabs on the home page (e.g. New York, DMV). Comma-separated. Leave blank for “Full fleet” only.
             </p>
@@ -447,7 +451,7 @@ export default function ControlPanelClient({
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-medium shadow-sm"
+              className="btn-primary min-h-[44px] disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save changes'}
             </button>

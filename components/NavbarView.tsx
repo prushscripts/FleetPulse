@@ -18,9 +18,9 @@ function getNavStyle(scrolled?: boolean) {
     display: 'flex',
     alignItems: 'center',
     padding: 'env(safe-area-inset-top) 28px env(safe-area-inset-bottom) 28px',
-    background: 'rgba(8,12,28,0.92)',
+    background: 'rgba(10,15,30,0.95)',
     backdropFilter: 'blur(16px)',
-    borderBottom: scrolled ? '1px solid rgba(139, 92, 246, 0.25)' : '1px solid rgba(139, 92, 246, 0.15)',
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
     overflow: 'visible',
   }
 }

@@ -1,10 +1,50 @@
 'use client'
 
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import Image from 'next/image'
+import { ArrowRight, Lock } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import EntryAnimation from '@/components/animations/EntryAnimation'
+
+function GridBackground() {
+  const dots = Array.from({ length: 48 }, (_, i) => ({
+    id: i,
+    x: (i % 8) * 12.5,
+    y: Math.floor(i / 8) * 16.66,
+    delay: Math.random() * 3,
+    duration: 2 + Math.random() * 2,
+  }))
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0 opacity-[0.06]"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(59,130,246,1) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,1) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+        }}
+      />
+      {dots.slice(0, 12).map((dot) => (
+        <motion.div
+          key={dot.id}
+          className="absolute w-1.5 h-1.5 rounded-full bg-blue-400"
+          style={{ left: dot.x + '%', top: dot.y + '%' }}
+          animate={{ opacity: [0.2, 0.8, 0.2], scale: [0.8, 1.2, 0.8] }}
+          transition={{ duration: dot.duration, delay: dot.delay, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      ))}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl opacity-20"
+        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.6), transparent)' }}
+      />
+    </div>
+  )
+}
+
+const inputClass = 'w-full px-4 py-3 min-h-[48px] bg-white/[0.04] border border-white/[0.1] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/20 transition-all'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -21,40 +61,29 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-
     if (password !== confirmPassword) {
       setError('Passwords do not match')
       return
     }
-
     if (password.length < 6) {
       setError('Password must be at least 6 characters')
       return
     }
-
     setLoading(true)
-
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-
+      const { error: signUpError } = await supabase.auth.signUp({ email, password })
       if (signUpError) {
         setError(signUpError.message || 'An error occurred during signup')
         setLoading(false)
         return
       }
-
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
       const { data: sessionData } = await supabase.auth.getSession()
-
       if (!sessionData?.session) {
         setError('Account created! Please check your email to verify your account.')
         setLoading(false)
         return
       }
-
       const key = companyKey.trim()
       if (key) {
         let company: { id: string; name: string } | null = null
@@ -67,11 +96,7 @@ export default function SignupPage() {
         }
         if (company) {
           await supabase.auth.updateUser({
-            data: {
-              company_id: company.id,
-              company_name: company.name,
-              companies: [{ id: company.id, name: company.name }],
-            },
+            data: { company_id: company.id, company_name: company.name, companies: [{ id: company.id, name: company.name }] },
           })
           setRedirectOnComplete('/home')
           setShowEntry(true)
@@ -84,8 +109,8 @@ export default function SignupPage() {
         setShowEntry(true)
       }
       setLoading(false)
-    } catch (err: any) {
-      setError(err?.message || 'An error occurred during signup')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred during signup')
       setLoading(false)
     }
   }
@@ -100,200 +125,98 @@ export default function SignupPage() {
           }}
         />
       )}
-    <div className={`min-h-screen relative overflow-hidden ${showEntry ? 'pointer-events-none' : ''}`} style={{ backgroundColor: 'var(--fleet-navy, #0d1120)' }}>
-      {/* Subtle animated background: slow-moving radial gradient + faint grid */}
-      <div
-        className="absolute inset-0 opacity-[0.07] animate-auth-grid"
-        style={{
-          backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% 50%, rgba(99, 102, 241, 0.4), transparent 70%), radial-gradient(ellipse 60% 40% at 80% 20%, rgba(139, 92, 246, 0.2), transparent 50%)',
-          backgroundSize: '100% 100%',
-          animationDuration: '20s',
-        }}
-      />
-      <div
-        className="absolute inset-0 animate-auth-grid"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.06) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-          opacity: 0.06,
-        }}
-      />
-      {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm flex flex-col flex-1 justify-center">
-        <div className="text-center mb-6 relative flex flex-col items-center">
-          {/* Pulse rings behind logo */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[120px] flex items-center justify-center pointer-events-none" style={{ marginTop: '-0.5rem' }}>
-            <span className="absolute w-32 h-32 rounded-full border border-[rgba(139,92,246,0.15)] animate-auth-pulse-ring" />
-            <span className="absolute w-32 h-32 rounded-full border border-[rgba(139,92,246,0.15)] animate-auth-pulse-ring animate-auth-pulse-ring-2" />
-            <span className="absolute w-32 h-32 rounded-full border border-[rgba(139,92,246,0.15)] animate-auth-pulse-ring animate-auth-pulse-ring-3" />
+      <div className={`min-h-screen min-h-[100dvh] bg-navy-900 flex relative overflow-hidden ${showEntry ? 'pointer-events-none' : ''}`}>
+        <div className="hidden lg:flex lg:w-[42%] xl:w-[45%] relative bg-navy-800 border-r border-white/[0.06] flex-col justify-between p-12 overflow-hidden min-h-screen">
+          <GridBackground />
+          <div className="relative z-10">
+            <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={140} height={32} className="h-8 w-auto" />
           </div>
-          <div className="relative z-10 mx-auto mb-2 flex items-center justify-center">
-            <img
-              src="/branding/fleetpulse-logo.png"
-              alt="FleetPulse"
-              className="max-w-[240px] w-full h-auto object-contain block"
-              width={240}
-              height={80}
-            />
-          </div>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-indigo-400/80 mb-4" style={{ letterSpacing: '3px' }}>
-            Modern Fleet Management
-          </p>
-          <h2 className="text-2xl font-bold text-white mb-1">
-            Create Your Account
-          </h2>
-          <p className="text-sm text-gray-400">
-            Start managing your fleet today
-          </p>
-        </div>
-
-        {/* Signup Card — glassy */}
-        <div className="rounded-xl p-5 backdrop-blur-[12px]" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(139,92,246,0.12)', boxShadow: '0 0 60px rgba(109,40,217,0.08)' }}>
-          <form onSubmit={handleSignup} className="space-y-4">
-            {error && (
-              <div className={`px-3 py-2 rounded-lg text-sm flex items-start gap-2 ${
-                error.includes('verify') || error.includes('check your email')
-                  ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400'
-                  : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400'
-              }`}>
-                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  {error.includes('verify') || error.includes('check your email') ? (
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  ) : (
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  )}
-                </svg>
-                <span>{error}</span>
+          <div className="relative z-10">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card-glass p-6 rounded-2xl mb-6">
+              <p className="text-sm text-slate-300 leading-relaxed mb-4">
+                &quot;We cut maintenance surprises by 40% in the first quarter. FleetPulse pays for itself.&quot;
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-semibold text-blue-400">JD</div>
+                <div>
+                  <div className="text-xs font-medium text-white">Fleet Director</div>
+                  <div className="text-[10px] text-slate-500">Regional logistics, 80+ vehicles</div>
+                </div>
               </div>
-            )}
-
-            <div>
-              <label htmlFor="email" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                placeholder="you@example.com"
-              />
+            </motion.div>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <Lock size={12} className="text-slate-600" />
+              Secured by 256-bit SSL
             </div>
-
-            <div>
-              <label htmlFor="password" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                Confirm password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="companyKey" className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                Company invite code <span className="font-normal text-gray-400">(optional)</span>
-                <span
-                  className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-gray-400 dark:border-gray-500 text-gray-500 dark:text-gray-400 cursor-help text-[10px] font-bold"
-                  title="If you don't have an ID, contact your company administration to acquire one."
-                >
-                  ?
-                </span>
-              </label>
-              <input
-                id="companyKey"
-                name="companyKey"
-                type="text"
-                autoComplete="off"
-                value={companyKey}
-                onChange={(e) => setCompanyKey(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                placeholder=""
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center items-center gap-2 py-2.5 px-3 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 ease-out hover:brightness-105 hover:scale-[1.02] disabled:hover:brightness-100 disabled:hover:scale-100"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Creating account...</span>
-                </>
-              ) : (
-                <>
-                  <span>Create account</span>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </>
-              )}
-            </button>
-
-            <p className="mt-4 text-center text-[11px] text-gray-500 dark:text-gray-400">
-              🔒 Secure SSL Login · No credit card required · Cancel anytime
-            </p>
-          </form>
-
-          <p className="mt-4 text-center text-sm text-gray-400">
-            Already have an account?{' '}
-            <Link href="/login" className="font-medium text-indigo-300 hover:text-white">
-              Sign in
-            </Link>
-          </p>
-
-          <div className="mt-3 text-center">
-            <Link
-              href="/"
-              className="text-xs text-gray-400 hover:text-white inline-flex items-center gap-1"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to home
-            </Link>
           </div>
         </div>
-        <p className="mt-8 text-center text-[10px] text-white/20 tracking-widest">
-          Secured by 256-bit SSL · FleetPulse v2.0 · © 2025 Prush Logistics Group LLC
-        </p>
+
+        <div className="flex-1 flex items-center justify-center p-6 sm:p-8">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="w-full max-w-sm">
+            <div className="lg:hidden mb-8 flex justify-center">
+              <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={120} height={28} className="h-7 w-auto" />
+            </div>
+
+            <div className="mb-8">
+              <h1 className="text-2xl sm:text-3xl font-display font-bold text-white mb-2">Create your account</h1>
+              <p className="text-sm text-slate-400">Start managing your fleet today</p>
+            </div>
+
+            <form onSubmit={handleSignup} action="#" method="get" className="space-y-4">
+              {error && (
+                <div className={`px-3 py-2 rounded-xl text-sm ${error.includes('verify') || error.includes('check your email') ? 'bg-blue-500/10 border border-blue-500/30 text-blue-300' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Email</label>
+                <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className={inputClass} />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Password</label>
+                <input id="password" name="password" type="password" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className={inputClass} />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Confirm password</label>
+                <input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className={inputClass} />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-1.5 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Company access code <span className="font-normal normal-case">(optional)</span>
+                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-500 text-slate-500 cursor-help text-[10px] font-bold" title="If you don't have an ID, contact your company administration to acquire one.">?</span>
+                </label>
+                <input id="companyKey" name="companyKey" type="text" autoComplete="off" value={companyKey} onChange={(e) => setCompanyKey(e.target.value)} placeholder="e.g. WheelzUpAPD2026" className={inputClass} />
+              </div>
+
+              <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 min-h-[48px] mt-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  <>Create account <ArrowRight size={15} /></>
+                )}
+              </button>
+
+              <p className="text-center text-[11px] text-slate-500 mt-4">🔒 Secure SSL · No credit card required</p>
+            </form>
+
+            <p className="text-center text-sm text-slate-500 mt-6">
+              Already have an account?{' '}
+              <Link href="/login" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">Sign in</Link>
+            </p>
+
+            <div className="mt-8 pt-6 border-t border-white/[0.06] text-center">
+              <Link href="/" className="text-xs text-slate-600 hover:text-slate-400 transition-colors">← Back to homepage</Link>
+            </div>
+          </motion.div>
+        </div>
       </div>
-      </div>
-    </div>
     </>
   )
 }

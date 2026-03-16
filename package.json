@@ -11,8 +11,10 @@
     "import-voyager": "node scripts/imports/import-voyager-mileage.js"
   },
   "dependencies": {
+    "@radix-ui/react-navigation-menu": "^1.2.14",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.39.0",
+    "clsx": "^2.1.1",
     "date-fns": "^3.0.6",
     "dotenv": "^16.3.1",
     "framer-motion": "^12.36.0",
@@ -20,7 +22,8 @@
     "next": "14.0.4",
     "papaparse": "^5.4.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
     "@types/node": "^20",

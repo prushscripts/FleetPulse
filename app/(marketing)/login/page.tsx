@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-
+import Image from 'next/image'
+import { Eye, EyeOff, ArrowRight, Lock } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { LOGO_LOOP_VIDEO } from '@/lib/animation-paths'
 
 const LOGIN_LOADER_HOLD_MS = 1200
@@ -12,7 +14,43 @@ const LOGIN_PULSE_MS = 600
 
 type CompanyOption = { id: string; name: string; displayName?: string; roadmapOnly?: boolean }
 
+function GridBackground() {
+  const dots = Array.from({ length: 48 }, (_, i) => ({
+    id: i,
+    x: (i % 8) * 12.5,
+    y: Math.floor(i / 8) * 16.66,
+    delay: Math.random() * 3,
+    duration: 2 + Math.random() * 2,
+  }))
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0 opacity-[0.06]"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(59,130,246,1) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,1) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+        }}
+      />
+      {dots.slice(0, 12).map((dot) => (
+        <motion.div
+          key={dot.id}
+          className="absolute w-1.5 h-1.5 rounded-full bg-blue-400"
+          style={{ left: dot.x + '%', top: dot.y + '%' }}
+          animate={{ opacity: [0.2, 0.8, 0.2], scale: [0.8, 1.2, 0.8] }}
+          transition={{ duration: dot.duration, delay: dot.delay, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      ))}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl opacity-20"
+        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.6), transparent)' }}
+      />
+    </div>
+  )
+}
+
 export default function LoginPage() {
+  const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -52,19 +90,11 @@ export default function LoginPage() {
     const t = setTimeout(async () => {
       setCompaniesLoading(true)
       try {
-        const res = await fetch('/api/companies-for-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: raw }),
-        })
+        const res = await fetch('/api/companies-for-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: raw }) })
         const data = await res.json()
         const list = data?.companies ?? []
         setCompanies(list)
-        if (list.length === 1) {
-          setSelectedCompany(list[0])
-        } else {
-          setSelectedCompany(list[0] ?? null)
-        }
+        setSelectedCompany(list.length === 1 ? list[0] : list[0] ?? null)
       } catch {
         setCompanies([])
         setSelectedCompany(null)
@@ -77,9 +107,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (companyDropdownRef.current && !companyDropdownRef.current.contains(e.target as Node)) {
-        setShowCompanyDropdown(false)
-      }
+      if (companyDropdownRef.current && !companyDropdownRef.current.contains(e.target as Node)) setShowCompanyDropdown(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -89,36 +117,22 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
-
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
       if (signInError) {
         setError(signInError.message || 'An error occurred during login')
         setLoading(false)
         return
       }
-
       const companyToSet = selectedCompany ?? (companies.length === 1 ? companies[0] : null)
       if (companyToSet) {
-        await supabase.auth.updateUser({
-          data: {
-            company_id: companyToSet.id,
-            company_name: companyToSet.displayName || companyToSet.name,
-          },
-        })
+        await supabase.auth.updateUser({ data: { company_id: companyToSet.id, company_name: companyToSet.displayName || companyToSet.name } })
       }
-
       await new Promise((resolve) => setTimeout(resolve, 100))
       const { data: sessionData } = await supabase.auth.getSession()
-
       if (sessionData?.session) {
         const isRoadmapOnly = companyToSet?.roadmapOnly || (companyToSet?.name || '').toLowerCase().includes('roadmap')
-        const redirectTo = isRoadmapOnly ? '/dashboard/roadmap' : '/dashboard/home'
-        setLoginSuccessRedirect(redirectTo)
+        setLoginSuccessRedirect(isRoadmapOnly ? '/dashboard/roadmap' : '/dashboard/home')
       } else {
         setError('Session not established. Please try again.')
         setLoading(false)
@@ -130,276 +144,164 @@ export default function LoginPage() {
   }
 
   return (
-    <>
-    <div className="min-h-screen min-h-[100dvh] relative overflow-hidden" style={{ backgroundColor: 'var(--fleet-navy, #0d1120)' }}>
-      {/* Login transition overlay: blur + loader card, then pulse burst */}
+    <div className="min-h-screen min-h-[100dvh] bg-navy-900 flex">
       {loading && (
         <div className="fixed inset-0 z-[9998] flex items-center justify-center pointer-events-auto">
-          <div
-            className="absolute inset-0 bg-black/30 backdrop-blur-md transition-opacity"
-            aria-hidden
-          />
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-md" aria-hidden />
           {!showPulseBurst && (
-            <div
-              className="rounded-xl shadow-2xl border border-white/10 backdrop-blur-lg px-10 py-8 flex flex-col items-center justify-center relative z-10 transition-opacity duration-200"
-              style={{
-                background: 'rgba(15,15,25,0.9)',
-                opacity: loginVideoReady ? 1 : 0,
-              }}
-            >
-              <video
-                autoPlay
-                muted
-                playsInline
-                loop
-                preload="auto"
-                src={LOGO_LOOP_VIDEO}
-                className="w-[150px] sm:w-[180px] h-auto object-contain opacity-90"
-                onLoadedData={() => setLoginVideoReady(true)}
-                aria-hidden
-              />
+            <div className="rounded-xl shadow-2xl border border-white/10 backdrop-blur-lg px-10 py-8 flex flex-col items-center justify-center relative z-10 transition-opacity duration-200 bg-navy-800/95" style={{ opacity: loginVideoReady ? 1 : 0 }}>
+              <video autoPlay muted playsInline loop preload="auto" src={LOGO_LOOP_VIDEO} className="w-[150px] sm:w-[180px] h-auto object-contain opacity-90" onLoadedData={() => setLoginVideoReady(true)} aria-hidden />
             </div>
           )}
           {showPulseBurst && (
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              <div
-                className="rounded-full w-[120px] h-[120px] animate-login-pulse-burst"
-                style={{
-                  background: 'radial-gradient(circle, rgba(139,92,246,0.8) 0%, transparent 70%)',
-                }}
-              />
+              <div className="rounded-full w-[120px] h-[120px] animate-login-pulse-burst" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.8) 0%, transparent 70%)' }} />
             </div>
           )}
         </div>
       )}
 
-      {/* Page content — blurred when loading */}
-      <div className={`min-h-screen min-h-[100dvh] relative transition-all duration-300 ${loading ? 'blur-md' : ''}`}>
-      {/* Grid background — fixed so it does not affect page height */}
-      <div
-        className="fixed inset-0 z-0 pointer-events-none animate-auth-grid"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.12) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-          opacity: 0.08,
-        }}
-      />
-      {/* Soft radial glow behind logo — fixed, stronger (opacity 0.35), pulse-slow */}
-      <div
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[200px] rounded-full pointer-events-none z-0 animate-auth-pulse-slow"
-        style={{
-          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.35) 0%, transparent 70%)',
-          filter: 'blur(120px)',
-          opacity: 0.35,
-        }}
-      />
-      {/* Content */}
-      <div className="relative z-10 min-h-screen min-h-[100dvh] flex flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-[380px] flex flex-col flex-1 justify-center min-h-0">
-        <div className="text-center mb-6 relative flex flex-col items-center">
-          {/* 3 concentric pulse rings — scale 1 → 1.2, opacity fade, 6s infinite */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(280px,85vw)] h-[120px] min-h-[100px] flex items-center justify-center pointer-events-none z-0" style={{ marginTop: '-0.5rem' }}>
-            <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.4)] animate-auth-pulse-ring-slow" />
-            <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.35)] animate-auth-pulse-ring-slow animate-auth-pulse-ring-slow-2" />
-            <span className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-[rgba(139,92,246,0.3)] animate-auth-pulse-ring-slow animate-auth-pulse-ring-slow-3" />
+      <div className={`flex-1 min-h-screen min-h-[100dvh] relative transition-all duration-300 ${loading ? 'blur-md' : ''}`}>
+        <div className="hidden lg:flex lg:w-[42%] xl:w-[45%] relative bg-navy-800 border-r border-white/[0.06] flex-col justify-between p-12 overflow-hidden min-h-screen">
+          <GridBackground />
+          <div className="relative z-10">
+            <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={140} height={32} className="h-8 w-auto" />
           </div>
-          <div className="relative z-10 mx-auto mb-2 flex items-center justify-center animate-login-logo-scale-in">
-            <div className="animate-login-logo-float">
-              <img
-                src="/branding/fleetpulse-logo.png"
-                alt="FleetPulse"
-                className="max-w-[280px] w-full h-auto object-contain block"
-                width={280}
-                height={93}
-              />
+          <div className="relative z-10">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card-glass p-6 rounded-2xl mb-6">
+              <p className="text-sm text-slate-300 leading-relaxed mb-4">
+                &quot;FleetPulse transformed how we manage our 57-vehicle New York fleet. Oil tracking alone saves us thousands in missed service costs.&quot;
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-semibold text-blue-400">MT</div>
+                <div>
+                  <div className="text-xs font-medium text-white">Operations Manager</div>
+                  <div className="text-[10px] text-slate-500">Logistics company, New York</div>
+                </div>
+              </div>
+            </motion.div>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <Lock size={12} className="text-slate-600" />
+              Secured by 256-bit SSL
             </div>
           </div>
-          <p className="text-xs uppercase mb-4 text-indigo-400/80" style={{ letterSpacing: '0.14em', opacity: 0.85 }}>
-            Modern Fleet Management
-          </p>
-          <h2 className="text-2xl font-bold text-white mb-1">
-            Welcome Back
-          </h2>
-          <p className="text-sm text-gray-400">
-            Sign in to your account
-          </p>
         </div>
 
-        {/* Login Card — glassmorphism */}
-        <div className="rounded-xl p-5 bg-white/5 backdrop-blur-lg border border-white/10 shadow-xl">
-          <form onSubmit={handleLogin} action="#" method="get" className="space-y-4">
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-sm flex items-start gap-2">
-                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                <span>{error}</span>
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="email" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2.5 min-h-[44px] text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                placeholder="you@example.com"
-              />
+        <div className="flex-1 flex items-center justify-center p-6 sm:p-8">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="w-full max-w-sm">
+            <div className="lg:hidden mb-8 flex justify-center">
+              <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={120} height={28} className="h-7 w-auto" />
             </div>
 
-            {/* Company selector: shown when we found companies for this email */}
-            {companies.length > 0 && (
-              <div ref={companyDropdownRef} className="relative">
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                  Open as
-                </label>
-                {companiesLoading ? (
-                  <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-500 dark:text-gray-400 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50">
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span>Finding your companies…</span>
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setShowCompanyDropdown((v) => !v)}
-                      className="w-full flex items-center justify-between gap-2 px-3 py-2.5 min-h-[44px] text-sm text-left border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                    >
-                      <span className="truncate">
-                        {selectedCompany ? (selectedCompany.displayName || selectedCompany.name) : 'Select company'}
-                      </span>
-                      <svg className={`w-4 h-4 flex-shrink-0 text-gray-400 transition-transform ${showCompanyDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                    {showCompanyDropdown && (
-                      <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg py-1 max-h-48 overflow-auto">
-                        {companies.map((c) => (
-                          <button
-                            key={c.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCompany(c)
-                              setShowCompanyDropdown(false)
-                            }}
-                            className={`w-full px-3 py-2.5 text-left text-sm transition-colors ${
-                              selectedCompany?.id === c.id
-                                ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium'
-                                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                            }`}
-                          >
-                            {c.displayName || c.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                      You’ll land in this company after signing in.
-                    </p>
-                  </>
-                )}
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="password" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2.5 min-h-[44px] text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                placeholder="••••••••"
-              />
+            <div className="mb-8">
+              <h1 className="text-2xl sm:text-3xl font-display font-bold text-white mb-2">Welcome back</h1>
+              <p className="text-sm text-slate-400">Sign in to your fleet dashboard</p>
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-3.5 w-3.5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                />
-                <span className="text-xs text-gray-600 dark:text-gray-400">Remember me</span>
-              </label>
-              <Link
-                href="#"
-                className="text-xs font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
-              >
-                Forgot password?
-              </Link>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center items-center gap-2 min-h-[44px] py-2.5 px-3 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 ease-out hover:brightness-105 hover:scale-[1.02] disabled:hover:brightness-100 disabled:hover:scale-100"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Signing in...</span>
-                </>
-              ) : (
-                <>
-                  <span>Sign in</span>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </>
+            <form onSubmit={handleLogin} action="#" method="get" className="space-y-4">
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-2 rounded-xl text-sm flex items-start gap-2">
+                  <span>{error}</span>
+                </div>
               )}
-            </button>
 
-            <p className="mt-4 text-center text-[11px] text-gray-500 dark:text-gray-400">
-              🔒 Secure SSL Login · No credit card required · Cancel anytime
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@company.com"
+                  required
+                  className="w-full px-4 py-3 min-h-[48px] bg-white/[0.04] border border-white/[0.1] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                />
+              </div>
+
+              {companies.length > 0 && (
+                <div ref={companyDropdownRef} className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Open as</label>
+                  {companiesLoading ? (
+                    <div className="flex items-center gap-2 px-4 py-3 min-h-[48px] text-sm text-slate-500 rounded-xl border border-white/[0.1] bg-white/[0.04]">
+                      <div className="w-4 h-4 border-2 border-slate-500/30 border-t-slate-400 rounded-full animate-spin" />
+                      <span>Finding your companies…</span>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setShowCompanyDropdown((v) => !v)}
+                        className="w-full flex items-center justify-between gap-2 px-4 py-3 min-h-[48px] text-sm text-left bg-white/[0.04] border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-blue-500/60"
+                      >
+                        <span className="truncate">{selectedCompany ? (selectedCompany.displayName || selectedCompany.name) : 'Select company'}</span>
+                        <svg className={`w-4 h-4 flex-shrink-0 text-slate-400 transition-transform ${showCompanyDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      </button>
+                      {showCompanyDropdown && (
+                        <div className="absolute z-20 mt-1 w-full rounded-xl border border-white/[0.1] bg-navy-800 shadow-lg py-1 max-h-48 overflow-auto">
+                          {companies.map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => { setSelectedCompany(c); setShowCompanyDropdown(false) }}
+                              className={`w-full px-4 py-2.5 text-left text-sm min-h-[44px] ${selectedCompany?.id === c.id ? 'bg-blue-500/20 text-blue-300' : 'text-slate-300 hover:bg-white/[0.04]'}`}
+                            >
+                              {c.displayName || c.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-[11px] text-slate-500 mt-1">You’ll land in this company after signing in.</p>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Password</label>
+                  <Link href="#" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">Forgot password?</Link>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    className="w-full px-4 py-3 min-h-[48px] pr-12 bg-white/[0.04] border border-white/[0.1] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 min-h-[48px] mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>Sign in <ArrowRight size={15} /></>
+                )}
+              </button>
+            </form>
+
+            <p className="text-center text-sm text-slate-500 mt-6">
+              New to FleetPulse?{' '}
+              <Link href="/signup" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">Create an account</Link>
             </p>
-          </form>
 
-          <p className="mt-4 text-center text-sm text-gray-400">
-            New to FleetPulse?{' '}
-            <Link href="/signup" className="font-medium text-indigo-300 hover:text-white">
-              Create an account
-            </Link>
-          </p>
-
-          <div className="mt-3 text-center">
-            <Link
-              href="/"
-              className="text-xs text-gray-400 hover:text-white inline-flex items-center gap-1"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to home
-            </Link>
-          </div>
+            <div className="mt-8 pt-6 border-t border-white/[0.06] text-center">
+              <Link href="/" className="text-xs text-slate-600 hover:text-slate-400 transition-colors">← Back to homepage</Link>
+            </div>
+          </motion.div>
         </div>
-        <p className="mt-8 text-center text-[10px] text-white/20 tracking-widest">
-          Secured by 256-bit SSL · FleetPulse v2.0 · © 2025 Prush Logistics Group LLC
-        </p>
-      </div>
-      </div>
       </div>
     </div>
-    </>
   )
 }

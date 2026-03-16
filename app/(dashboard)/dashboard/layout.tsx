@@ -48,7 +48,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     pathname !== '/dashboard/about'
 
   return (
-    <div className="w-full pt-[64px] relative">
+    <div className="w-full pt-[64px] pb-20 md:pb-0 relative">
       {showLoadingOverlay && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-50 dark:bg-gray-900 min-h-screen">
           <div className="text-gray-500 dark:text-gray-400 text-sm">Loading…</div>

@@ -1075,25 +1075,26 @@ export default function DashboardClient(
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredVehicles.map((vehicle, index) => {
                 const oilStatus = getOilStatus(vehicle)
+                const oilBorder = oilStatus.status === 'overdue' ? 'border-l-2 border-l-red-500/40' : 'border-l-2 border-l-emerald-500/40'
                 return (
                   <button
                     key={vehicle.id}
                     type="button"
                     onClick={() => navigateToVehicle(vehicle.id)}
-                    className={`w-full text-left px-4 py-3 sm:px-5 sm:py-3.5 flex flex-wrap items-center gap-x-3 gap-y-2 transition-colors min-h-[44px] touch-manipulation ${
+                    className={`w-full text-left px-4 py-3 sm:px-5 sm:py-3.5 flex flex-wrap items-center gap-x-3 gap-y-2 transition-colors min-h-[44px] touch-manipulation ${oilBorder} ${
                       index % 2 === 0 ? 'bg-white dark:bg-gray-800/50' : 'bg-gray-50/50 dark:bg-gray-800/30'
                     } hover:bg-indigo-50/40 dark:hover:bg-indigo-900/10 active:bg-indigo-100/50 dark:active:bg-indigo-900/20 ${
-                      lastVehicleId === vehicle.id ? 'border-l-2 border-l-indigo-500 bg-indigo-50/40 dark:bg-indigo-900/10' : ''
+                      lastVehicleId === vehicle.id ? 'bg-indigo-50/40 dark:bg-indigo-900/10' : ''
                     }`}
                   >
-                    <span className="text-sm font-semibold text-gray-900 dark:text-white shrink-0">{vehicle.code}</span>
+                    <span className="text-sm font-display font-semibold text-gray-900 dark:text-white shrink-0">{vehicle.code}</span>
                     <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium shrink-0 ${getVehicleStatusColor(vehicle.status)}`}>
                       {getVehicleStatusLabel(vehicle.status)}
                     </span>
-                    <span className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide shrink-0">{vehicle.vehicle_type}</span>
-                    <span className="text-xs text-gray-700 dark:text-gray-300 shrink-0">{vehicle.current_mileage.toLocaleString()} mi</span>
-                    <span className={`text-xs shrink-0 ${oilStatus.status === 'overdue' ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                      oil {vehicle.oil_change_due_mileage.toLocaleString()}
+                    <span className="px-2 py-0.5 rounded-md bg-white/[0.06] dark:bg-gray-700/50 text-xs text-slate-400 dark:text-gray-400 uppercase shrink-0">{vehicle.vehicle_type}</span>
+                    <span className="text-sm font-mono text-gray-700 dark:text-gray-300 shrink-0">{vehicle.current_mileage.toLocaleString()} mi</span>
+                    <span className={`shrink-0 ${oilStatus.status === 'overdue' ? 'badge badge-danger' : 'badge badge-active'}`}>
+                      {oilStatus.status === 'overdue' ? '⚠ Oil Overdue' : '✓ Oil OK'} {vehicle.oil_change_due_mileage.toLocaleString()}
                     </span>
                     {vehicle.open_issues_count > 0 && (
                       <span className="inline-flex items-center gap-0.5 text-xs font-medium text-amber-600 dark:text-amber-400 shrink-0" title="Open issues">
@@ -1130,19 +1131,17 @@ export default function DashboardClient(
         <div className={`${viewMode === 'cards' ? 'grid' : 'hidden'} grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`}>
           {filteredVehicles.map((vehicle) => {
             const oilStatus = getOilStatus(vehicle)
+            const oilBorder = oilStatus.status === 'overdue' ? 'border-l-2 border-l-red-500/40' : 'border-l-2 border-l-emerald-500/40'
             return (
               <article
                 key={vehicle.id}
                 onClick={() => navigateToVehicle(vehicle.id)}
-                className="group relative bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:border-indigo-300 dark:hover:border-indigo-600 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden cursor-pointer"
+                className={`group relative card-glass p-4 sm:p-5 hover:border-blue-500/20 transition-all duration-200 cursor-pointer ${oilBorder}`}
               >
-                {/* Subtle gradient overlay on hover */}
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/0 via-purple-50/0 to-indigo-50/0 group-hover:from-indigo-50/50 group-hover:via-purple-50/30 group-hover:to-indigo-50/50 dark:group-hover:from-indigo-900/10 dark:group-hover:via-purple-900/10 dark:group-hover:to-indigo-900/10 transition-all duration-300 pointer-events-none"></div>
-                
                 <div className="relative">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-base sm:text-lg font-semibold tracking-tight text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      <h3 className="text-base sm:text-lg font-display font-semibold text-gray-900 dark:text-white transition-colors">
                         {vehicle.code}
                       </h3>
                       {vehicle.driver_name && (
@@ -1153,8 +1152,8 @@ export default function DashboardClient(
                           {vehicle.driver_name}
                         </p>
                       )}
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                        {getTerritory(vehicle)} • {vehicle.vehicle_type.toUpperCase()}
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1.5">
+                        {getTerritory(vehicle)} • <span className="px-2 py-0.5 rounded-md bg-white/[0.06] dark:bg-gray-700/50 text-xs text-slate-400 uppercase">{vehicle.vehicle_type}</span>
                       </p>
                       {((plateMap[vehicle.code?.toLowerCase() ?? ''] ?? vehicle.license_plate) || '').trim() && (
                         <p className="text-[11px] text-gray-600 dark:text-gray-300 font-mono mt-1">
@@ -1204,15 +1203,13 @@ export default function DashboardClient(
                         </button>
                       </div>
                       <span
-                        className={`px-2.5 py-1 text-xs font-semibold rounded-full ${getVehicleStatusColor(
+                        className={`badge ${getVehicleStatusColor(
                           vehicle.status
                         )}`}
                       >
                         {getVehicleStatusLabel(vehicle.status)}
                       </span>
-                      <span
-                        className={`px-2.5 py-1 text-xs font-semibold rounded-full ${oilStatus.color}`}
-                      >
+                      <span className={oilStatus.status === 'overdue' ? 'badge badge-danger' : 'badge badge-active'}>
                         {oilStatus.status === 'overdue' ? '⚠ Oil Overdue' : '✓ Oil OK'}
                       </span>
                     </div>
@@ -1226,7 +1223,7 @@ export default function DashboardClient(
                         </svg>
                         Current Mileage
                       </span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
+                      <span className="font-mono text-sm font-semibold text-gray-900 dark:text-white">
                         {vehicle.current_mileage.toLocaleString()}
                       </span>
                     </div>
@@ -1237,7 +1234,7 @@ export default function DashboardClient(
                         </svg>
                         Oil Change Due
                       </span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
+                      <span className="font-mono text-sm font-semibold text-gray-900 dark:text-white">
                         {vehicle.oil_change_due_mileage.toLocaleString()}
                       </span>
                     </div>

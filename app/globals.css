@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -410,6 +412,19 @@ body {
   --background: #ffffff;
   --foreground: #171717;
   --fleet-navy: #0d1120;
+  /* Premium design system (navy theme for landing/marketing) */
+  --bg-base: #0A0F1E;
+  --bg-surface: #0F1629;
+  --bg-elevated: #151D35;
+  --border-default: rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.16);
+  --accent: #3B82F6;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -459,6 +474,80 @@ body {
 .dark * {
   scrollbar-color: rgb(75 85 99) rgb(31 41 55);
 }
+
+/* Premium design system: glass card, buttons, badges */
+.card-glass {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.card-glass:hover {
+  border-color: rgba(59,130,246,0.25);
+  box-shadow: 0 0 20px rgba(59,130,246,0.06);
+}
+
+.btn-primary {
+  background: #3B82F6;
+  color: white;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 500;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-primary:hover { opacity: 0.9; }
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  background-size: 200% 100%;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.btn-primary:hover::after {
+  opacity: 1;
+  animation: shimmer 1.5s linear infinite;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.btn-ghost:hover {
+  border-color: rgba(255,255,255,0.25);
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.04);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.badge-active  { background: rgba(16,185,129,0.1); color: #10B981; }
+.badge-warning { background: rgba(245,158,11,0.1); color: #F59E0B; }
+.badge-danger  { background: rgba(239,68,68,0.1);  color: #EF4444; }
+.badge-neutral { background: rgba(100,116,139,0.1); color: #94A3B8; }
 
 @layer utilities {
   .text-balance {
