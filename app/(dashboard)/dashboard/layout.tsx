@@ -15,15 +15,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setActivationChecked(true)
       return
     }
+    let cancelled = false
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      const companyId = user?.user_metadata?.company_id
-      if (user && !companyId) {
-        router.replace('/dashboard/welcome')
-        return
-      }
-      setActivationChecked(true)
-    })
+    supabase.auth.getUser()
+      .then(({ data: { user } }) => {
+        if (cancelled) return
+        const companyId = user?.user_metadata?.company_id
+        if (user && !companyId) {
+          router.replace('/dashboard/welcome')
+          return
+        }
+        setActivationChecked(true)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        if (typeof console !== 'undefined') console.error('[FleetPulse] dashboard layout auth check failed:', err)
+        setActivationChecked(true)
+      })
+    return () => { cancelled = true }
   }, [pathname, router])
 
   // Avoid flash of dashboard content before activation redirect

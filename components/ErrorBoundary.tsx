@@ -38,11 +38,11 @@ export default class ErrorBoundary extends React.Component<Props, State> {
           style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
           <p className="text-lg font-medium mb-2">FleetPulse encountered an error.</p>
-          {isDev && error && (
+          {error && (
             <div className="text-left max-w-2xl w-full mb-4 p-4 bg-black/30 rounded-lg overflow-auto">
               <p className="text-red-300 font-mono text-sm break-all mb-2">{error.message}</p>
-              {errorInfo?.componentStack && (
-                <pre className="text-xs text-gray-400 whitespace-pre-wrap font-mono">{errorInfo.componentStack}</pre>
+              {isDev && errorInfo?.componentStack && (
+                <pre className="text-xs text-gray-400 whitespace-pre-wrap font-mono mt-2">{errorInfo.componentStack}</pre>
               )}
             </div>
           )}
