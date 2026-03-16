@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { LOGO_LOOP_VIDEO } from '@/lib/animation-paths'
 
-export const LOADING_VIDEO_SRC = '/animations/possibleLogoLoop.mp4'
-export const LOADING_VIDEO_SRC_FALLBACK = '/Animations/possibleLogoLoop.mp4'
+export const LOADING_VIDEO_SRC = LOGO_LOOP_VIDEO
 
 export type LoadingOverlayProps = {
   loadingLabel: string
@@ -14,7 +14,6 @@ const FADE_IN_MS = 250
 const FADE_OUT_MS = 350
 
 export default function LoadingOverlay({ loadingLabel, isExiting = false }: LoadingOverlayProps) {
-  const [videoSrc, setVideoSrc] = useState(LOADING_VIDEO_SRC)
   const [videoReady, setVideoReady] = useState(false)
   const [entered, setEntered] = useState(false)
 
@@ -49,13 +48,10 @@ export default function LoadingOverlay({ loadingLabel, isExiting = false }: Load
         playsInline
         loop
         preload="auto"
-        src={videoSrc}
+        src={LOADING_VIDEO_SRC}
         className="absolute w-0 h-0 opacity-0 pointer-events-none"
         aria-hidden
         onLoadedData={() => setVideoReady(true)}
-        onError={() => {
-          if (videoSrc === LOADING_VIDEO_SRC) setVideoSrc(LOADING_VIDEO_SRC_FALLBACK)
-        }}
       />
       {videoReady && (
         <div className="flex flex-col items-center justify-center">
@@ -88,7 +84,7 @@ export default function LoadingOverlay({ loadingLabel, isExiting = false }: Load
                   filter: 'drop-shadow(0 0 20px rgba(139, 92, 246, 0.3))',
                 }}
                 aria-hidden
-                src={videoSrc}
+                src={LOADING_VIDEO_SRC}
               />
             </div>
           </div>

@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { INTRO_VIDEO } from '@/lib/animation-paths'
 
-const VIDEO_PATH = '/animations/officialFPAnimation.mp4'
-const VIDEO_PATH_FALLBACK = '/Animations/officialFPAnimation.mp4'
 const PULSE_BURST_MS = 700
 const FADE_REVEAL_MS = 500
 const FAILSAFE_MS = 8000
@@ -13,7 +12,6 @@ type Props = { onEnd: () => void }
 
 export default function IntroAnimationOverlay({ onEnd }: Props) {
   const [phase, setPhase] = useState<'video' | 'pulse' | 'reveal'>('video')
-  const [videoSrc, setVideoSrc] = useState(VIDEO_PATH)
   const [videoReady, setVideoReady] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const triggeredRef = useRef(false)
@@ -21,6 +19,15 @@ export default function IntroAnimationOverlay({ onEnd }: Props) {
   useEffect(() => {
     if (typeof console !== 'undefined') console.log('[FleetPulse] intro animation mounted')
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)')
+    if (mql.matches) {
+      sessionStorage.setItem('fleetpulse-intro-seen', '1')
+      onEnd()
+    }
+  }, [onEnd])
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -84,13 +91,12 @@ export default function IntroAnimationOverlay({ onEnd }: Props) {
             muted
             playsInline
             preload="auto"
-            src={videoSrc}
+            src={INTRO_VIDEO}
             className="w-full h-auto object-contain rounded-xl aspect-video"
             style={{ background: 'transparent' }}
             onEnded={handleVideoEnded}
             onLoadedData={() => setVideoReady(true)}
             onCanPlay={() => setVideoReady(true)}
-            onError={() => { if (videoSrc === VIDEO_PATH) setVideoSrc(VIDEO_PATH_FALLBACK) }}
             aria-label="FleetPulse intro"
           />
         </div>

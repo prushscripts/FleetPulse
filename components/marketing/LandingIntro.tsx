@@ -2,16 +2,16 @@
 
 import { useState, useEffect, useRef } from 'react'
 
+import { INTRO_VIDEO } from '@/lib/animation-paths'
+
 const INTRO_STORAGE_KEY = 'fleetpulse-intro-seen'
-const VIDEO_PATH = '/animations/officialFPAnimation.mp4'
-const VIDEO_PATH_FALLBACK = '/Animations/officialFPAnimation.mp4'
 const MIN_DISPLAY_MS = 2500
 const TRANSITION_MS = 1200
 
 export default function LandingIntro() {
   const [visible, setVisible] = useState<boolean | null>(null)
   const [transitioning, setTransitioning] = useState(false)
-  const [videoSrc, setVideoSrc] = useState(VIDEO_PATH)
+  const [videoSrc] = useState(INTRO_VIDEO)
   const videoRef = useRef<HTMLVideoElement>(null)
   const startTimeRef = useRef<number | null>(null)
 
@@ -85,9 +85,6 @@ export default function LandingIntro() {
           className="relative z-10 w-full max-w-[min(90vw,560px)] h-auto object-contain"
           style={{ background: 'transparent' }}
           onEnded={handleVideoEnded}
-          onError={() => {
-            if (videoSrc === VIDEO_PATH) setVideoSrc(VIDEO_PATH_FALLBACK)
-          }}
           aria-label="FleetPulse intro"
         />
       </div>

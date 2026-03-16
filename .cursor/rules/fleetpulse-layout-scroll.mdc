@@ -1,0 +1,29 @@
+---
+description: Prevent layout/scroll/error regressions; apply when editing root layout or scroll/error/intro components
+globs: app/layout.tsx, **/IntroAnimation*.tsx, **/ScrollBlur*.tsx, **/ScrollToTop*.tsx, **/FloatingLoginCard*.tsx, **/*ErrorBoundary*.tsx, **/NavbarLayout*.tsx
+alwaysApply: false
+---
+
+# FleetPulse layout, scroll, and error guardrails
+
+When editing **root layout** or components that affect **scroll**, **first-load**, or **global error handling**, follow these rules so we don’t repeat the March 2025 breakage.
+
+## Must preserve
+
+1. **Scroll container** — ScrollBlur, FloatingLoginCard, and ScrollToTop use `window.scrollY`. Do **not** add a wrapper around main content that has its own scroll (e.g. `overflow-y: auto` + fixed height). The **document/body** must stay the primary vertical scroll container.
+
+2. **Error scope** — Use **local** error boundaries (e.g. DashboardErrorBoundary) for section failures. Avoid a global ErrorBoundary that catches every error and triggers a full-app reload; if you keep one, reserve it for true top-level failures only.
+
+3. **Intro / first-load** — Any first-load overlay that uses a video or heavy asset must have a **failsafe timeout** and a **fallback or skip** so users never see a blank/purple screen for more than a few seconds.
+
+4. **Asset paths** — After moving or renaming files under `public/` or `components/`, update all references and verify path/casing (e.g. `animations` vs `Animations`).
+
+## Before merging
+
+Run the checklist in **docs/SAFE_CHANGES_GUARDRAILS.md** (landing loads, scroll unblurs, login card collapses, back-to-top, login → dashboard, dashboard loads, asset paths). When changing root layout or global wrappers, compare against **Restore Points/FleetPulseRestoreReference** for scroll and error behavior.
+
+## References
+
+- **Full guardrails and checklist:** `docs/SAFE_CHANGES_GUARDRAILS.md`
+- **Why the last breakage happened:** `docs/BREAKAGE_ANALYSIS_CURRENT_VS_RESTORE_REFERENCE.md` (root cause summary at top)
+- **Restore reference usage:** `Restore Points/README.md`

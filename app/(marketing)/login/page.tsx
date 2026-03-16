@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
-const LOGIN_LOADER_VIDEO = '/animations/possibleLogoLoop.mp4'
-const LOGIN_LOADER_VIDEO_FALLBACK = '/Animations/possibleLogoLoop.mp4'
+import { LOGO_LOOP_VIDEO } from '@/lib/animation-paths'
+
 const LOGIN_LOADER_HOLD_MS = 1200
 const LOGIN_PULSE_MS = 600
 
@@ -19,7 +19,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [loginSuccessRedirect, setLoginSuccessRedirect] = useState<string | null>(null)
   const [showPulseBurst, setShowPulseBurst] = useState(false)
-  const [loginVideoSrc, setLoginVideoSrc] = useState(LOGIN_LOADER_VIDEO)
   const [loginVideoReady, setLoginVideoReady] = useState(false)
   const [companies, setCompanies] = useState<CompanyOption[]>([])
   const [companiesLoading, setCompaniesLoading] = useState(false)
@@ -154,12 +153,9 @@ export default function LoginPage() {
                 playsInline
                 loop
                 preload="auto"
-                src={loginVideoSrc}
+                src={LOGO_LOOP_VIDEO}
                 className="w-[150px] sm:w-[180px] h-auto object-contain opacity-90"
                 onLoadedData={() => setLoginVideoReady(true)}
-                onError={() => {
-                  if (loginVideoSrc === LOGIN_LOADER_VIDEO) setLoginVideoSrc(LOGIN_LOADER_VIDEO_FALLBACK)
-                }}
                 aria-hidden
               />
             </div>
