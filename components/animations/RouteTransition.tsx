@@ -19,15 +19,21 @@ export default function RouteTransition() {
     if (pathname === prevPathRef.current) return
 
     setIsTransitioning(true)
-    videoRef.current?.play().catch(() => {})
-
     const timer = setTimeout(() => {
       setIsTransitioning(false)
       prevPathRef.current = pathname
     }, 700)
-
     return () => clearTimeout(timer)
   }, [pathname])
+
+  // Play video after it mounts (it's conditional so ref is set on next paint)
+  useEffect(() => {
+    if (!isTransitioning) return
+    const t = requestAnimationFrame(() => {
+      videoRef.current?.play().catch(() => {})
+    })
+    return () => cancelAnimationFrame(t)
+  }, [isTransitioning])
 
   return (
     <AnimatePresence>

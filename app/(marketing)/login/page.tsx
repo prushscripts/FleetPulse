@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Eye, EyeOff, ArrowRight, Lock } from 'lucide-react'
@@ -29,7 +28,6 @@ export default function LoginPage() {
   const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null)
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false)
   const companyDropdownRef = useRef<HTMLDivElement>(null)
-  const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
@@ -37,14 +35,15 @@ export default function LoginPage() {
     const t = setTimeout(() => {
       setShowPulseBurst(true)
       setTimeout(() => {
-        router.replace(loginSuccessRedirect)
         setLoading(false)
         setLoginSuccessRedirect(null)
         setShowPulseBurst(false)
+        // Full page redirect so session cookies are sent and we avoid 405/client transition errors
+        window.location.href = loginSuccessRedirect
       }, LOGIN_PULSE_MS)
     }, LOGIN_LOADER_HOLD_MS)
     return () => clearTimeout(t)
-  }, [loginSuccessRedirect, router])
+  }, [loginSuccessRedirect])
 
   useEffect(() => {
     const raw = email.trim().toLowerCase()

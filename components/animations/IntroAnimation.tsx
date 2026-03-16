@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { INTRO_VIDEO } from '@/lib/animation-paths'
+import { INTRO_VIDEO, INTRO_VIDEO_FALLBACK } from '@/lib/animation-paths'
 
 const BLUR_OUT_DURATION_MS = 1200
 const LOAD_TIMEOUT_MS = 2000 // Skip intro on slow connections (e.g. mobile)
@@ -15,18 +15,17 @@ const LOAD_TIMEOUT_MS = 2000 // Skip intro on slow connections (e.g. mobile)
 export default function IntroAnimation({ onComplete }: { onComplete: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [phase, setPhase] = useState<'playing' | 'blur-out' | 'done'>('playing')
+  const [videoSrc, setVideoSrc] = useState(INTRO_VIDEO)
 
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
 
     video.play().catch(() => {
-      // Autoplay blocked — skip intro immediately
       setPhase('done')
       onComplete()
     })
 
-    // On slow connections, skip after 2s if video hasn't loaded
     const loadTimeout = setTimeout(() => {
       if (video.readyState < 3) {
         setPhase('done')
@@ -42,12 +41,23 @@ export default function IntroAnimation({ onComplete }: { onComplete: () => void 
       }, BLUR_OUT_DURATION_MS)
     }
 
+    const handleError = () => {
+      if (videoSrc === INTRO_VIDEO) {
+        setVideoSrc(INTRO_VIDEO_FALLBACK)
+      } else {
+        setPhase('done')
+        onComplete()
+      }
+    }
+
     video.addEventListener('ended', handleEnded)
+    video.addEventListener('error', handleError)
     return () => {
       clearTimeout(loadTimeout)
       video.removeEventListener('ended', handleEnded)
+      video.removeEventListener('error', handleError)
     }
-  }, [onComplete])
+  }, [onComplete, videoSrc])
 
   const handleSkip = () => {
     setPhase('blur-out')
@@ -86,7 +96,7 @@ export default function IntroAnimation({ onComplete }: { onComplete: () => void 
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <video
               ref={videoRef}
-              src={INTRO_VIDEO}
+              src={videoSrc}
               muted
               playsInline
               preload="auto"

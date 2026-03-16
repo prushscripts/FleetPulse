@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { Copy, Check } from 'lucide-react'
 import { createDefaultCustomTemplate } from '@/lib/custom-template'
 import Papa from 'papaparse'
 
@@ -54,6 +55,7 @@ export default function ControlPanelClient({
   const [customTabLabels, setCustomTabLabels] = useState<Record<string, string>>(initialCompanyConfig?.custom_tab_labels ?? {})
   const [authKey] = useState(initialCompanyConfig?.auth_key ?? '')
   const [importResult, setImportResult] = useState<{ success: number; error: number; message?: string } | null>(null)
+  const [copyToast, setCopyToast] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -135,8 +137,8 @@ export default function ControlPanelClient({
   const copyAuthCode = () => {
     if (authKey) {
       navigator.clipboard.writeText(authKey)
-      setMessage({ type: 'success', text: 'Access code copied to clipboard.' })
-      setTimeout(() => setMessage(null), 2000)
+      setCopyToast(true)
+      setTimeout(() => setCopyToast(false), 2000)
     }
   }
 
@@ -223,33 +225,41 @@ export default function ControlPanelClient({
 
   if (!companyId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Control Panel</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+      <div className="min-h-screen bg-[#0A0F1E] text-white">
+        <div className="px-4 sm:px-6 max-w-2xl mx-auto py-12">
+          <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mb-1">Settings · Control Panel</p>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-white mb-2">Control Panel</h1>
+          <p className="text-slate-400 text-sm mb-6">
             Add or activate a company in Settings to customize your fleet view, templates, and features.
           </p>
-          <a href="/dashboard/settings" className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+          <Link href="/dashboard/settings" className="btn-primary inline-flex items-center gap-2 px-4 py-2 min-h-[44px]">
             Go to Settings
-          </a>
+          </Link>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-[#0A0F1E] text-white">
+      {copyToast && (
+        <div className="fixed top-4 right-4 z-[100] px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm rounded-xl toast-enter flex items-center gap-2">
+          <Check size={14} />
+          Copied to clipboard
+        </div>
+      )}
+      <div className="px-4 md:px-6 py-6 page-enter max-w-3xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Control Panel</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mb-1">Settings · Control Panel</p>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-white">Control Panel</h1>
+          <p className="text-sm text-slate-400 mt-0.5">
             Customize your fleet dashboard: template, features, and home segments.
           </p>
         </div>
 
         {trialDaysLeft !== null && (
-          <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+          <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+            <p className="text-sm font-medium text-amber-400">
               Trial: {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} left. Limit: 5 trucks. Upgrade to keep full access.
             </p>
           </div>
@@ -258,200 +268,221 @@ export default function ControlPanelClient({
         {message && (
           <div className={`mb-6 p-4 rounded-xl text-sm ${
             message.type === 'success'
-              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
-              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
+              ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+              : 'bg-red-500/10 border border-red-500/20 text-red-400'
           }`}>
             {message.text}
           </div>
         )}
 
-        <form onSubmit={handleSave} className="space-y-8">
-          <section className="card-glass p-6 sm:p-8 rounded-2xl mb-6">
-            <h2 className="text-lg font-display font-semibold text-gray-900 dark:text-white mb-1">Company Configuration</h2>
-            <p className="text-sm text-slate-500 dark:text-gray-400 mb-6">Tab visibility, custom labels, and import.</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Configure your company&apos;s FleetPulse experience. Tabs and labels apply to the navbar for all members.
-            </p>
-
-            <div className="mb-6">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Tab visibility</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {TAB_KEYS.map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={enabledTabs.includes(key)}
-                      onChange={() => toggleTab(key)}
-                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">{label}</span>
-                  </label>
-                ))}
-              </div>
+        <form onSubmit={handleSave} className="space-y-4">
+          <section className="card-glass rounded-2xl overflow-hidden mb-4">
+            <div className="px-5 sm:px-6 py-4 border-b border-white/[0.06]">
+              <h2 className="text-sm font-semibold text-white">Company Configuration</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Tab visibility, custom labels, and import.</p>
             </div>
-
-            <div className="mb-6">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Custom tab labels</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Rename tabs (e.g. Vehicles → Trucks). Leave blank to use default.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {TAB_KEYS.filter((t) => enabledTabs.includes(t.key)).map(({ key, label }) => (
-                  <div key={key} className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500 dark:text-gray-400 w-24 shrink-0">{label}</span>
-                    <input
-                      type="text"
-                      value={customTabLabels[key] ?? ''}
-                      onChange={(e) => setCustomLabel(key, e.target.value)}
-                      placeholder={label}
-                      className="flex-1 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={inspectionsEnabled}
-                  onChange={(e) => setInspectionsEnabled(e.target.checked)}
-                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <span className="font-medium text-gray-900 dark:text-white">Enable Digital Inspections</span>
-              </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">When off, the Inspections tab is removed from the navbar.</p>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Import data</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Upload CSV files. Columns are mapped by header name (see tooltips).</p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => triggerCsvImport('vehicles')}
-                  className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  title={vehicleColumns.join(', ')}
-                >
-                  Import Vehicles (CSV)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => triggerCsvImport('drivers')}
-                  className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  title={driverColumns.join(', ')}
-                >
-                  Import Drivers (CSV)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => triggerCsvImport('service_records')}
-                  className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 opacity-75"
-                  title="Coming soon"
-                >
-                  Import Service Records (CSV)
-                </button>
-              </div>
-              {importResult && (
-                <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                  {importResult.success} succeeded, {importResult.error} failed.
-                  {importResult.message && ` ${importResult.message}`}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Your company access code</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Share this with team members so they can join your company during signup.</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 px-3 py-2 rounded-lg bg-gray-900 text-orange-400 font-mono text-sm border border-gray-700 overflow-x-auto">
-                  {authKey || '—'}
-                </code>
-                <button
-                  type="button"
-                  onClick={copyAuthCode}
-                  disabled={!authKey}
-                  className="shrink-0 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <section className="card-glass p-6 sm:p-8 rounded-2xl mb-6">
-            <h2 className="text-lg font-display font-semibold text-gray-900 dark:text-white mb-1">Template</h2>
-            <p className="text-sm text-slate-500 dark:text-gray-400 mb-6">Choose dashboard layout.</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Choose a layout style for your dashboard. More templates (and CSV import) coming soon.
-            </p>
-            <div className="space-y-2">
-              {TEMPLATES.map((t) => (
-                <label key={t.id} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="template"
-                    value={t.id}
-                    checked={template === t.id}
-                    onChange={() => setTemplate(t.id)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <span className="font-medium text-gray-900 dark:text-white">{t.label}</span>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{t.description}</p>
-                    {t.id === 'custom' && (
-                      <Link
-                        href="/dashboard/control-panel/template-builder"
-                        className="inline-block mt-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Open Template Builder →
-                      </Link>
-                    )}
-                  </div>
-                </label>
-              ))}
-            </div>
-          </section>
-
-          <section className="card-glass p-6 sm:p-8 rounded-2xl mb-6">
-            <h2 className="text-lg font-display font-semibold text-gray-900 dark:text-white mb-1">Features</h2>
-            <p className="text-sm text-slate-500 dark:text-gray-400 mb-6">Inspections and roadmap.</p>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={inspectionsEnabled}
-                onChange={(e) => setInspectionsEnabled(e.target.checked)}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
+            <div className="px-5 sm:px-6 py-5 space-y-6">
+              <p className="text-sm text-slate-400">
+                Configure your company&apos;s FleetPulse experience. Tabs and labels apply to the navbar for all members.
+              </p>
               <div>
-                <span className="font-medium text-gray-900 dark:text-white">Inspection system</span>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Show Inspections tab and inspection tracking. Turn off if you don’t use inspections.
-                </p>
+                <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-3">Tab visibility</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {TAB_KEYS.map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-2 p-2 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={enabledTabs.includes(key)}
+                        onChange={() => toggleTab(key)}
+                        className="rounded border-white/20 text-blue-500 focus:ring-blue-500/50 bg-white/[0.04]"
+                      />
+                      <span className="text-sm font-medium text-white">{label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </label>
+              <div>
+                <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-3">Custom tab labels</h3>
+                <p className="text-xs text-slate-500 mb-2">Rename tabs (e.g. Vehicles → Trucks). Leave blank to use default.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {TAB_KEYS.filter((t) => enabledTabs.includes(t.key)).map(({ key, label }) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="text-sm text-slate-400 w-24 shrink-0">{label}</span>
+                      <input
+                        type="text"
+                        value={customTabLabels[key] ?? ''}
+                        onChange={(e) => setCustomLabel(key, e.target.value)}
+                        placeholder={label}
+                        className="flex-1 px-3 py-2.5 bg-white/[0.04] border border-white/[0.1] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/20 transition-all min-h-[44px]"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={inspectionsEnabled}
+                  onClick={() => setInspectionsEnabled(!inspectionsEnabled)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 flex-shrink-0 ${inspectionsEnabled ? 'bg-blue-500' : 'bg-white/10'}`}
+                >
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ${inspectionsEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                </button>
+                <div>
+                  <span className="font-medium text-white">Enable Digital Inspections</span>
+                  <p className="text-xs text-slate-400 mt-0.5">When off, the Inspections tab is removed from the navbar.</p>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-2">Import data</h3>
+                <p className="text-xs text-slate-500 mb-3">Upload CSV files. Columns are mapped by header name (see tooltips).</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => triggerCsvImport('vehicles')}
+                    className="px-3 py-2 rounded-xl border border-white/[0.1] bg-white/[0.04] text-sm font-medium text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all min-h-[44px]"
+                    title={vehicleColumns.join(', ')}
+                  >
+                    Import Vehicles (CSV)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => triggerCsvImport('drivers')}
+                    className="px-3 py-2 rounded-xl border border-white/[0.1] bg-white/[0.04] text-sm font-medium text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all min-h-[44px]"
+                    title={driverColumns.join(', ')}
+                  >
+                    Import Drivers (CSV)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => triggerCsvImport('service_records')}
+                    className="px-3 py-2 rounded-xl border border-white/[0.1] bg-white/[0.04] text-sm font-medium text-slate-400 opacity-75 min-h-[44px]"
+                    title="Coming soon"
+                  >
+                    Import Service Records (CSV)
+                  </button>
+                </div>
+                {importResult && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    {importResult.success} succeeded, {importResult.error} failed.
+                    {importResult.message && ` ${importResult.message}`}
+                  </p>
+                )}
+              </div>
+              <div>
+                <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-2">Your company access code</h3>
+                <p className="text-xs text-slate-500 mb-2">Share this with team members so they can join your company during signup.</p>
+                <div className="flex items-center gap-2 px-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl font-mono text-sm text-white">
+                  <span className="flex-1 truncate">{authKey || '—'}</span>
+                  <button
+                    type="button"
+                    onClick={copyAuthCode}
+                    disabled={!authKey}
+                    className="text-blue-400 hover:text-blue-300 text-xs transition-colors flex items-center gap-1 flex-shrink-0 min-h-[44px] min-w-[44px] justify-center"
+                  >
+                    <Copy size={12} />
+                    Copy
+                  </button>
+                </div>
+              </div>
+            </div>
           </section>
 
-          <section className="card-glass p-6 sm:p-8 rounded-2xl mb-6">
-            <h2 className="text-lg font-display font-semibold text-gray-900 dark:text-white mb-1">Home dashboard segments</h2>
-            <p className="text-sm text-slate-500 dark:text-gray-400 mb-6">Territory segments for home view.</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              Optional labels for territory/region tabs on the home page (e.g. New York, DMV). Comma-separated. Leave blank for “Full fleet” only.
-            </p>
-            <input
-              type="text"
-              value={territoryInput}
-              onChange={(e) => setTerritoryInput(e.target.value)}
-              placeholder="e.g. New York, DMV, West"
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-            />
+          <section className="card-glass rounded-2xl overflow-hidden mb-4">
+            <div className="px-5 sm:px-6 py-4 border-b border-white/[0.06]">
+              <h2 className="text-sm font-semibold text-white">Template</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Choose dashboard layout.</p>
+            </div>
+            <div className="px-5 sm:px-6 py-5">
+              <p className="text-sm text-slate-400 mb-4">
+                Choose a layout style for your dashboard. More templates (and CSV import) coming soon.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {TEMPLATES.map((t) => {
+                  const selected = template === t.id
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setTemplate(t.id)}
+                      className={`relative text-left p-4 rounded-xl border transition-all duration-200 min-h-[44px] ${
+                        selected ? 'border-blue-500/50 bg-blue-500/5' : 'card-glass border-white/[0.08] hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      {selected && (
+                        <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+                          <Check size={12} className="text-white" />
+                        </span>
+                      )}
+                      <span className="font-medium text-white">{t.label}</span>
+                      <p className="text-xs text-slate-400 mt-0.5">{t.description}</p>
+                      {t.id === 'custom' && (
+                        <Link
+                          href="/dashboard/control-panel/template-builder"
+                          className="inline-block mt-2 text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Open Template Builder →
+                        </Link>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+
+          <section className="card-glass rounded-2xl overflow-hidden mb-4">
+            <div className="px-5 sm:px-6 py-4 border-b border-white/[0.06]">
+              <h2 className="text-sm font-semibold text-white">Features</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Inspections and roadmap.</p>
+            </div>
+            <div className="px-5 sm:px-6 py-5">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={inspectionsEnabled}
+                  onClick={() => setInspectionsEnabled(!inspectionsEnabled)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 flex-shrink-0 ${inspectionsEnabled ? 'bg-blue-500' : 'bg-white/10'}`}
+                >
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ${inspectionsEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                </button>
+                <div>
+                  <span className="font-medium text-white">Inspection system</span>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Show Inspections tab and inspection tracking. Turn off if you don’t use inspections.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="card-glass rounded-2xl overflow-hidden mb-4">
+            <div className="px-5 sm:px-6 py-4 border-b border-white/[0.06]">
+              <h2 className="text-sm font-semibold text-white">Home dashboard segments</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Territory segments for home view.</p>
+            </div>
+            <div className="px-5 sm:px-6 py-5">
+              <p className="text-sm text-slate-400 mb-3">
+                Optional labels for territory/region tabs on the home page (e.g. New York, DMV). Comma-separated. Leave blank for “Full fleet” only.
+              </p>
+              <input
+                type="text"
+                value={territoryInput}
+                onChange={(e) => setTerritoryInput(e.target.value)}
+                placeholder="e.g. New York, DMV, West"
+                className="w-full px-3 py-2.5 bg-white/[0.04] border border-white/[0.1] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/20 transition-all min-h-[44px]"
+              />
+            </div>
           </section>
 
           <div className="flex gap-3">
             <button
               type="submit"
               disabled={saving}
-              className="btn-primary min-h-[44px] disabled:opacity-50"
+              className="btn-primary min-h-[44px] w-full sm:w-auto disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save changes'}
             </button>

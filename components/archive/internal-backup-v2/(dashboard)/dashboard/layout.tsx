@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import AppShell from '@/components/app/AppShell'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const [activationChecked, setActivationChecked] = useState(false)
 
+  // Redirect unassigned users to welcome (except when on activate, settings, welcome, or about)
   useEffect(() => {
     if (pathname === '/dashboard/activate' || pathname === '/dashboard/settings' || pathname === '/dashboard/welcome' || pathname === '/dashboard/about') {
       setActivationChecked(true)
@@ -35,6 +35,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => { cancelled = true }
   }, [pathname, router])
 
+  useEffect(() => {
+    if (activationChecked && (pathname === '/dashboard' || pathname?.startsWith('/dashboard/'))) {
+      if (typeof console !== 'undefined') console.log('[FleetPulse] dashboard rendered')
+    }
+  }, [activationChecked, pathname])
+
   const showLoadingOverlay =
     !activationChecked &&
     pathname !== '/dashboard/activate' &&
@@ -42,15 +48,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     pathname !== '/dashboard/about'
 
   return (
-    <AppShell>
+    <div className="w-full pt-[64px] pb-20 md:pb-0 relative">
       {showLoadingOverlay && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#0A0F1E] min-h-screen">
-          <div className="text-slate-400 text-sm">Loading…</div>
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-50 dark:bg-gray-900 min-h-screen">
+          <div className="text-gray-500 dark:text-gray-400 text-sm">Loading…</div>
         </div>
       )}
-      <div key={pathname} className="animate-tab-enter w-full relative">
+      <div key={pathname} className="animate-tab-enter">
         {children}
       </div>
-    </AppShell>
+    </div>
   )
 }
