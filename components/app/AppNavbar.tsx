@@ -169,7 +169,7 @@ export default function AppNavbar() {
                 </div>
                 <div className="p-1">
                   <Link
-                    href="/profile"
+                    href="/dashboard/profile"
                     onClick={() => setUserMenuOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors"
                   >

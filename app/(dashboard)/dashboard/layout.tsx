@@ -3,9 +3,33 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import AppShell from '@/components/app/AppShell'
 import DashboardErrorBoundary from './DashboardErrorBoundary'
+
+const pageVariants = {
+  initial: {
+    opacity: 0,
+    scale: 0.98,
+    filter: 'blur(4px)',
+  },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    filter: 'blur(0px)',
+    transition: {
+      duration: 0.25,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 1.01,
+    filter: 'blur(2px)',
+    transition: { duration: 0.15, ease: 'easeIn' },
+  },
+}
 
 const MAX_ATTEMPTS = 6
 const RETRY_MS = 500
@@ -44,7 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!user || !checked) return
-    if (pathname === '/dashboard/activate' || pathname === '/dashboard/settings' || pathname === '/dashboard/welcome' || pathname === '/dashboard/about') {
+    if (pathname === '/dashboard/activate' || pathname === '/dashboard/settings' || pathname === '/dashboard/welcome' || pathname === '/dashboard/about' || pathname === '/dashboard/profile') {
       return
     }
     const role = user.user_metadata?.role as string | undefined
@@ -78,9 +102,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <DashboardErrorBoundary>
       <AppShell>
-        <div key={pathname} className="animate-tab-enter w-full relative">
-          {children}
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={pathname}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="w-full relative"
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </AppShell>
     </DashboardErrorBoundary>
   )

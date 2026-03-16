@@ -4,15 +4,25 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { normalizeTier, SubscriptionTier } from '@/lib/tiers'
+import {
+  Truck,
+  Users,
+  ClipboardCheck,
+  Activity,
+  Bell,
+  AlertTriangle,
+  ArrowRight,
+} from 'lucide-react'
 
 export default function AboutClient({ displayName }: { displayName: string }) {
-  const [activeTab, setActiveTab] = useState<'features' | 'pricing'>('features')
   const [userTier, setUserTier] = useState<SubscriptionTier>('professional')
   const supabase = createClient()
 
   useEffect(() => {
     const loadTier = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (user) {
         setUserTier(normalizeTier(user.user_metadata?.subscription_tier))
       }
@@ -23,48 +33,51 @@ export default function AboutClient({ displayName }: { displayName: string }) {
   const features = [
     {
       title: 'Vehicle Tracking',
-      description: 'Track mileage, oil changes, and maintenance schedules for all your vehicles.',
-      icon: '🚗',
+      description:
+        'Track mileage, oil changes, and maintenance schedules. Get automated alerts before issues become breakdowns.',
+      icon: Truck,
+      color: 'text-blue-400',
+      bg: 'bg-blue-500/10',
     },
     {
       title: 'Driver Management',
-      description: 'Assign drivers to vehicles and track driver assignments and performance.',
-      icon: '👤',
+      description:
+        'Assign drivers to vehicles by location. NY and DMV driver pools automatically filter when assigning.',
+      icon: Users,
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-500/10',
     },
     {
       title: 'Digital Inspections',
-      description: 'Conduct pre-trip and post-trip inspections with photo documentation.',
-      icon: '📋',
+      description:
+        'Pre-trip and post-trip inspections with custom templates, photo documentation, and automatic issue creation on failures.',
+      icon: ClipboardCheck,
+      color: 'text-violet-400',
+      bg: 'bg-violet-500/10',
     },
     {
-      title: 'Service Records',
-      description: 'Maintain complete service history with costs and provider information.',
-      icon: '🔧',
+      title: 'Fleet Health Score',
+      description:
+        'Real-time fleet health score based on oil compliance, open issues, and inspection pass rates.',
+      icon: Activity,
+      color: 'text-amber-400',
+      bg: 'bg-amber-500/10',
+    },
+    {
+      title: 'Smart Alerts',
+      description:
+        'Oil change reminders, document expiry alerts, and inspection notifications delivered instantly.',
+      icon: Bell,
+      color: 'text-rose-400',
+      bg: 'bg-rose-500/10',
     },
     {
       title: 'Issue Tracking',
-      description: 'Report and track vehicle issues with priority levels and status updates.',
-      icon: '⚠️',
-    },
-    {
-      title: 'Document Management',
-      description: 'Store and track important documents with expiration date reminders.',
-      icon: '📄',
-    },
-    {
-      title: 'Fleet Health Dashboard',
-      description: 'Monitor fleet health with oil change percentages and inspection statistics.',
-      icon: '📊',
-    },
-    {
-      title: 'CSV Import',
-      description: 'Bulk import vehicles from CSV files for quick setup.',
-      icon: '📥',
-    },
-    {
-      title: 'Mobile Friendly',
-      description: 'Access your fleet data anywhere with our responsive design.',
-      icon: '📱',
+      description:
+        'Report and track vehicle issues with priority levels. Driver-submitted issues flow directly into your dashboard.',
+      icon: AlertTriangle,
+      color: 'text-orange-400',
+      bg: 'bg-orange-500/10',
     },
   ]
 
@@ -76,7 +89,6 @@ export default function AboutClient({ displayName }: { displayName: string }) {
     billingNote: string
     maxVehicles: number
     features: string[]
-    color: string
     popular?: boolean
   }> = [
     {
@@ -92,7 +104,6 @@ export default function AboutClient({ displayName }: { displayName: string }) {
         'Issue tracking',
         'Email support',
       ],
-      color: 'gray',
     },
     {
       name: 'Professional',
@@ -109,7 +120,6 @@ export default function AboutClient({ displayName }: { displayName: string }) {
         'CSV import/export',
         'Priority support',
       ],
-      color: 'indigo',
       popular: true,
     },
     {
@@ -127,176 +137,133 @@ export default function AboutClient({ displayName }: { displayName: string }) {
         'Dedicated support',
         'SLA guarantee',
       ],
-      color: 'purple',
     },
   ]
 
+  const stats = [
+    { value: '57', label: 'Vehicles tracked', color: 'text-blue-400' },
+    { value: '40+', label: 'Active drivers', color: 'text-emerald-400' },
+    { value: '2,500+', label: 'Inspections logged', color: 'text-violet-400' },
+    { value: '99.9%', label: 'Platform uptime', color: 'text-amber-400' },
+  ]
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Hero: corporate, minimal */}
-      <section className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-8 sm:py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
-            Welcome, {displayName.charAt(0).toUpperCase() + displayName.slice(1)}
+    <div className="min-h-screen bg-[#0A0F1E]">
+      <div className="page-fade-in px-4 md:px-6 py-12 max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-500/20 bg-blue-500/[0.06] text-xs text-blue-400 mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+            FleetPulse v2.0 — Now with inspections & driver portal
+          </div>
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-4 tracking-tight">
+            Built for fleets that
+            <br />
+            <span className="text-blue-400">can&apos;t afford downtime</span>
+          </h1>
+          <p className="text-slate-400 text-lg max-w-xl mx-auto">
+            FleetPulse is the modern fleet management platform built for logistics companies who need
+            real-time visibility across every vehicle, driver, and inspection.
           </p>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white tracking-tight">FleetPulse</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Fleet management platform</p>
         </div>
-      </section>
 
-      {/* Tabs: clean, no scale/pulse */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
-          <button
-            onClick={() => setActiveTab('features')}
-            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'features'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
-          >
-            Features
-          </button>
-          <button
-            onClick={() => setActiveTab('pricing')}
-            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'pricing'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
-          >
-            Pricing
-          </button>
-        </div>
-      </div>
-
-      {/* Content with smooth slide transitions */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 overflow-visible">
-        <div className="relative min-h-[400px] overflow-visible">
-          {/* Features Tab - scrollable, no clip */}
-          <div
-            className={`transition-all duration-500 ease-in-out overflow-visible ${
-              activeTab === 'features'
-                ? 'opacity-100 translate-x-0 block'
-                : 'absolute inset-0 opacity-0 translate-x-[-100%] pointer-events-none overflow-hidden'
-            }`}
-          >
-              <div className="space-y-4 pb-16">
-              <div className="text-center">
-                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-                  Fleet management features
-                </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                  Vehicle tracking, drivers, inspections, and reporting.
-                </p>
+        {/* Features grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
+          {features.map((feature) => {
+            const Icon = feature.icon
+            return (
+              <div
+                key={feature.title}
+                className="card-glass rounded-xl p-5 group hover:border-white/[0.12] transition-all duration-200"
+              >
+                <div
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${feature.bg} mb-3`}
+                >
+                  <Icon size={20} className={feature.color} />
+                </div>
+                <h3 className="font-semibold text-white mb-1.5">{feature.title}</h3>
+                <p className="text-sm text-slate-400 leading-relaxed mb-3">{feature.description}</p>
+                <span className="text-slate-500 group-hover:text-blue-400 transition-colors inline-flex items-center gap-1 text-xs">
+                  <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                  Learn more
+                </span>
               </div>
-              <div className="max-h-[calc(100dvh-320px)] overflow-y-auto overflow-x-hidden overscroll-behavior-smooth rounded-lg pr-1 -mr-1">
-              <div className="space-y-4">
-                {features.map((feature, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-start gap-4 p-5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-                  >
-                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-lg">
-                      {feature.icon}
+            )
+          })}
+        </div>
+
+        {/* Stats bar */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-16">
+          {stats.map(({ value, label, color }) => (
+            <div key={label} className="card-glass rounded-2xl p-6 text-center">
+              <div className={`text-4xl font-mono font-bold ${color} mb-2`}>{value}</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider">{label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Pricing */}
+        <div className="mb-16">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl font-display font-bold text-white mb-2">Pricing</h2>
+            <p className="text-slate-400 text-sm">Same plans as on the landing page.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {tiers.map((tier) => {
+              const isPopular = !!tier.popular
+              return (
+                <div
+                  key={tier.name}
+                  className={`card-glass rounded-2xl p-6 relative ${
+                    isPopular ? 'ring-1 ring-blue-500/30' : ''
+                  }`}
+                >
+                  {isPopular && (
+                    <div className="absolute top-4 right-4 text-[10px] font-medium text-blue-400 uppercase tracking-wider">
+                      Popular
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                        {feature.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                        {feature.description}
-                      </p>
-                    </div>
+                  )}
+                  <h3 className="text-xl font-display font-bold text-white mb-1">{tier.name}</h3>
+                  <p className="text-xs text-slate-500 mb-4">{tier.tagline}</p>
+                  <div className="mb-2">
+                    <span className="text-3xl font-mono font-bold text-white">{tier.price}</span>
+                    <span className="text-sm text-slate-500 ml-1">{tier.period}</span>
                   </div>
-                ))}
-              </div>
-              </div>
-            </div>
+                  <p className="text-[11px] text-slate-600 mb-4">{tier.billingNote}</p>
+                  <p className="text-[11px] text-slate-600 mb-6">
+                    {tier.maxVehicles === Infinity
+                      ? 'Unlimited vehicles'
+                      : `Up to ${tier.maxVehicles} vehicles`}
+                  </p>
+                  <ul className="space-y-3 mb-6">
+                    {tier.features.map((f) => (
+                      <li key={f} className="flex items-start text-sm gap-2">
+                        <span className="text-emerald-400 mt-0.5 flex-shrink-0">✓</span>
+                        <span className="text-slate-400">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="pt-4 border-t border-white/[0.06] text-center">
+                    <span className="text-xs text-slate-500">
+                      {userTier === tier.name.toLowerCase() ? '✓ Your current tier' : ''}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
+        </div>
 
-          {/* Pricing Tab */}
-          <div
-            className={`transition-all duration-500 ease-in-out ${
-              activeTab === 'pricing'
-                ? 'opacity-100 translate-x-0'
-                : 'absolute inset-0 opacity-0 translate-x-[100%] pointer-events-none overflow-hidden'
-            }`}
+        {/* CTA */}
+        <div className="text-center pt-8">
+          <Link
+            href="/dashboard"
+            className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-sm"
           >
-            <div className="space-y-10">
-              <div className="text-center mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">Pricing</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Per-vehicle pricing</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {tiers.map((tier, idx) => {
-                  const isPopular = !!tier.popular
-                  const isPremium = tier.name === 'Premium'
-                  const cardWrapperClass = isPopular
-                    ? 'relative bg-indigo-600 dark:bg-indigo-700 rounded-lg border border-indigo-500 dark:border-indigo-600 p-6'
-                    : `relative bg-white dark:bg-gray-800 rounded-lg border p-6 ${
-                        isPremium ? 'border-gray-200 dark:border-gray-700' : 'border-gray-200 dark:border-gray-700'
-                      }`
-                  return (
-                    <div key={idx} className={cardWrapperClass}>
-                      {isPopular ? (
-                        <div className="absolute top-4 right-4 text-xs font-medium text-indigo-200">
-                          Popular
-                        </div>
-                      ) : null}
-                      <h3 className={`text-2xl font-bold mb-1 ${isPopular ? 'text-white pt-0' : 'text-gray-900 dark:text-white'}`}>{tier.name}</h3>
-                      <p className={`text-sm mb-4 ${isPopular ? 'text-indigo-200' : 'text-gray-600 dark:text-gray-400'}`}>{tier.tagline}</p>
-                      <div className="mb-2">
-                        <span className={`text-4xl font-bold ${isPopular ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{tier.price}</span>
-                        <span className={`text-sm ml-2 ${isPopular ? 'text-indigo-200' : 'text-gray-600 dark:text-gray-400'}`}>{tier.period}</span>
-                      </div>
-                      <p className={`text-xs mb-2 ${isPopular ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-400'}`}>{tier.billingNote}</p>
-                      <p className={`text-xs mb-6 ${isPopular ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-400'}`}>
-                        {tier.maxVehicles === Infinity ? 'Unlimited vehicles' : `Up to ${tier.maxVehicles} vehicles`}
-                      </p>
-                      <ul className="space-y-4 mb-8">
-                        {tier.features.map((feature, fIdx) => (
-                          <li key={fIdx} className="flex items-start text-sm">
-                            <span className={`mr-3 mt-0.5 text-lg ${isPopular ? 'text-white' : 'text-green-500'}`}>✓</span>
-                            <span className={isPopular ? 'text-indigo-100' : 'text-gray-700 dark:text-gray-300'}>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      <div className={`text-center pt-4 border-t ${isPopular ? 'border-indigo-400/50' : 'border-gray-200 dark:border-gray-700'}`}>
-                        <span className={`text-sm font-medium ${isPopular ? 'text-white' : 'text-indigo-600 dark:text-indigo-400'}`}>
-                          {userTier === tier.name.toLowerCase() ? '✓ Your current tier' : ''}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
+            Back to Dashboard
+          </Link>
         </div>
       </div>
-
-      {/* CTA */}
-      <section className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-10 mt-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Fleet management</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">Go to dashboard or contact support.</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/dashboard"
-              className="inline-block px-6 py-2.5 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors"
-            >
-              Dashboard
-            </Link>
-            <a
-              href="mailto:fleetpulse@fastmail.com"
-              className="inline-block px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              Contact
-            </a>
-          </div>
-        </div>
-      </section>
     </div>
   )
 }

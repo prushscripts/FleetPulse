@@ -11,6 +11,7 @@ import { normalizeTier, SubscriptionTier, TIER_CONFIG } from '@/lib/tiers'
 import { getUserDisplayName } from '@/lib/user-utils'
 import type { VehicleWithStats } from '@/lib/dashboard-types'
 import QuickAssignPopover from '@/components/vehicles/QuickAssignPopover'
+import VehiclePanel from '@/components/vehicles/VehiclePanel'
 
 type SortField = 'code' | 'current_mileage' | 'oil_status' | 'status'
 type SortDirection = 'asc' | 'desc'
@@ -74,6 +75,8 @@ export default function DashboardClient(
   const [hiddenVehicles, setHiddenVehicles] = useState<string[]>([])
   const [allDrivers, setAllDrivers] = useState<Array<{ id: string; name: string; email?: string | null; location?: string | null; isNYDriver?: boolean; isDMVDriver?: boolean }>>([])
   const [quickAssignVehicleId, setQuickAssignVehicleId] = useState<string | null>(null)
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleWithStats | null>(null)
+  const [panelOpen, setPanelOpen] = useState(false)
   const filterMenuRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
   const router = useRouter()
@@ -563,6 +566,18 @@ export default function DashboardClient(
       JSON.stringify({ y: window.scrollY, t: Date.now() })
     )
     router.push(`/dashboard/vehicles/${vehicleId}`)
+  }
+
+  const openVehiclePanel = (vehicle: VehicleWithStats) => {
+    setSelectedVehicle(vehicle)
+    setPanelOpen(true)
+  }
+
+  const unassignDriverFromVehicle = async (vehicleId: string) => {
+    const res = await fetch(`/api/vehicles/${vehicleId}/unassign-driver`, { method: 'POST' })
+    if (!res.ok) throw new Error('Unable to unassign driver')
+    await loadVehicles()
+    if (selectedVehicle?.id === vehicleId) setSelectedVehicle((prev) => (prev?.id === vehicleId ? { ...prev!, driver_id: null, driver_name: null } : prev))
   }
 
   const openVehicleDocuments = (vehicleId: string) => {
@@ -1230,119 +1245,106 @@ export default function DashboardClient(
 
         {viewMode === 'list' && (
           <div className="mx-4 md:mx-6 card-glass rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-2 border-b border-white/[0.06] bg-white/[0.02]">
+              <div className="w-28 text-[10px] text-slate-600 uppercase tracking-widest">Vehicle</div>
+              <div className="w-36 text-[10px] text-slate-600 uppercase tracking-widest hidden sm:block">Location</div>
+              <div className="w-28 text-[10px] text-slate-600 uppercase tracking-widest hidden md:block">Driver</div>
+              <div className="w-28 text-[10px] text-slate-600 uppercase tracking-widest hidden lg:block text-right">Mileage</div>
+              <div className="w-20 text-[10px] text-slate-600 uppercase tracking-widest hidden xl:block">VIN</div>
+              <div className="flex-1" />
+              <div className="w-24 text-[10px] text-slate-600 uppercase tracking-widest text-right">Oil Status</div>
+              <div className="w-16" />
+            </div>
             <div className="divide-y divide-white/[0.04]">
               {filteredVehicles.map((vehicle, index) => {
-                const oilStatus = getOilStatus(vehicle)
-                const oilStatusKey = oilStatus.status === 'overdue' ? 'overdue' : 'ok'
+                const current = vehicle.current_mileage ?? 0
+                const due = vehicle.oil_change_due_mileage ?? 0
+                const oilOverdueMiles = due > 0 && current >= due ? current - due : 0
+                const borderClass =
+                  oilOverdueMiles > 5000
+                    ? 'border-l-red-500'
+                    : oilOverdueMiles > 0
+                      ? 'border-l-amber-500/70'
+                      : 'border-l-emerald-500/40'
                 return (
                   <motion.div
                     key={vehicle.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.03, duration: 0.25 }}
-                    className={`group relative flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 sm:py-4 bg-white/[0.02] hover:bg-white/[0.04] border-b border-white/[0.04] last:border-0 transition-all duration-200 cursor-pointer border-l-2 ${
-                      oilStatusKey === 'overdue' ? 'border-l-red-500/60' : 'border-l-emerald-500/40'
-                    } ${lastVehicleId === vehicle.id ? 'ring-1 ring-inset ring-blue-500/20' : ''}`}
-                    onClick={() => navigateToVehicle(vehicle.id)}
+                    initial={{ opacity: 0, x: -4 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.02, duration: 0.2 }}
+                    onClick={() => openVehiclePanel(vehicle)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigateToVehicle(vehicle.id) } }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        openVehiclePanel(vehicle)
+                      }
+                    }}
+                    className={`group flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.03] transition-all duration-150 cursor-pointer border-l-2 ${borderClass} ${lastVehicleId === vehicle.id ? 'ring-1 ring-inset ring-blue-500/20' : ''}`}
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                        <span className="font-mono font-semibold text-sm text-white">{vehicle.code}</span>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-white/[0.06] text-slate-400 uppercase tracking-wide">
-                          {vehicle.vehicle_type}
-                        </span>
+                    <div className="w-28 flex-shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono font-bold text-sm text-white">{vehicle.code}</span>
                         {vehicle.open_issues_count > 0 && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400">
-                            {vehicle.open_issues_count} issue{vehicle.open_issues_count > 1 ? 's' : ''}
+                          <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 text-[9px] font-bold flex items-center justify-center flex-shrink-0">
+                            {vehicle.open_issues_count}
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-slate-500">
-                        {getTerritory(vehicle)}
-                        <span className="hidden sm:inline"> · {vehicle.year ?? ''} {vehicle.make ?? ''}</span>
+                      <span className="text-[10px] text-slate-600 uppercase tracking-wide">{vehicle.vehicle_type ?? '—'}</span>
+                    </div>
+                    <div className="w-36 flex-shrink-0 hidden sm:block">
+                      <div className="text-xs text-slate-400">{getTerritory(vehicle)}</div>
+                      <div className="text-[10px] text-slate-600">
+                        {vehicle.year ?? ''} {vehicle.make ?? ''}
                       </div>
                     </div>
-                    <div className="hidden sm:block text-right flex-shrink-0">
-                      <div className="font-mono text-sm text-white">{(vehicle.current_mileage ?? 0).toLocaleString()} mi</div>
-                      <div className="text-[11px] text-slate-500">current</div>
-                    </div>
-                    {vehicle.driver_name ? (
-                      <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06] flex-shrink-0">
-                        <div className="w-4 h-4 rounded-full bg-blue-500/30 flex items-center justify-center text-[9px] font-bold text-blue-300">
-                          {vehicle.driver_name.charAt(0).toUpperCase()}
+                    <div className="w-28 flex-shrink-0 hidden md:block">
+                      {vehicle.driver_name ? (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center text-[9px] font-bold text-blue-300 flex-shrink-0">
+                            {vehicle.driver_name.charAt(0)}
+                          </div>
+                          <span className="text-xs text-slate-400 truncate">{vehicle.driver_name}</span>
                         </div>
-                        <span className="text-xs text-slate-300 max-w-[80px] truncate">
-                          {vehicle.driver_name}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="relative hidden sm:block">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setQuickAssignVehicleId((prev) => prev === vehicle.id ? null : vehicle.id) }}
-                          className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-lg border border-dashed border-white/10 text-slate-600 hover:border-blue-500/30 hover:text-blue-400 transition-all text-xs flex-shrink-0"
-                          title="Assign driver"
-                        >
-                          <UserPlus size={11} />
-                          <span>Assign</span>
-                        </button>
-                        <QuickAssignPopover
-                          open={quickAssignVehicleId === vehicle.id}
-                          vehicleLocation={getTerritory(vehicle)}
-                          drivers={allDrivers}
-                          onAssign={async (driverId) => {
-                            await assignDriverToVehicle(vehicle.id, driverId)
-                            setQuickAssignVehicleId(null)
-                            showToast('Driver assigned', `Assigned driver to ${vehicle.code}.`)
-                          }}
-                          onClose={() => setQuickAssignVehicleId(null)}
-                        />
-                      </div>
-                    )}
-                    <div className="flex-shrink-0">
-                      {oilStatus.status === 'overdue' ? (
-                        (() => {
-                          const current = vehicle.current_mileage ?? 0
-                          const due = vehicle.oil_change_due_mileage ?? 0
-                          const overdueMiles = current - due
-                          return (
-                            <span className="badge badge-danger flex items-center gap-1.5">
-                              <span className="status-dot danger" style={{ width: '5px', height: '5px' }} />
-                              {overdueMiles > 0
-                                ? `Oil +${overdueMiles.toLocaleString()} mi overdue`
-                                : 'Oil overdue'}
-                            </span>
-                          )
-                        })()
                       ) : (
-                        <span className="badge badge-active flex items-center gap-1.5">
-                          <span className="status-dot active" style={{ width: '5px', height: '5px' }} />
+                        <span className="text-[10px] text-slate-700 italic">Unassigned</span>
+                      )}
+                    </div>
+                    <div className="w-28 flex-shrink-0 hidden lg:block text-right">
+                      <div className="font-mono text-xs text-white">{current.toLocaleString()} mi</div>
+                      <div className="text-[10px] text-slate-600">current</div>
+                    </div>
+                    <div className="w-20 flex-shrink-0 hidden xl:block">
+                      <div className="font-mono text-[10px] text-slate-600 uppercase tracking-wide">
+                        {vehicle.vin ? '···' + vehicle.vin.slice(-6) : '—'}
+                      </div>
+                      <div className="text-[10px] text-slate-700">VIN</div>
+                    </div>
+                    <div className="flex-1" />
+                    <div className="flex-shrink-0">
+                      {oilOverdueMiles > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-mono font-medium">
+                          +{oilOverdueMiles.toLocaleString()} mi
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium">
                           Oil OK
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                    <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                       <button
                         type="button"
-                        className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.08] transition-all min-w-[44px] min-h-[44px]"
-                        onClick={(e) => { e.stopPropagation(); openVehicleDocuments(vehicle.id) }}
-                        title="Documents"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openVehiclePanel(vehicle)
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-medium hover:bg-blue-500/20 transition-colors"
                       >
-                        <FileText size={13} />
+                        Open
                       </button>
-                      <button
-                        type="button"
-                        className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.08] transition-all min-w-[44px] min-h-[44px]"
-                        onClick={(e) => { e.stopPropagation(); openQuickEdit(vehicle) }}
-                        title="Edit"
-                      >
-                        <Edit2 size={13} />
-                      </button>
-                      <span className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                        Open <ArrowRight size={11} />
-                      </span>
                     </div>
                   </motion.div>
                 )
@@ -1359,7 +1361,7 @@ export default function DashboardClient(
             return (
               <article
                 key={vehicle.id}
-                onClick={() => navigateToVehicle(vehicle.id)}
+                onClick={() => openVehiclePanel(vehicle)}
                 className={`group relative card-glass p-4 sm:p-5 hover:border-blue-500/20 transition-all duration-200 cursor-pointer ${oilBorder}`}
               >
                 <div className="relative">
@@ -1875,6 +1877,19 @@ export default function DashboardClient(
           </div>
         </div>
       )}
+
+      <VehiclePanel
+        vehicle={selectedVehicle}
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        allDrivers={allDrivers}
+        onAssignDriver={async (vehicleId, driverId) => {
+          await assignDriverToVehicle(vehicleId, driverId)
+          showToast('Driver assigned', `Assigned driver to ${selectedVehicle?.code ?? 'vehicle'}.`)
+          setSelectedVehicle((prev) => (prev ? { ...prev, driver_id: driverId, driver_name: allDrivers.find((d) => d.id === driverId)?.name ?? null } : null))
+        }}
+        onUnassignDriver={unassignDriverFromVehicle}
+      />
     </div>
   )
 }
