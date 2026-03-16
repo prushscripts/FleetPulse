@@ -144,7 +144,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-navy-900 flex">
+    <div className="min-h-screen min-h-[100dvh] bg-[#0A0F1E] flex flex-row">
       {loading && (
         <div className="fixed inset-0 z-[9998] flex items-center justify-center pointer-events-auto">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-md" aria-hidden />
@@ -161,34 +161,36 @@ export default function LoginPage() {
         </div>
       )}
 
-      <div className={`flex-1 min-h-screen min-h-[100dvh] relative transition-all duration-300 ${loading ? 'blur-md' : ''}`}>
-        <div className="hidden lg:flex lg:w-[42%] xl:w-[45%] relative bg-navy-800 border-r border-white/[0.06] flex-col justify-between p-12 overflow-hidden min-h-screen">
-          <GridBackground />
-          <div className="relative z-10">
-            <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={140} height={32} className="h-8 w-auto" />
-          </div>
-          <div className="relative z-10">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card-glass p-6 rounded-2xl mb-6">
-              <p className="text-sm text-slate-300 leading-relaxed mb-4">
-                &quot;FleetPulse transformed how we manage our 57-vehicle New York fleet. Oil tracking alone saves us thousands in missed service costs.&quot;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-semibold text-blue-400">MT</div>
-                <div>
-                  <div className="text-xs font-medium text-white">Operations Manager</div>
-                  <div className="text-[10px] text-slate-500">Logistics company, New York</div>
-                </div>
+      {/* LEFT PANEL — only on large screens */}
+      <div className={`hidden lg:flex lg:w-[42%] xl:w-[45%] relative bg-[#0F1629] border-r border-white/[0.06] flex-col justify-between p-12 overflow-hidden min-h-screen ${loading ? 'blur-sm' : ''}`}>
+        <GridBackground />
+        <div className="relative z-10">
+          <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={140} height={32} className="h-8 w-auto" />
+        </div>
+        <div className="relative z-10">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card-glass p-6 rounded-2xl mb-6">
+            <p className="text-sm text-slate-300 leading-relaxed mb-4">
+              &quot;FleetPulse transformed how we manage our 57-vehicle New York fleet. Oil tracking alone saves us thousands in missed service costs.&quot;
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-semibold text-blue-400">MT</div>
+              <div>
+                <div className="text-xs font-medium text-white">Operations Manager</div>
+                <div className="text-[10px] text-slate-500">Logistics company, New York</div>
               </div>
-            </motion.div>
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <Lock size={12} className="text-slate-600" />
-              Secured by 256-bit SSL
             </div>
+          </motion.div>
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Lock size={12} className="text-slate-600" />
+            Secured by 256-bit SSL
           </div>
         </div>
+      </div>
 
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-8">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="w-full max-w-sm">
+      {/* RIGHT PANEL — always visible, takes all space on mobile */}
+      <div className={`flex-1 flex items-center justify-center p-6 sm:p-8 min-h-screen w-full ${loading ? 'blur-md' : ''}`}>
+        <div className="w-full max-w-sm">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="w-full">
             <div className="lg:hidden mb-8 flex justify-center">
               <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={120} height={28} className="h-7 w-auto" />
             </div>
