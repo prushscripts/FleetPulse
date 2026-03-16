@@ -4,7 +4,6 @@ import './globals.css'
 import { ThemeProvider } from '@/components/layout/ThemeProvider'
 import { PageTransitionProvider } from '@/components/animations/PageTransition'
 import NavbarLayout from '@/components/layout/NavbarLayout'
-import IntroAnimation from '@/components/IntroAnimation'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import BackgroundLayer from '@/components/BackgroundLayer'
 
@@ -50,13 +49,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ErrorBoundary>
             <BackgroundLayer />
             <div className="relative z-10 min-h-full overflow-x-hidden">
-              <IntroAnimation>
-                <PageTransitionProvider>
-                  <NavbarLayout>
-                    <main>{children}</main>
-                  </NavbarLayout>
-                </PageTransitionProvider>
-              </IntroAnimation>
+              <PageTransitionProvider>
+                <NavbarLayout>
+                  <main>{children}</main>
+                </NavbarLayout>
+              </PageTransitionProvider>
             </div>
           </ErrorBoundary>
         </ThemeProvider>

@@ -1,11 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Navbar from '@/components/Navbar'
-import HeroSection from '@/components/landing/HeroSection'
-import FeaturesSection from '@/components/landing/FeaturesSection'
-import PricingSection from '@/components/landing/PricingSection'
-import CtaSection from '@/components/landing/CtaSection'
-import Footer from '@/components/landing/Footer'
+import LandingClient from '@/components/landing/LandingClient'
 
 export default async function LandingPage() {
   const supabase = await createClient()
@@ -17,14 +12,5 @@ export default async function LandingPage() {
     redirect('/dashboard')
   }
 
-  return (
-    <main className="bg-navy-900 min-h-screen">
-      <Navbar />
-      <HeroSection />
-      <FeaturesSection />
-      <PricingSection />
-      <CtaSection />
-      <Footer />
-    </main>
-  )
+  return <LandingClient />
 }
