@@ -327,7 +327,14 @@ export default function DriverInspectionFlowPage() {
 
       setPhase('success')
     } catch (e: any) {
-      setSubmitError(e?.message || 'Failed to submit inspection. Please try again.')
+      const msg = e?.message ?? ''
+      if (msg.includes('company_id') && msg.toLowerCase().includes('schema')) {
+        setSubmitError(
+          'Database needs an update. Ask your fleet admin to run the "add-inspections-company-id" script in Supabase, then try again.'
+        )
+      } else {
+        setSubmitError(msg || 'Failed to submit inspection. Please try again.')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -361,7 +368,8 @@ export default function DriverInspectionFlowPage() {
   return (
     <InspectionErrorBoundary onBack={() => router.back()}>
       <div
-        className="min-h-screen bg-[#0A0F1E] pt-6 pb-24 px-4 text-white"
+        className="min-h-screen bg-[#0A0F1E] pt-6 pb-24 px-4 text-white overflow-x-hidden touch-manipulation"
+        style={{ overflowAnchor: 'auto' }}
         onPointerDown={(e) => {
           const el = e.target as HTMLElement | null
           if (!el) return
@@ -386,10 +394,10 @@ export default function DriverInspectionFlowPage() {
           {phase === 'confirm' && (
           <motion.div
             key="confirm"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
             className="min-h-[70vh] flex flex-col items-center justify-center text-center"
           >
             <p className="text-sm text-slate-400 mb-3">Quick Safety Check</p>
@@ -420,10 +428,10 @@ export default function DriverInspectionFlowPage() {
           {phase === 'odometer' && (
           <motion.div
             key="odometer"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
             className="max-w-xl mx-auto"
           >
             <h2 className="text-xl font-semibold text-white mb-2">Enter current odometer reading</h2>
@@ -434,7 +442,8 @@ export default function DriverInspectionFlowPage() {
               onChange={(e) => setOdometer(e.target.value.replace(/[^\d]/g, ''))}
               inputMode="numeric"
               placeholder={vehicle?.current_mileage ? `${vehicle.current_mileage.toLocaleString()}` : '0'}
-              className="w-full px-4 py-4 bg-white/[0.04] border border-white/[0.1] rounded-2xl text-2xl font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-all"
+              className="w-full px-4 py-4 bg-white/[0.04] border border-white/[0.1] rounded-2xl text-base font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-all min-h-[48px]"
+              style={{ fontSize: '16px' }}
             />
             {odometerError && <p className="text-sm text-red-400 mt-2">{odometerError}</p>}
 
@@ -452,10 +461,10 @@ export default function DriverInspectionFlowPage() {
           {phase === 'checklist' && (
           <motion.div
             key="checklist"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
             className="max-w-xl mx-auto"
           >
             <div className="flex items-center justify-between mb-5">
@@ -525,7 +534,8 @@ export default function DriverInspectionFlowPage() {
                             }
                             placeholder="Why did you fail this item?"
                             rows={3}
-                            className="mt-3 w-full px-4 py-3.5 bg-white/[0.04] border border-white/[0.1] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-all resize-none"
+                            className="mt-3 w-full px-4 py-3.5 bg-white/[0.04] border border-white/[0.1] rounded-xl text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-all resize-none"
+                            style={{ fontSize: '16px' }}
                           />
                         </motion.div>
                       )}
@@ -554,10 +564,10 @@ export default function DriverInspectionFlowPage() {
         {phase === 'summary' && (
           <motion.div
             key="summary"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
             className="max-w-xl mx-auto"
           >
             <h2 className="text-2xl font-bold text-white mb-2">Summary</h2>
@@ -588,10 +598,11 @@ export default function DriverInspectionFlowPage() {
               <textarea
                 value={overallNotes}
                 onChange={(e) => setOverallNotes(e.target.value)}
-                placeholder="Anything else your fleet manager should know..."
-                rows={4}
-                className="w-full px-4 py-3.5 bg-white/[0.04] border border-white/[0.1] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-all resize-none"
-              />
+              placeholder="Anything else your fleet manager should know..."
+              rows={4}
+              className="w-full px-4 py-3.5 bg-white/[0.04] border border-white/[0.1] rounded-xl text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-all resize-none"
+              style={{ fontSize: '16px' }}
+            />
             </div>
 
             {submitError && <p className="text-sm text-red-300 mt-4">{submitError}</p>}
@@ -614,10 +625,10 @@ export default function DriverInspectionFlowPage() {
         {phase === 'success' && (
           <motion.div
             key="success"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
             className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4"
           >
             <div className="w-20 h-20 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mb-6">

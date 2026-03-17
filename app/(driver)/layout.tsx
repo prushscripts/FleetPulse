@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import DriverNav from './DriverNav'
 
 export default async function DriverLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -19,6 +20,7 @@ export default async function DriverLayout({ children }: { children: React.React
 
   return (
     <div className="min-h-screen bg-[#0A0F1E] text-white">
+      <DriverNav />
       <main className="px-4 py-6 pb-24 max-w-xl mx-auto page-fade-in">{children}</main>
     </div>
   )
