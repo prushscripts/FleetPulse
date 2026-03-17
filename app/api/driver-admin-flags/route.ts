@@ -33,13 +33,14 @@ export async function POST(request: Request) {
     }
 
     const admin = createAdminClient()
-    const { data: users, error } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    const { data, error } = await admin.auth.admin.listUsers({ perPage: 1000 })
     if (error) {
       return NextResponse.json({ flags: {} }, { status: 200 })
     }
 
+    const userList = data?.users ?? []
     const flags: Record<string, boolean> = {}
-    for (const u of users ?? []) {
+    for (const u of userList) {
       const email = u.email?.toLowerCase()
       if (!email) continue
       if (!emails.includes(email)) continue
