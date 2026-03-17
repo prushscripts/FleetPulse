@@ -4,6 +4,9 @@ import { redirect } from 'next/navigation'
 import { ClipboardCheck, Truck } from 'lucide-react'
 import DriverReportIssue from './DriverReportIssue'
 
+// Time-sensitive greeting: ensure this page is not cached.
+export const dynamic = 'force-dynamic'
+
 export default async function DriverHomePage() {
   const supabase = await createClient()
   const {
@@ -17,16 +20,21 @@ export default async function DriverHomePage() {
   const companyId = user.user_metadata?.company_id as string | undefined
 
   // Greeting should be based on New York time (EST/ET), not server/container time.
+  // Use 12-hour output parts (AM/PM) then convert to 24-hour so boundaries are correct.
   const now = new Date()
-  const hour = Number(
-    new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/New_York',
-      hour: '2-digit',
-      hour12: false,
-    }).format(now),
-  )
-  const greeting =
-    hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    hour: 'numeric',
+    hour12: true,
+  }).formatToParts(now)
+
+  const hourPart = parts.find((p) => p.type === 'hour')?.value ?? '12'
+  const dayPeriod = parts.find((p) => p.type === 'dayPeriod')?.value ?? 'AM'
+  let hour24 = Number(hourPart)
+  if (dayPeriod === 'PM' && hour24 !== 12) hour24 += 12
+  if (dayPeriod === 'AM' && hour24 === 12) hour24 = 0
+
+  const greeting = hour24 < 12 ? 'Good morning' : hour24 < 18 ? 'Good afternoon' : 'Good evening'
 
   const { data: driver } = await supabase
     .from('drivers')
@@ -108,12 +116,6 @@ export default async function DriverHomePage() {
           className="btn-primary w-full py-5 flex items-center justify-center gap-2 text-sm"
         >
           🚛 Start Pre-Trip Inspection
-        </Link>
-        <Link
-          href="/driver/inspection/post_trip"
-          className="btn-ghost w-full py-5 flex items-center justify-center gap-2 text-sm"
-        >
-          🏁 Start Post-Trip Inspection
         </Link>
         <DriverReportIssue vehicleId={assignedVehicle?.id ?? null} vehicleCode={assignedVehicle?.code ?? null} />
       </section>

@@ -30,14 +30,12 @@ const DEFAULT_ITEMS: TemplateChecklistItem[] = [
   { id: '2', category: 'Exterior', label: 'Tires & wheels condition', required: true },
   { id: '3', category: 'Exterior', label: 'Body damage check', required: true },
   { id: '4', category: 'Exterior', label: 'Windows & mirrors clean', required: true },
-  { id: '5', category: 'Under Hood', label: 'Engine oil level', required: true },
-  { id: '6', category: 'Under Hood', label: 'Coolant level', required: true },
-  { id: '7', category: 'Interior', label: 'Brakes feel normal', required: true },
-  { id: '8', category: 'Interior', label: 'Steering responsive', required: true },
-  { id: '9', category: 'Interior', label: 'Horn working', required: true },
-  { id: '10', category: 'Interior', label: 'Seatbelt working', required: true },
-  { id: '11', category: 'Interior', label: 'No dashboard warning lights', required: true },
-  { id: '12', category: 'Safety', label: 'Fire extinguisher present', required: false },
+  { id: '5', category: 'Interior', label: 'Brakes feel normal', required: true },
+  { id: '6', category: 'Interior', label: 'Steering responsive', required: true },
+  { id: '7', category: 'Interior', label: 'Horn working', required: true },
+  { id: '8', category: 'Interior', label: 'Seatbelt working', required: true },
+  { id: '9', category: 'Interior', label: 'No dashboard warning lights', required: true },
+  { id: '10', category: 'Safety', label: 'Fire extinguisher present', required: false },
 ]
 
 type ItemAnswer = {
@@ -81,11 +79,12 @@ class InspectionErrorBoundary extends React.Component<
 
 export default function DriverInspectionFlowPage() {
   const params = useParams<{ type: string }>()
-  const typeParam = params?.type ?? 'pre_trip'
   const router = useRouter()
   const supabase = createClient()
 
-  const inspectionType: InspectionType = typeParam === 'post_trip' ? 'post_trip' : 'pre_trip'
+  // Wheelzup workflow: only pre-trip inspections.
+  // If a user hits /post_trip, we still run the pre-trip flow so the UI never blanks.
+  const inspectionType: InspectionType = 'pre_trip'
 
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -128,8 +127,12 @@ export default function DriverInspectionFlowPage() {
   const requiredCompleteForActiveCategory = useMemo(() => {
     if (!activeCategoryItems.length) return false
     return activeCategoryItems.every((i) => {
-      if (!i.required) return true
-      return !!answers[i.id]?.status
+      const a = answers[i.id]
+      // If not required, unanswered items are allowed.
+      if (!a?.status) return !i.required
+      // If failed, you must include a "why".
+      if (a.status === 'fail') return a.note.trim().length > 0
+      return true
     })
   }, [activeCategoryItems, answers])
 
@@ -158,13 +161,23 @@ export default function DriverInspectionFlowPage() {
         const display = nickname.trim() || (user?.email ? user.email.split('@')[0] : 'Driver')
         setDriverDisplayName(display)
 
-        const { data: driverRow } = await supabase
-          .from('drivers')
-          .select('id')
-          .or(`user_id.eq.${user?.id ?? ''},email.eq.${user?.email ?? ''}`)
-          .limit(1)
-          .maybeSingle()
-        const did = (driverRow as { id?: string } | null)?.id ?? null
+        // Find the driver record for this auth user.
+        // Important: older driver rows may have `user_id` unset, so we fall back to `email`.
+        const userId = user?.id ?? null
+        const userEmail = user?.email ?? null
+
+        const { data: driverByUser } = userId
+          ? await supabase.from('drivers').select('id').eq('user_id', userId).maybeSingle()
+          : { data: null }
+
+        const { data: driverByEmail } =
+          !driverByUser && userEmail
+            ? await (cid
+                ? supabase.from('drivers').select('id').eq('email', userEmail).eq('company_id', cid).limit(1).maybeSingle()
+                : supabase.from('drivers').select('id').eq('email', userEmail).limit(1).maybeSingle())
+            : { data: null }
+
+        const did = (driverByUser as { id?: string } | null)?.id ?? (driverByEmail as { id?: string } | null)?.id ?? null
         setDriverId(did)
 
         let vehicleRow: DriverVehicle | null = null
@@ -178,6 +191,10 @@ export default function DriverInspectionFlowPage() {
           vehicleRow = (v as DriverVehicle | null) ?? null
         }
         setVehicle(vehicleRow)
+        // Derive company_id from the assigned vehicle when user_metadata is missing/late.
+        if (!cid && vehicleRow?.company_id) {
+          setCompanyId(vehicleRow.company_id)
+        }
 
         let templateItems: TemplateChecklistItem[] = []
         if (cid) {
@@ -202,6 +219,10 @@ export default function DriverInspectionFlowPage() {
               .filter((i) => i.id && i.label)
           }
         }
+
+        // Drivers do a general safety/quick inspection; strip out any "Under Hood" sections.
+        const allowedCategories = new Set(['Exterior', 'Interior', 'Safety'])
+        templateItems = templateItems.filter((i) => allowedCategories.has(i.category))
 
         if (!templateItems.length) templateItems = DEFAULT_ITEMS
 
@@ -240,11 +261,25 @@ export default function DriverInspectionFlowPage() {
     setOdometerError(null)
   }, [odometer, vehicle?.current_mileage])
 
+  // Mobile polish:
+  // - Reset scroll between steps so the next view starts at the top.
+  // - Helps avoid "stuck halfway" when the keyboard opens/closes.
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      try {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      } catch {
+        window.scrollTo(0, 0)
+      }
+    })
+  }, [phase, categoryIndex])
+
   const beginDisabled = !vehicle?.id
   const canContinueOdometer = !!odometer.trim() && !odometerError
 
   const submit = async () => {
-    if (!vehicle?.id || !companyId || !driverId) {
+    const effectiveCompanyId = companyId ?? vehicle?.company_id ?? null
+    if (!vehicle?.id || !effectiveCompanyId || !driverId) {
       setSubmitError('Missing vehicle assignment. Contact your fleet manager.')
       return
     }
@@ -267,7 +302,7 @@ export default function DriverInspectionFlowPage() {
       }))
 
       const { error: insErr } = await supabase.from('inspections').insert({
-        company_id: companyId,
+        company_id: effectiveCompanyId,
         vehicle_id: vehicle.id,
         driver_id: driverId,
         submitted_by_user_id: user.id,
@@ -325,7 +360,19 @@ export default function DriverInspectionFlowPage() {
 
   return (
     <InspectionErrorBoundary onBack={() => router.back()}>
-      <div className="min-h-screen bg-[#0A0F1E] pt-6 pb-24 px-4 text-white">
+      <div
+        className="min-h-screen bg-[#0A0F1E] pt-6 pb-24 px-4 text-white"
+        onPointerDown={(e) => {
+          const el = e.target as HTMLElement | null
+          if (!el) return
+          const tag = el.tagName
+          const interactive = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'LABEL'].includes(tag)
+          if (!interactive) {
+            const active = document.activeElement as HTMLElement | null
+            active?.blur?.()
+          }
+        }}
+      >
         <button
           type="button"
           onClick={() => router.back()}
@@ -335,11 +382,17 @@ export default function DriverInspectionFlowPage() {
           Back
         </button>
 
-        {phase === 'confirm' && (
-          <div className="min-h-[70vh] flex flex-col items-center justify-center text-center">
-            <p className="text-sm text-slate-400 mb-3">
-              Starting {inspectionType === 'pre_trip' ? 'Pre-Trip' : 'Post-Trip'} Inspection
-            </p>
+        <AnimatePresence mode="wait">
+          {phase === 'confirm' && (
+          <motion.div
+            key="confirm"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+            className="min-h-[70vh] flex flex-col items-center justify-center text-center"
+          >
+            <p className="text-sm text-slate-400 mb-3">Quick Safety Check</p>
             <p className="text-slate-500 text-sm mb-2">
               {timestamp.toLocaleDateString()} · {driverDisplayName}
             </p>
@@ -361,11 +414,18 @@ export default function DriverInspectionFlowPage() {
             {beginDisabled && (
               <p className="text-sm text-amber-400 mt-4">No vehicle assigned. Contact your fleet manager.</p>
             )}
-          </div>
+          </motion.div>
         )}
 
-        {phase === 'odometer' && (
-          <div className="max-w-xl mx-auto">
+          {phase === 'odometer' && (
+          <motion.div
+            key="odometer"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+            className="max-w-xl mx-auto"
+          >
             <h2 className="text-xl font-semibold text-white mb-2">Enter current odometer reading</h2>
             <p className="text-sm text-slate-400 mb-5">Use the current mileage on your dashboard.</p>
 
@@ -386,11 +446,18 @@ export default function DriverInspectionFlowPage() {
             >
               Continue <ArrowRight size={18} />
             </button>
-          </div>
+          </motion.div>
         )}
 
-        {phase === 'checklist' && (
-          <div className="max-w-xl mx-auto">
+          {phase === 'checklist' && (
+          <motion.div
+            key="checklist"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+            className="max-w-xl mx-auto"
+          >
             <div className="flex items-center justify-between mb-5">
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-widest">Category</p>
@@ -456,7 +523,7 @@ export default function DriverInspectionFlowPage() {
                             onChange={(e) =>
                               setAnswers((prev) => ({ ...prev, [it.id]: { ...a, note: e.target.value } }))
                             }
-                            placeholder="Add notes (recommended)..."
+                            placeholder="Why did you fail this item?"
                             rows={3}
                             className="mt-3 w-full px-4 py-3.5 bg-white/[0.04] border border-white/[0.1] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-all resize-none"
                           />
@@ -481,11 +548,18 @@ export default function DriverInspectionFlowPage() {
               {categoryIndex + 1 >= categories.length ? 'Review & Submit' : 'Next Category'}{' '}
               <ArrowRight size={18} />
             </button>
-          </div>
+          </motion.div>
         )}
 
         {phase === 'summary' && (
-          <div className="max-w-xl mx-auto">
+          <motion.div
+            key="summary"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+            className="max-w-xl mx-auto"
+          >
             <h2 className="text-2xl font-bold text-white mb-2">Summary</h2>
             <p className="text-sm text-slate-400 mb-5">
               {passedCount} passed, {failedItems.length} failed
@@ -534,11 +608,18 @@ export default function DriverInspectionFlowPage() {
                 'Submit Inspection'
               )}
             </button>
-          </div>
+          </motion.div>
         )}
 
         {phase === 'success' && (
-          <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4">
+          <motion.div
+            key="success"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+            className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4"
+          >
             <div className="w-20 h-20 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mb-6">
               <CheckCircle2 size={34} className="text-emerald-400" />
             </div>
@@ -554,8 +635,9 @@ export default function DriverInspectionFlowPage() {
             >
               Back to Home
             </button>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
     </InspectionErrorBoundary>
   )

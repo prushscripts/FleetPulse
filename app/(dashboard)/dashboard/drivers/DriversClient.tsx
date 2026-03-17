@@ -87,10 +87,41 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
   const supabase = createClient()
   const { confirm } = useConfirm()
 
+  const [driverAdminFlags, setDriverAdminFlags] = useState<Record<string, boolean>>({})
+  const [adminFlagsLoading, setAdminFlagsLoading] = useState(false)
+  const [togglingAdminByEmail, setTogglingAdminByEmail] = useState<Record<string, boolean>>({})
+
   useEffect(() => {
     loadDrivers()
     loadUser()
   }, [])
+
+  const loadAdminFlags = async (driverList?: Driver[]) => {
+    try {
+      setAdminFlagsLoading(true)
+      const list = driverList ?? drivers
+      const emails = (list || [])
+        .map((d) => d.email?.toLowerCase() ?? '')
+        .filter(Boolean)
+      if (!emails.length) {
+        setDriverAdminFlags({})
+        return
+      }
+
+      const res = await fetch('/api/driver-admin-flags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emails }),
+      })
+
+      const data = (await res.json().catch(() => ({}))) as { flags?: Record<string, boolean> }
+      setDriverAdminFlags(data?.flags ?? {})
+    } catch {
+      setDriverAdminFlags({})
+    } finally {
+      setAdminFlagsLoading(false)
+    }
+  }
 
   const loadWriteupCounts = async () => {
     try {
@@ -173,6 +204,8 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
       const { data, error } = await query
       if (error) throw error
       setDrivers(data || [])
+      // Fetch admin/driver toggle state for each driver email.
+      await loadAdminFlags(data || [])
       await loadWriteupCounts()
     } catch (error) {
       console.error('Error loading drivers:', error)
@@ -271,6 +304,33 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
     } catch (error: any) {
       console.error('Error deleting driver:', error)
       showToast('Delete failed', error.message || 'Unable to delete driver. Please try again.')
+    }
+  }
+
+  const toggleDriverAdmin = async (driverEmail: string, nextIsAdmin: boolean) => {
+    const email = driverEmail.trim().toLowerCase()
+    if (!email) return
+
+    setTogglingAdminByEmail((prev) => ({ ...prev, [email]: true }))
+    try {
+      const res = await fetch('/api/driver-admin-toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, isAdmin: nextIsAdmin }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        showToast('Update failed', data?.error || 'Unable to update admin access.')
+        return
+      }
+
+      // Refresh local admin flags so the UI immediately reflects the toggle.
+      await loadAdminFlags()
+      showToast('Access updated', nextIsAdmin ? 'Admin access enabled.' : 'Driver access enabled.')
+    } catch (e: any) {
+      showToast('Update failed', e?.message || 'Unable to update admin access.')
+    } finally {
+      setTogglingAdminByEmail((prev) => ({ ...prev, [email]: false }))
     }
   }
 
@@ -763,6 +823,39 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                               </p>
                             </div>
                           </div>
+
+                          {/* Admin / Driver access toggle */}
+                          {driver.email && (
+                            (() => {
+                              const emailKey = driver.email!.toLowerCase()
+                              const isAdmin = driverAdminFlags[emailKey] ?? false
+                              const isUpdating = togglingAdminByEmail[emailKey] ?? false
+                              return (
+                                <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    Access
+                                  </span>
+                                  <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={isAdmin}
+                                    disabled={!driver.email || isUpdating}
+                                    onClick={() => toggleDriverAdmin(emailKey, !isAdmin)}
+                                    className={`relative inline-flex items-center h-8 w-14 rounded-full transition-colors ${
+                                      isAdmin ? 'bg-emerald-500/20' : 'bg-gray-200 dark:bg-gray-700'
+                                    }`}
+                                  >
+                                    <span
+                                      className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform ${
+                                        isAdmin ? 'translate-x-6' : 'translate-x-1'
+                                      }`}
+                                    />
+                                    <span className="sr-only">{isAdmin ? 'Admin enabled' : 'Driver enabled'}</span>
+                                  </button>
+                                </div>
+                              )
+                            })()
+                          )}
                           
                           {/* Citation Policy */}
                           <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -898,6 +991,37 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                         </button>
                       )}
                     </div>
+
+                    {/* Admin / Driver access toggle */}
+                    {driver.email && (
+                      (() => {
+                        const emailKey = driver.email!.toLowerCase()
+                        const isAdmin = driverAdminFlags[emailKey] ?? false
+                        const isUpdating = togglingAdminByEmail[emailKey] ?? false
+                        return (
+                          <div className="mt-3 flex items-center justify-between gap-3">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Access</span>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={isAdmin}
+                              disabled={isUpdating}
+                              onClick={() => toggleDriverAdmin(emailKey, !isAdmin)}
+                              className={`relative inline-flex items-center h-8 w-14 rounded-full transition-colors ${
+                                isAdmin ? 'bg-emerald-500/20' : 'bg-gray-200 dark:bg-gray-700'
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform ${
+                                  isAdmin ? 'translate-x-6' : 'translate-x-1'
+                                }`}
+                              />
+                              <span className="sr-only">{isAdmin ? 'Admin enabled' : 'Driver enabled'}</span>
+                            </button>
+                          </div>
+                        )
+                      })()
+                    )}
                     </div>
                   </div>
                   <span
