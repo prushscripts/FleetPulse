@@ -159,11 +159,6 @@ export default function LoginPage() {
         </div>
 
         <div className="relative z-10">
-          <Link href="/">
-            <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={1600} height={410} className="h-10 w-auto" />
-          </Link>
-        </div>
-        <div className="relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card-glass p-6 rounded-2xl mb-6">
             <div className="text-amber-400 text-sm mb-2">★★★★★</div>
             <p className="text-sm text-slate-300 leading-relaxed mb-4 italic">

@@ -124,11 +124,6 @@ export default function SignupPage() {
         <div className="hidden lg:flex lg:w-[42%] xl:w-[45%] relative bg-[#0F1629] border-r border-white/[0.06] flex-col justify-between p-12 overflow-hidden min-h-screen">
           <ConstellationBackground />
           <div className="relative z-10">
-            <Link href="/">
-              <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={1600} height={410} className="h-10 w-auto" />
-            </Link>
-          </div>
-          <div className="relative z-10">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card-glass p-6 rounded-2xl mb-6">
               <p className="text-sm text-slate-300 leading-relaxed mb-4">
                 &quot;We cut maintenance surprises by 40% in the first quarter. FleetPulse pays for itself.&quot;
