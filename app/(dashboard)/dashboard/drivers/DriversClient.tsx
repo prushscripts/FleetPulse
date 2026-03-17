@@ -609,6 +609,7 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                           <th className="px-4 py-2 border-r border-gray-200/50 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900/60">Hire Date</th>
                           <th className="px-4 py-2 border-r border-gray-200/50 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900/60">Status</th>
                           <th className="px-4 py-2 border-r border-gray-200/50 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900/60">Citation Policy</th>
+                          <th className="px-3 py-2 border-r border-gray-200/50 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900/60 text-center">Admin</th>
                           <th className="px-4 py-2 bg-gray-50 dark:bg-gray-900/60 text-center">Actions</th>
                         </tr>
                       </thead>
@@ -687,6 +688,35 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                                 >
                                   {driver.signed_citation_policy ? '✓ Signed' : '✗ Not signed'}
                                 </span>
+                              </td>
+                              <td className="px-3 py-3 border-r border-gray-200/50 dark:border-gray-700/50 whitespace-nowrap text-center">
+                                {driver.email && (() => {
+                                  const emailKey = driver.email!.toLowerCase()
+                                  const isAdmin = driverAdminFlags[emailKey] ?? false
+                                  const isUpdating = togglingAdminByEmail[emailKey] ?? false
+                                  return (
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      <span className="text-[11px] text-gray-500 dark:text-gray-400">Admin</span>
+                                      <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={isAdmin}
+                                        disabled={isUpdating}
+                                        onClick={() => toggleDriverAdmin(emailKey, !isAdmin)}
+                                        className={`relative inline-flex h-5 w-9 rounded-full transition-colors flex-shrink-0 ${
+                                          isAdmin ? 'bg-emerald-500/20' : 'bg-gray-200 dark:bg-gray-700'
+                                        }`}
+                                      >
+                                        <span
+                                          className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${
+                                            isAdmin ? 'translate-x-5' : 'translate-x-0.5'
+                                          }`}
+                                        />
+                                        <span className="sr-only">{isAdmin ? 'Admin on' : 'Admin off'}</span>
+                                      </button>
+                                    </div>
+                                  )
+                                })()}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-center">
                                 <div className="flex gap-2 justify-center items-center">
@@ -824,33 +854,31 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                             </div>
                           </div>
 
-                          {/* Admin / Driver access toggle */}
+                          {/* Admin toggle */}
                           {driver.email && (
                             (() => {
                               const emailKey = driver.email!.toLowerCase()
                               const isAdmin = driverAdminFlags[emailKey] ?? false
                               const isUpdating = togglingAdminByEmail[emailKey] ?? false
                               return (
-                                <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    Access
-                                  </span>
+                                <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
+                                  <span className="text-[11px] text-gray-500 dark:text-gray-400">Admin</span>
                                   <button
                                     type="button"
                                     role="switch"
                                     aria-checked={isAdmin}
                                     disabled={!driver.email || isUpdating}
                                     onClick={() => toggleDriverAdmin(emailKey, !isAdmin)}
-                                    className={`relative inline-flex items-center h-8 w-14 rounded-full transition-colors ${
+                                    className={`relative inline-flex h-5 w-9 rounded-full transition-colors flex-shrink-0 ${
                                       isAdmin ? 'bg-emerald-500/20' : 'bg-gray-200 dark:bg-gray-700'
                                     }`}
                                   >
                                     <span
-                                      className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform ${
-                                        isAdmin ? 'translate-x-6' : 'translate-x-1'
+                                      className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${
+                                        isAdmin ? 'translate-x-5' : 'translate-x-0.5'
                                       }`}
                                     />
-                                    <span className="sr-only">{isAdmin ? 'Admin enabled' : 'Driver enabled'}</span>
+                                    <span className="sr-only">{isAdmin ? 'Admin on' : 'Admin off'}</span>
                                   </button>
                                 </div>
                               )
@@ -992,31 +1020,31 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                       )}
                     </div>
 
-                    {/* Admin / Driver access toggle */}
+                    {/* Admin toggle */}
                     {driver.email && (
                       (() => {
                         const emailKey = driver.email!.toLowerCase()
                         const isAdmin = driverAdminFlags[emailKey] ?? false
                         const isUpdating = togglingAdminByEmail[emailKey] ?? false
                         return (
-                          <div className="mt-3 flex items-center justify-between gap-3">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">Access</span>
+                          <div className="mt-3 flex items-center justify-between gap-2">
+                            <span className="text-[11px] text-gray-500 dark:text-gray-400">Admin</span>
                             <button
                               type="button"
                               role="switch"
                               aria-checked={isAdmin}
                               disabled={isUpdating}
                               onClick={() => toggleDriverAdmin(emailKey, !isAdmin)}
-                              className={`relative inline-flex items-center h-8 w-14 rounded-full transition-colors ${
+                              className={`relative inline-flex h-5 w-9 rounded-full transition-colors flex-shrink-0 ${
                                 isAdmin ? 'bg-emerald-500/20' : 'bg-gray-200 dark:bg-gray-700'
                               }`}
                             >
                               <span
-                                className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform ${
-                                  isAdmin ? 'translate-x-6' : 'translate-x-1'
+                                className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${
+                                  isAdmin ? 'translate-x-5' : 'translate-x-0.5'
                                 }`}
                               />
-                              <span className="sr-only">{isAdmin ? 'Admin enabled' : 'Driver enabled'}</span>
+                              <span className="sr-only">{isAdmin ? 'Admin on' : 'Admin off'}</span>
                             </button>
                           </div>
                         )
