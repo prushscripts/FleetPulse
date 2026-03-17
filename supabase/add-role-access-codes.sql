@@ -7,5 +7,5 @@ UPDATE companies
 SET 
   manager_access_code = 'WheelzAPD2026!',
   driver_access_code = 'Wheelzupauth2026'
-WHERE invite_code = 'WheelzUpAPD2026' 
+WHERE auth_key = 'WheelzUpAPD2026'
    OR name ILIKE '%wheelz%';
