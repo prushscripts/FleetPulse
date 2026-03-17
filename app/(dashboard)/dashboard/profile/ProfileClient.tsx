@@ -11,6 +11,8 @@ export default function ProfileClient() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [role, setRole] = useState<string>('driver')
+  const [syncingRole, setSyncingRole] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -19,6 +21,7 @@ export default function ProfileClient() {
       .then(({ data: { user } }) => {
         if (cancelled) return
         setUserEmail(user?.email ?? null)
+        setRole((user?.user_metadata?.role as string | undefined) ?? 'owner')
         const existing =
           (user?.user_metadata?.nickname as string | undefined) ||
           user?.email?.split('@')[0] ||
@@ -54,6 +57,29 @@ export default function ProfileClient() {
       // swallow; in a real app we might show an error toast
     } finally {
       setSaving(false)
+    }
+  }
+
+  const adminEnabled = role !== 'driver'
+
+  const setAdminEnabled = async (nextEnabled: boolean) => {
+    if (syncingRole) return
+    setSyncingRole(true)
+    try {
+      const nextRole = nextEnabled ? 'owner' : 'driver'
+      const { error } = await supabase.auth.updateUser({ data: { role: nextRole } })
+      if (error) throw error
+
+      // Ensure profiles + drivers sync aligns with the new role.
+      await fetch('/api/sync-profile', { method: 'POST', credentials: 'include' })
+
+      setRole(nextRole)
+      // Redirect based on the expected route gating.
+      window.location.href = nextEnabled ? '/dashboard/fleet-health' : '/driver'
+    } catch {
+      // swallow; in a real app we might show an error toast
+    } finally {
+      setSyncingRole(false)
     }
   }
 
@@ -141,6 +167,46 @@ export default function ProfileClient() {
           <div>
             <div className="text-xs text-slate-500 mb-1">Plan</div>
             <div className="text-sm text-white">Professional</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Access role toggle */}
+      <section className="card-glass rounded-2xl overflow-hidden mb-4">
+        <div className="px-5 py-4 border-b border-white/[0.06]">
+          <h2 className="text-sm font-semibold text-white">Access</h2>
+        </div>
+        <div className="px-5 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-xs text-slate-500 mb-1 uppercase tracking-wider">Admin switch</div>
+              <div className="text-sm text-white">
+                {adminEnabled ? 'Admin (Dashboard)' : 'Driver (Driver Portal)'}
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Toggle off to turn this user into a driver. Toggle on to enable dashboard access.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setAdminEnabled(!adminEnabled)}
+              disabled={syncingRole}
+              className="flex items-center gap-3 rounded-xl px-4 py-3 border border-white/[0.10] bg-white/[0.03] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="text-xs text-slate-400">{adminEnabled ? 'On' : 'Off'}</span>
+              <span
+                className={`w-10 h-6 rounded-full transition-colors relative ${
+                  adminEnabled ? 'bg-emerald-500/20 border border-emerald-500/40' : 'bg-white/[0.03] border border-white/[0.10]'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform ${
+                    adminEnabled ? 'translate-x-4 bg-emerald-400' : 'translate-x-0 bg-slate-400'
+                  }`}
+                />
+              </span>
+            </button>
           </div>
         </div>
       </section>

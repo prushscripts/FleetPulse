@@ -16,6 +16,18 @@ export default async function DriverHomePage() {
   const displayName = nickname || user.email || 'Driver'
   const companyId = user.user_metadata?.company_id as string | undefined
 
+  // Greeting should be based on New York time (EST/ET), not server/container time.
+  const now = new Date()
+  const hour = Number(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour: '2-digit',
+      hour12: false,
+    }).format(now),
+  )
+  const greeting =
+    hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+
   const { data: driver } = await supabase
     .from('drivers')
     .select('id, first_name, last_name, location')
@@ -52,9 +64,11 @@ export default async function DriverHomePage() {
     (assignedVehicle?.current_mileage ?? 0) >= (assignedVehicle?.oil_change_due_mileage ?? Number.MAX_SAFE_INTEGER)
 
   return (
-    <div className="space-y-4">
-      <header className="card-glass rounded-2xl p-5">
-        <h1 className="text-2xl font-display font-bold text-white">Hey {displayName} 👋</h1>
+    <div className="min-h-screen bg-[#0A0F1E] pt-6 pb-24 px-4 space-y-0">
+      <header className="mb-4">
+        <h1 className="text-2xl font-display font-bold text-white">
+          {greeting}, {displayName} 👋
+        </h1>
         <p className="text-sm text-slate-400 mt-1">
           {assignedVehicle?.code ? `You're assigned to ${assignedVehicle.code}` : 'No assigned vehicle yet'}
         </p>
@@ -86,19 +100,25 @@ export default async function DriverHomePage() {
             )}
           </div>
         </div>
+      </section>
+
+      <section className="mt-4 space-y-2">
+        <Link
+          href="/driver/inspection/pre_trip"
+          className="btn-primary w-full py-5 flex items-center justify-center gap-2 text-sm"
+        >
+          🚛 Start Pre-Trip Inspection
+        </Link>
+        <Link
+          href="/driver/inspection/post_trip"
+          className="btn-ghost w-full py-5 flex items-center justify-center gap-2 text-sm"
+        >
+          🏁 Start Post-Trip Inspection
+        </Link>
         <DriverReportIssue vehicleId={assignedVehicle?.id ?? null} vehicleCode={assignedVehicle?.code ?? null} />
       </section>
 
-      <section className="space-y-2">
-        <Link href="/driver/inspection/pre_trip" className="btn-primary w-full py-5 flex items-center justify-center gap-2 text-sm">
-          🚛 Start Pre-Trip Inspection
-        </Link>
-        <Link href="/driver/inspection/post_trip" className="btn-ghost w-full py-5 flex items-center justify-center gap-2 text-sm">
-          🏁 Start Post-Trip Inspection
-        </Link>
-      </section>
-
-      <section className="card-glass rounded-2xl p-5">
+      <section className="mt-6 card-glass rounded-2xl p-5">
         <h3 className="text-sm font-semibold text-white mb-3">Announcements</h3>
         <div className="space-y-2">
           {(announcements || []).length === 0 && (
@@ -113,7 +133,7 @@ export default async function DriverHomePage() {
         </div>
       </section>
 
-      <section className="card-glass rounded-2xl p-5">
+      <section className="mt-4 card-glass rounded-2xl p-5">
         <h3 className="text-sm font-semibold text-white mb-3">Recent Check-ins</h3>
         <div className="space-y-2">
           {(recentInspections || []).length === 0 && (
