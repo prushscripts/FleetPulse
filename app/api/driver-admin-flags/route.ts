@@ -8,10 +8,11 @@ type Body = {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as Body
-    const emails = Array.isArray(body?.emails) ? body.emails : []
-      .map((e) => (typeof e === 'string' ? e.trim().toLowerCase() : ''))
-      .filter(Boolean)
+    const body = (await request.json().catch(() => ({}))) as unknown as Body
+    const raw = (body as Body | undefined)?.emails as unknown
+    const emails = (Array.isArray(raw) ? raw : [])
+      .map((e: unknown) => (typeof e === 'string' ? e.trim().toLowerCase() : ''))
+      .filter((e): e is string => !!e)
 
     if (!emails.length) {
       return NextResponse.json({ flags: {} }, { status: 200 })
