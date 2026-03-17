@@ -1,6 +1,5 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
   const { code, role } = await req.json()
@@ -12,7 +11,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = createAdminClient()
 
   // Find company by either manager or driver code
   const codeColumn =
