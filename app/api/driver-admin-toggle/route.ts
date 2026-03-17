@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     const nextRole = enabled ? 'owner' : 'driver'
 
     const { error: updateError } = await admin.auth.admin.updateUserById(targetId, {
-      data: {
+      user_metadata: {
         is_admin: enabled,
         role: nextRole,
       },
