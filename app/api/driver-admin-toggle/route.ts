@@ -33,12 +33,13 @@ export async function POST(request: Request) {
     }
 
     const admin = createAdminClient()
-    const { data: users, error } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    const { data, error } = await admin.auth.admin.listUsers({ perPage: 1000 })
     if (error) {
       return NextResponse.json({ error: 'Unable to lookup users' }, { status: 500 })
     }
 
-    const target = (users ?? []).find((u) => u.email?.toLowerCase() === email) ?? null
+    const userList = data?.users ?? []
+    const target = userList.find((u) => u.email?.toLowerCase() === email) ?? null
     const targetId = target?.id
     if (!targetId) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
