@@ -14,31 +14,35 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://FleetPulseHQ.com'
-const ogImageUrl = `${siteUrl}/images/banner1.png`
-
 export const metadata: Metadata = {
-  title: 'FleetPulse - Fleet Management System',
-  description: 'Modern fleet management platform for vehicle tracking and maintenance',
-  metadataBase: new URL(siteUrl),
+  title: 'FleetPulse — Modern Fleet Management',
+  description: 'Real-time fleet visibility, digital inspections, driver management, and fleet health analytics. The modern fleet management platform for logistics teams.',
+  metadataBase: new URL('https://fleetpulsehq.com'),
   openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    title: 'FleetPulse – Modern Fleet Management',
-    description: 'Track vehicles, manage maintenance, and keep your fleet running smoothly. All in one powerful platform.',
-    url: siteUrl,
+    title: 'FleetPulse — Modern Fleet Management',
+    description: 'Real-time fleet visibility, digital inspections, driver management, and fleet health analytics.',
+    url: 'https://fleetpulsehq.com',
     siteName: 'FleetPulse',
-    images: [{ url: ogImageUrl, width: 2400, height: 1256, alt: 'FleetPulse – Modern Fleet Management' }],
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'FleetPulse — Modern Fleet Management Platform',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FleetPulse – Modern Fleet Management',
-    description: 'Track vehicles, manage maintenance, and keep your fleet running smoothly.',
-    images: [ogImageUrl],
+    title: 'FleetPulse — Modern Fleet Management',
+    description: 'Real-time fleet visibility, digital inspections, driver management, and fleet health analytics.',
+    images: ['/opengraph-image'],
   },
   icons: {
-    icon: '/branding/fleetpulse-icon-32.png',
-    apple: '/branding/fleetpulse-icon-32.png',
+    icon: '/fpfavicon.png',
+    apple: '/fpfavicon.png',
   },
 }
 

@@ -10,6 +10,7 @@ import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 interface Driver {
   id: string
+  user_id?: string | null
   first_name: string
   last_name: string
   email: string | null
@@ -873,6 +874,29 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                       >
                         {driver.signed_citation_policy ? '✓ Citation policy signed' : '✗ Citation policy not signed'}
                       </span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-2 text-xs ${
+                          driver.user_id ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            driver.user_id ? 'bg-emerald-500' : 'bg-slate-500'
+                          }`}
+                        />
+                        {driver.user_id ? 'Account active' : 'No account'}
+                      </span>
+                      {!driver.user_id && (
+                        <button
+                          type="button"
+                          className="ml-auto px-2 py-1 rounded-md text-[11px] font-medium bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition-colors"
+                          onClick={() => showToast('Invite', 'Invite flow coming soon.')}
+                        >
+                          Invite
+                        </button>
+                      )}
                     </div>
                     </div>
                   </div>

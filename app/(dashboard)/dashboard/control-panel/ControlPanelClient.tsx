@@ -24,6 +24,8 @@ const TAB_KEYS = [
 
 type CompanyConfig = {
   auth_key?: string
+  manager_access_code?: string | null
+  driver_access_code?: string | null
   enabled_tabs?: string[]
   custom_tab_labels?: Record<string, string>
   inspections_enabled?: boolean
@@ -51,9 +53,11 @@ export default function ControlPanelClient({
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [enabledTabs, setEnabledTabs] = useState<string[]>(initialCompanyConfig?.enabled_tabs ?? TAB_KEYS.map((t) => t.key))
   const [customTabLabels, setCustomTabLabels] = useState<Record<string, string>>(initialCompanyConfig?.custom_tab_labels ?? {})
-  const [authKey] = useState(initialCompanyConfig?.auth_key ?? '')
+  const [managerCode, setManagerCode] = useState<string>(initialCompanyConfig?.manager_access_code ?? '')
+  const [driverCode, setDriverCode] = useState<string>(initialCompanyConfig?.driver_access_code ?? '')
   const [importResult, setImportResult] = useState<{ success: number; error: number; message?: string } | null>(null)
   const [copyToast, setCopyToast] = useState(false)
+  const [canRegenerateCodes, setCanRegenerateCodes] = useState(false)
   const [requirePreTrip, setRequirePreTrip] = useState(false)
   const [requirePostTrip, setRequirePostTrip] = useState(false)
   const [randomCheckins, setRandomCheckins] = useState(false)
@@ -70,6 +74,21 @@ export default function ControlPanelClient({
     if (initialCompanyConfig?.enabled_tabs?.length) setEnabledTabs(initialCompanyConfig.enabled_tabs)
     if (initialCompanyConfig?.custom_tab_labels) setCustomTabLabels(initialCompanyConfig.custom_tab_labels)
   }, [initialCompanyConfig])
+
+  useEffect(() => {
+    const run = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      const tier = (user?.user_metadata?.subscription_tier as string | undefined) || 'professional'
+      setCanRegenerateCodes(tier === 'premium')
+      if (!companyId) return
+      const res = await fetch(`/api/company-config?company_id=${encodeURIComponent(companyId)}`)
+      if (!res.ok) return
+      const cfg = await res.json()
+      setManagerCode(cfg?.manager_access_code ?? '')
+      setDriverCode(cfg?.driver_access_code ?? '')
+    }
+    run()
+  }, [supabase, companyId])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -136,12 +155,41 @@ export default function ControlPanelClient({
     setCustomTabLabels((prev) => (value.trim() ? { ...prev, [key]: value.trim() } : { ...prev, [key]: '' }))
   }
 
-  const copyAuthCode = () => {
-    if (authKey) {
-      navigator.clipboard.writeText(authKey)
-      setCopyToast(true)
-      setTimeout(() => setCopyToast(false), 2000)
-    }
+  const copyCode = (value: string) => {
+    if (!value) return
+    navigator.clipboard.writeText(value)
+    setCopyToast(true)
+    setTimeout(() => setCopyToast(false), 2000)
+  }
+
+  const generateRandomCode = () => {
+    const bytes = new Uint8Array(10)
+    crypto.getRandomValues(bytes)
+    const token = Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+    return `FP-${token.slice(0, 12)}`
+  }
+
+  const regenerate = async (kind: 'manager' | 'driver') => {
+    if (!companyId) return
+    if (!canRegenerateCodes) return
+    const ok = window.confirm(
+      'This will invalidate the old code. Anyone using the old code will not be able to sign up. Existing accounts are not affected.',
+    )
+    if (!ok) return
+    const next = generateRandomCode()
+    const res = await fetch('/api/update-company-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        company_id: companyId,
+        ...(kind === 'manager' ? { manager_access_code: next } : { driver_access_code: next }),
+      }),
+    })
+    if (!res.ok) return
+    if (kind === 'manager') setManagerCode(next)
+    else setDriverCode(next)
   }
 
   type ImportType = 'vehicles' | 'drivers' | 'service_records'
@@ -385,20 +433,71 @@ export default function ControlPanelClient({
                 )}
               </div>
               <div>
-                <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-2">Your company access code</h3>
-                <p className="text-xs text-slate-500 mb-2">Share this with team members so they can join your company during signup.</p>
-                <div className="flex items-center gap-2 px-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl font-mono text-sm text-white">
-                  <span className="flex-1 truncate">{authKey || '—'}</span>
-                  <button
-                    type="button"
-                    onClick={copyAuthCode}
-                    disabled={!authKey}
-                    className="text-blue-400 hover:text-blue-300 text-xs transition-colors flex items-center gap-1 flex-shrink-0 min-h-[44px] min-w-[44px] justify-center"
-                  >
-                    <Copy size={12} />
-                    Copy
-                  </button>
-                </div>
+                <section className="card-glass rounded-2xl overflow-hidden mb-4">
+                  <div className="px-5 py-4 border-b border-white/[0.06]">
+                    <h2 className="text-sm font-semibold text-white">Access Codes</h2>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Share these codes with your team members during signup. Keep them secure.
+                    </p>
+                  </div>
+                  <div className="px-5 py-5 space-y-4">
+                    <div>
+                      <label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">
+                        Manager Access Code
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 px-4 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl font-mono text-sm text-white">
+                          {managerCode || '—'}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => copyCode(managerCode)}
+                          disabled={!managerCode}
+                          className="btn-ghost text-xs px-3 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Copy
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => regenerate('manager')}
+                          disabled={!canRegenerateCodes}
+                          title={canRegenerateCodes ? 'Regenerate code' : 'Available on Premium plan'}
+                          className="btn-ghost text-xs px-3 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Regenerate
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">
+                        Driver Access Code
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 px-4 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl font-mono text-sm text-white">
+                          {driverCode || '—'}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => copyCode(driverCode)}
+                          disabled={!driverCode}
+                          className="btn-ghost text-xs px-3 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Copy
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => regenerate('driver')}
+                          disabled={!canRegenerateCodes}
+                          title={canRegenerateCodes ? 'Regenerate code' : 'Available on Premium plan'}
+                          className="btn-ghost text-xs px-3 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Regenerate
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
               </div>
             </div>
           </section>

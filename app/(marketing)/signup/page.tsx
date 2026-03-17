@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, Lock } from 'lucide-react'
+import { ArrowRight, Lock, AlertCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import EntryAnimation from '@/components/animations/EntryAnimation'
 import ConstellationBackground from '@/components/animations/ConstellationBackground'
@@ -16,7 +16,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [companyKey, setCompanyKey] = useState('')
+  const [accessCode, setAccessCode] = useState('')
   const [role, setRole] = useState<'manager' | 'driver'>('manager')
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -43,12 +43,34 @@ export default function SignupPage() {
         ? nickname.trim().charAt(0).toUpperCase() + nickname.trim().slice(1)
         : ''
 
+      // Step 1: Validate access code FIRST before creating any account
+      const codeRes = await fetch('/api/validate-access-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: accessCode, role }),
+      })
+      const codeData = await codeRes.json()
+      if (!codeData?.valid) {
+        setError(codeData?.error || 'Invalid access code. Contact your administrator.')
+        setLoading(false)
+        return
+      }
+
+      const companyId = codeData.company_id as string | undefined
+      const companyName = codeData.company_name as string | undefined
+      if (!companyId) {
+        setError('Invalid access code. Contact your administrator.')
+        setLoading(false)
+        return
+      }
+
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             role,
+            company_id: companyId,
             ...(formattedNickname ? { nickname: formattedNickname } : {}),
           },
         },
@@ -65,36 +87,20 @@ export default function SignupPage() {
         setLoading(false)
         return
       }
-      const key = companyKey.trim()
-      if (key) {
-        let company: { id: string; name: string } | null = null
-        const { data: rpcRows, error: rpcErr } = await supabase.rpc('get_company_by_invite_code', { invite_code: key })
-        if (!rpcErr && Array.isArray(rpcRows) && rpcRows.length) company = rpcRows[0] as { id: string; name: string }
-        if (!company) {
-          const { data: d1 } = await supabase.from('companies').select('id, name').eq('auth_key', key).maybeSingle()
-          const { data: d2 } = await supabase.from('companies').select('id, name').eq('auth_key', key.toLowerCase()).maybeSingle()
-          company = d1 || d2 || null
-        }
-        if (company) {
-          await supabase.auth.updateUser({
-            data: {
-              company_id: company.id,
-              company_name: company.name,
-              companies: [{ id: company.id, name: company.name }],
-              role,
-              ...(formattedNickname ? { nickname: formattedNickname } : {}),
-            },
-          })
-          setRedirectOnComplete(role === 'driver' ? '/driver' : '/home')
-          setShowEntry(true)
-        } else {
-          setRedirectOnComplete(role === 'driver' ? '/driver' : '/dashboard/welcome')
-          setShowEntry(true)
-        }
-      } else {
-        setRedirectOnComplete(role === 'driver' ? '/driver' : '/dashboard/welcome')
-        setShowEntry(true)
-      }
+
+      // Ensure company_name + companies list exist in user_metadata for the rest of the app.
+      await supabase.auth.updateUser({
+        data: {
+          company_id: companyId,
+          ...(companyName ? { company_name: companyName } : {}),
+          ...(companyName ? { companies: [{ id: companyId, name: companyName }] } : {}),
+          role,
+          ...(formattedNickname ? { nickname: formattedNickname } : {}),
+        },
+      })
+
+      setRedirectOnComplete(role === 'driver' ? '/driver' : '/dashboard/fleet-health')
+      setShowEntry(true)
       // Sync role and company_id to profiles so RLS and driver portal layout work
       await fetch('/api/sync-profile', { method: 'POST', credentials: 'include' })
       setLoading(false)
@@ -220,12 +226,38 @@ export default function SignupPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="flex items-center gap-1.5 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Company access code <span className="font-normal normal-case">(optional)</span>
-                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-500 text-slate-500 cursor-help text-[10px] font-bold" title="If you don't have an ID, contact your company administration to acquire one.">?</span>
+                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  {role === 'manager' ? 'Manager Access Code' : 'Driver Access Code'}
                 </label>
-                <input id="companyKey" name="companyKey" type="text" autoComplete="off" value={companyKey} onChange={(e) => setCompanyKey(e.target.value)} placeholder="e.g. WheelzUpAPD2026" className={inputClass} />
+                <input
+                  id="accessCode"
+                  name="accessCode"
+                  type="password"
+                  autoComplete="off"
+                  required
+                  value={accessCode}
+                  onChange={(e) => setAccessCode(e.target.value)}
+                  placeholder={role === 'manager' ? 'Contact your administrator for access' : 'Contact your fleet manager for your code'}
+                  className={inputClass}
+                />
+                <p className="text-[11px] text-slate-500">
+                  {role === 'manager'
+                    ? 'Required to create a manager account'
+                    : 'Your fleet manager will provide this code'}
+                </p>
+                {error && !error.includes('verify') && !error.includes('check your email') && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20"
+                  >
+                    <AlertCircle size={14} className="text-red-400 flex-shrink-0" />
+                    <p className="text-xs text-red-400">{error}</p>
+                  </motion.div>
+                )}
               </div>
+
+              {/* Company is now derived from the role access code (multi-tenant). */}
 
               <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 min-h-[48px] mt-2 disabled:opacity-60 disabled:cursor-not-allowed">
                 {loading ? (

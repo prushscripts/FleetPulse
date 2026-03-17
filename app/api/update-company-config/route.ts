@@ -6,6 +6,8 @@ type Body = {
   enabled_tabs?: string[]
   custom_tab_labels?: Record<string, string>
   inspections_enabled?: boolean
+  manager_access_code?: string | null
+  driver_access_code?: string | null
 }
 
 export async function POST(request: Request) {
@@ -21,6 +23,8 @@ export async function POST(request: Request) {
     if (Array.isArray(body.enabled_tabs)) updates.enabled_tabs = body.enabled_tabs
     if (body.custom_tab_labels !== undefined) updates.custom_tab_labels = body.custom_tab_labels
     if (typeof body.inspections_enabled === 'boolean') updates.inspections_enabled = body.inspections_enabled
+    if (body.manager_access_code !== undefined) updates.manager_access_code = body.manager_access_code
+    if (body.driver_access_code !== undefined) updates.driver_access_code = body.driver_access_code
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ ok: true })
