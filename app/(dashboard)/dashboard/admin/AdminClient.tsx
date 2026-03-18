@@ -1,622 +1,630 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
-import { useConfirm } from '@/components/ui/ConfirmProvider'
+import {
+  AlertTriangle,
+  Megaphone,
+  Users,
+  ClipboardCheck,
+  Plus,
+  Pencil,
+  Trash2,
+  Copy,
+  Check,
+  ChevronRight,
+} from 'lucide-react'
+
+type AdminTab = 'issues' | 'announcements' | 'team'
 
 interface AdminClientProps {
   user: User
-  initialData?: AdminInitialData
+  initialTab?: string | null
+  inspectionId?: string | null
+  vehicleId?: string | null
 }
 
-interface VoyagerCardMapping {
+type IssueRow = {
   id: string
-  card_number: string
   vehicle_id: string
-  vehicle_code: string
-  active: boolean
-  notes: string | null
+  title: string
+  description: string | null
+  status: string
+  priority: string
+  source?: string | null
+  reported_date: string
+  vehicles?: { id: string; code: string | null; location?: string | null } | null
 }
 
-interface VoyagerApiConfig {
+type AnnouncementRow = {
   id: string
-  api_key: string
-  api_endpoint: string | null
-  account_id: string | null
-  enabled: boolean
-  last_sync_at: string | null
+  title: string
+  body: string
+  is_active: boolean
+  created_at: string
+  target_territory?: string | null
+  expires_at?: string | null
 }
 
-interface Company {
+type ProfileRow = {
   id: string
-  name: string
-  auth_key: string
+  email: string | null
+  full_name: string | null
+  role: string | null
+  territory: string | null
 }
 
-export type AdminInitialData = {
-  company: Company | null
-  vehicles: Array<{ id: string; code: string }>
-  cardMappings: VoyagerCardMapping[]
-  apiConfig: VoyagerApiConfig | null
-}
-
-export default function AdminClient({ user, initialData }: AdminClientProps) {
-  const [activeTab, setActiveTab] = useState<'company' | 'cards' | 'api'>('company')
-  const [company, setCompany] = useState<Company | null>(initialData?.company ?? null)
-  const [cardMappings, setCardMappings] = useState<VoyagerCardMapping[]>(initialData?.cardMappings ?? [])
-  const [vehicles, setVehicles] = useState<Array<{ id: string; code: string }>>(initialData?.vehicles ?? [])
-  const [loading, setLoading] = useState(!initialData)
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  
-  // Card mapping form
-  const [showCardModal, setShowCardModal] = useState(false)
-  const [editingCard, setEditingCard] = useState<VoyagerCardMapping | null>(null)
-  const [cardForm, setCardForm] = useState({
-    card_number: '',
-    vehicle_id: '',
-    active: true,
-    notes: '',
-  })
-
-  // API config form
-  const [apiConfig, setApiConfig] = useState<VoyagerApiConfig | null>(initialData?.apiConfig ?? null)
-  const [apiForm, setApiForm] = useState({
-    api_key: initialData?.apiConfig?.api_key ?? '',
-    api_endpoint: initialData?.apiConfig?.api_endpoint ?? '',
-    account_id: initialData?.apiConfig?.account_id ?? '',
-    enabled: initialData?.apiConfig?.enabled ?? false,
-  })
-
+export default function AdminClient({
+  user,
+  initialTab,
+  inspectionId,
+  vehicleId,
+}: AdminClientProps) {
+  const router = useRouter()
   const supabase = createClient()
-  const { confirm } = useConfirm()
+  const companyId = (user?.user_metadata?.company_id as string) || null
+
+  const [activeTab, setActiveTab] = useState<AdminTab>(() => {
+    if (initialTab === 'issues' || initialTab === 'announcements' || initialTab === 'team')
+      return initialTab
+    return 'issues'
+  })
+
+  const [issues, setIssues] = useState<IssueRow[]>([])
+  const [issuesLoading, setIssuesLoading] = useState(true)
+  const [sourceFilter, setSourceFilter] = useState<string>('all')
+  const [territoryFilter, setTerritoryFilter] = useState<string>('all')
+  const [priorityFilter, setPriorityFilter] = useState<string>('all')
+
+  const [announcements, setAnnouncements] = useState<AnnouncementRow[]>([])
+  const [announcementsLoading, setAnnouncementsLoading] = useState(true)
+  const [showAnnouncementForm, setShowAnnouncementForm] = useState(false)
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: '',
+    body: '',
+    target_territory: 'all',
+    expires_at: '',
+  })
+  const [announcementSaving, setAnnouncementSaving] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+  const [teamMembers, setTeamMembers] = useState<ProfileRow[]>([])
+  const [companyConfig, setCompanyConfig] = useState<{
+    manager_access_code?: string | null
+    driver_access_code?: string | null
+  } | null>(null)
+  const [teamLoading, setTeamLoading] = useState(true)
+  const [editingTerritoryId, setEditingTerritoryId] = useState<string | null>(null)
+  const [editingTerritoryValue, setEditingTerritoryValue] = useState<string>('')
+  const [copiedCode, setCopiedCode] = useState<'manager' | 'driver' | null>(null)
 
   useEffect(() => {
-    if (initialData) {
-      setCompany(initialData.company)
-      setVehicles(initialData.vehicles)
-      setCardMappings(initialData.cardMappings)
-      setApiConfig(initialData.apiConfig)
-      if (initialData.apiConfig) {
-        setApiForm({
-          api_key: initialData.apiConfig.api_key || '',
-          api_endpoint: initialData.apiConfig.api_endpoint || '',
-          account_id: initialData.apiConfig.account_id || '',
-          enabled: initialData.apiConfig.enabled || false,
-        })
-      }
-      setLoading(false)
-      return
-    }
-    loadData()
-  }, [])
+    if (initialTab === 'issues' && (inspectionId || vehicleId)) setActiveTab('issues')
+  }, [initialTab, inspectionId, vehicleId])
 
-  const loadData = async () => {
+  const loadIssues = useCallback(async () => {
+    if (!companyId) return
+    setIssuesLoading(true)
     try {
-      setLoading(true)
+      const { data: vehiclesData } = await supabase
+        .from('vehicles')
+        .select('id, code, location')
+        .eq('company_id', companyId)
+      const vehicleIds = (vehiclesData || []).map((v) => v.id)
+      const vehicleMap = new Map((vehiclesData || []).map((v) => [v.id, v]))
 
-      const companyId = user?.user_metadata?.company_id
-      if (companyId) {
-        const { data: companyData } = await supabase
-          .from('companies')
-          .select('id, name, auth_key')
-          .eq('id', companyId)
-          .maybeSingle()
-        setCompany(companyData || null)
-      } else {
-        setCompany(null)
+      if (vehicleIds.length === 0) {
+        setIssues([])
+        setIssuesLoading(false)
+        return
       }
-      
-      // Load vehicles (scoped by company when multi-tenant)
-      let vehiclesQuery = supabase.from('vehicles').select('id, code').order('code', { ascending: true })
-      if (companyId) vehiclesQuery = vehiclesQuery.eq('company_id', companyId)
-      const { data: vehiclesData, error: vehiclesError } = await vehiclesQuery
-      if (vehiclesError) throw vehiclesError
-      setVehicles(vehiclesData || [])
-
-      // Load card mappings
-      const { data: cardsData, error: cardsError } = await supabase
-        .from('voyager_card_mappings')
-        .select('*')
-        .order('card_number', { ascending: true })
-
-      if (cardsError) throw cardsError
-      setCardMappings(cardsData || [])
-
-      // Load API config
-      const { data: configData, error: configError } = await supabase
-        .from('voyager_api_config')
-        .select('*')
-        .limit(1)
-        .single()
-
-      if (configError && configError.code !== 'PGRST116') throw configError // PGRST116 = no rows
-      if (configData) {
-        setApiConfig(configData)
-        setApiForm({
-          api_key: configData.api_key || '',
-          api_endpoint: configData.api_endpoint || '',
-          account_id: configData.account_id || '',
-          enabled: configData.enabled || false,
-        })
-      }
-    } catch (error: any) {
-      console.error('Error loading admin data:', error)
-      setMessage({ type: 'error', text: error.message || 'Failed to load data' })
+      const { data, error } = await supabase
+        .from('issues')
+        .select('id, vehicle_id, title, description, status, priority, source, reported_date')
+        .in('vehicle_id', vehicleIds)
+        .neq('status', 'resolved')
+        .order('reported_date', { ascending: false })
+      if (error) throw error
+      const withVehicles = (data || []).map((row) => ({
+        ...row,
+        vehicles: vehicleMap.get(row.vehicle_id) ?? null,
+      }))
+      setIssues(withVehicles as IssueRow[])
+    } catch (e) {
+      console.error(e)
+      setIssues([])
     } finally {
-      setLoading(false)
+      setIssuesLoading(false)
     }
-  }
+  }, [companyId, supabase])
 
-  const handleSaveCardMapping = async (e: React.FormEvent) => {
+  const loadAnnouncements = useCallback(async () => {
+    if (!companyId) return
+    setAnnouncementsLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      setAnnouncements((data as AnnouncementRow[]) || [])
+    } catch (e) {
+      console.error(e)
+      setAnnouncements([])
+    } finally {
+      setAnnouncementsLoading(false)
+    }
+  }, [companyId, supabase])
+
+  const loadTeam = useCallback(async () => {
+    if (!companyId) return
+    setTeamLoading(true)
+    try {
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, role, territory')
+        .eq('company_id', companyId)
+      if (profilesError) throw profilesError
+      setTeamMembers((profilesData as ProfileRow[]) || [])
+
+      const res = await fetch(`/api/company-config?company_id=${encodeURIComponent(companyId)}`)
+      if (res.ok) {
+        const config = await res.json()
+        setCompanyConfig({
+          manager_access_code: config.manager_access_code ?? null,
+          driver_access_code: config.driver_access_code ?? null,
+        })
+      } else {
+        setCompanyConfig(null)
+      }
+    } catch (e) {
+      console.error(e)
+      setTeamMembers([])
+    } finally {
+      setTeamLoading(false)
+    }
+  }, [companyId, supabase])
+
+  useEffect(() => {
+    if (activeTab === 'issues') loadIssues()
+  }, [activeTab, loadIssues])
+
+  useEffect(() => {
+    if (activeTab === 'announcements') loadAnnouncements()
+  }, [activeTab, loadAnnouncements])
+
+  useEffect(() => {
+    if (activeTab === 'team') loadTeam()
+  }, [activeTab, loadTeam])
+
+  const filteredIssues = issues.filter((issue) => {
+    const vehicle = issue.vehicles
+    const location = vehicle?.location ?? null
+    if (sourceFilter !== 'all' && (issue.source ?? 'manual') !== sourceFilter) return false
+    if (territoryFilter !== 'all') {
+      const loc = (location ?? '').trim() || 'All'
+      if (loc !== territoryFilter) return false
+    }
+    if (priorityFilter !== 'all' && issue.priority !== priorityFilter) return false
+    return true
+  })
+
+  const handlePublishAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSaving(true)
-    setMessage(null)
-
+    if (!companyId || !announcementForm.title.trim()) return
+    setAnnouncementSaving(true)
+    setToast(null)
     try {
-      const vehicle = vehicles.find((v) => v.id === cardForm.vehicle_id)
-      if (!vehicle) throw new Error('Vehicle not found')
-
-      const cardData = {
-        card_number: cardForm.card_number.trim(),
-        vehicle_id: cardForm.vehicle_id,
-        vehicle_code: vehicle.code,
-        active: cardForm.active,
-        notes: cardForm.notes.trim() || null,
-        created_by: user.id,
+      const payload: Record<string, unknown> = {
+        company_id: companyId,
+        title: announcementForm.title.trim(),
+        body: announcementForm.body.trim() || '',
+        is_active: true,
       }
-
-      if (editingCard) {
-        const { error } = await supabase
-          .from('voyager_card_mappings')
-          .update(cardData)
-          .eq('id', editingCard.id)
-        if (error) throw error
-        setMessage({ type: 'success', text: 'Card mapping updated successfully!' })
-      } else {
-        const { error } = await supabase
-          .from('voyager_card_mappings')
-          .insert([cardData])
-        if (error) throw error
-        setMessage({ type: 'success', text: 'Card mapping created successfully!' })
-      }
-
-      setShowCardModal(false)
-      setEditingCard(null)
-      setCardForm({ card_number: '', vehicle_id: '', active: true, notes: '' })
-      loadData()
-    } catch (error: any) {
-      console.error('Error saving card mapping:', error)
-      setMessage({ type: 'error', text: error.message || 'Failed to save card mapping' })
+      const { error } = await supabase.from('announcements').insert(payload)
+      if (error) throw error
+      setToast({
+        type: 'success',
+        message: `Announcement sent to ${announcementForm.target_territory === 'all' ? 'all' : announcementForm.target_territory} drivers`,
+      })
+      setAnnouncementForm({ title: '', body: '', target_territory: 'all', expires_at: '' })
+      setShowAnnouncementForm(false)
+      loadAnnouncements()
+    } catch (err: unknown) {
+      setToast({ type: 'error', message: (err as Error).message || 'Failed to publish' })
     } finally {
-      setSaving(false)
+      setAnnouncementSaving(false)
     }
   }
 
-  const handleDeleteCardMapping = async (id: string) => {
-    const confirmed = await confirm({
-      title: 'Delete card mapping?',
-      description: 'This removes the Voyager card-to-vehicle link.',
-      confirmLabel: 'Delete',
-      variant: 'danger',
-    })
-    if (!confirmed) return
+  const handleDeleteAnnouncement = async (id: string) => {
+    try {
+      await supabase.from('announcements').update({ is_active: false }).eq('id', id)
+      loadAnnouncements()
+      setToast({ type: 'success', message: 'Announcement removed' })
+    } catch {
+      setToast({ type: 'error', message: 'Failed to delete' })
+    }
+  }
 
+  const handleSaveTerritory = async (profileId: string) => {
     try {
       const { error } = await supabase
-        .from('voyager_card_mappings')
-        .delete()
-        .eq('id', id)
+        .from('profiles')
+        .update({ territory: editingTerritoryValue || '' })
+        .eq('id', profileId)
       if (error) throw error
-      setMessage({ type: 'success', text: 'Card mapping deleted successfully!' })
-      loadData()
-    } catch (error: any) {
-      console.error('Error deleting card mapping:', error)
-      setMessage({ type: 'error', text: error.message || 'Failed to delete card mapping' })
-    }
-  }
-
-  const handleSaveApiConfig = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    setMessage(null)
-
-    try {
-      const configData = {
-        api_key: apiForm.api_key.trim(),
-        api_endpoint: apiForm.api_endpoint.trim() || null,
-        account_id: apiForm.account_id.trim() || null,
-        enabled: apiForm.enabled,
-        updated_by: user.id,
-      }
-
-      if (apiConfig) {
-        const { error } = await supabase
-          .from('voyager_api_config')
-          .update(configData)
-          .eq('id', apiConfig.id)
-        if (error) throw error
-        setMessage({ type: 'success', text: 'API configuration updated successfully!' })
-      } else {
-        const { error } = await supabase
-          .from('voyager_api_config')
-          .insert([configData])
-        if (error) throw error
-        setMessage({ type: 'success', text: 'API configuration saved successfully!' })
-      }
-
-      loadData()
-    } catch (error: any) {
-      console.error('Error saving API config:', error)
-      setMessage({ type: 'error', text: error.message || 'Failed to save API configuration' })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const openCardModal = (card?: VoyagerCardMapping) => {
-    if (card) {
-      setEditingCard(card)
-      setCardForm({
-        card_number: card.card_number,
-        vehicle_id: card.vehicle_id,
-        active: card.active,
-        notes: card.notes || '',
+      const name = teamMembers.find((m) => m.id === profileId)?.full_name || teamMembers.find((m) => m.id === profileId)?.email || 'User'
+      setToast({
+        type: 'success',
+        message: `Territory updated — ${name} will now receive notifications for ${editingTerritoryValue || 'all territories'} drivers`,
       })
-    } else {
-      setEditingCard(null)
-      setCardForm({ card_number: '', vehicle_id: '', active: true, notes: '' })
+      setEditingTerritoryId(null)
+      loadTeam()
+    } catch {
+      setToast({ type: 'error', message: 'Failed to update territory' })
     }
-    setShowCardModal(true)
   }
 
-  if (loading) {
+  const copyCode = (kind: 'manager' | 'driver') => {
+    const value =
+      kind === 'manager' ? companyConfig?.manager_access_code : companyConfig?.driver_access_code
+    if (value) {
+      navigator.clipboard.writeText(value)
+      setCopiedCode(kind)
+      setTimeout(() => setCopiedCode(null), 2000)
+    }
+  }
+
+  const priorityBorder: Record<string, string> = {
+    critical: 'border-l-red-500',
+    high: 'border-l-amber-500',
+    medium: 'border-l-blue-500',
+    low: 'border-l-slate-500',
+  }
+
+  if (!companyId) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-600 dark:text-gray-400">Loading admin panel...</div>
+      <div className="min-h-screen bg-[#0A0F1E] flex items-center justify-center">
+        <p className="text-slate-400">No company assigned. Activate with a company key in Settings.</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+    <div className="min-h-screen bg-[#0A0F1E] text-white">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Admin Panel</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Company setup, Voyager integration, and fleet configuration
-          </p>
+          <h1 className="text-2xl font-display font-bold text-white">Admin</h1>
+          <p className="text-sm text-slate-400 mt-1">Issues, announcements, and team</p>
         </div>
 
-        {/* Message Alert */}
-        {message && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            message.type === 'success'
-              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400'
-              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400'
-          }`}>
-            {message.text}
+        {toast && (
+          <div
+            className={`mb-6 px-4 py-3 rounded-xl text-sm ${
+              toast.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+            }`}
+          >
+            {toast.message}
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex gap-4">
+        <div className="flex gap-2 border-b border-white/[0.08] mb-6">
+          {(['issues', 'announcements', 'team'] as const).map((tab) => (
             <button
-              onClick={() => setActiveTab('company')}
-              className={`px-4 py-2 font-medium text-sm transition-colors ${
-                activeTab === 'company'
-                  ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${
+                activeTab === tab
+                  ? 'bg-white/[0.08] text-white border-b-2 border-blue-500'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              Company
+              {tab === 'issues' && <span className="flex items-center gap-2"><ClipboardCheck size={14} /> Issues</span>}
+              {tab === 'announcements' && <span className="flex items-center gap-2"><Megaphone size={14} /> Announcements</span>}
+              {tab === 'team' && <span className="flex items-center gap-2"><Users size={14} /> Team</span>}
             </button>
-            <button
-              onClick={() => setActiveTab('cards')}
-              className={`px-4 py-2 font-medium text-sm transition-colors ${
-                activeTab === 'cards'
-                  ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-              }`}
-            >
-              Card Mappings
-            </button>
-            <button
-              onClick={() => setActiveTab('api')}
-              className={`px-4 py-2 font-medium text-sm transition-colors ${
-                activeTab === 'api'
-                  ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-              }`}
-            >
-              API Configuration
-            </button>
-          </div>
+          ))}
         </div>
 
-        {/* Company Tab */}
-        {activeTab === 'company' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Company authentication</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-              Share your company authentication key with your team so they can activate their accounts and access this company’s fleet data. New users sign up, then enter this key on the activation page.
-            </p>
-            {company ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Company name</label>
-                  <p className="text-lg font-medium text-gray-900 dark:text-white">{company.name}</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Company authentication key</label>
+        {/* Tab: Issues */}
+        {activeTab === 'issues' && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-xs text-slate-500">Source:</span>
+              <select
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                className="bg-white/[0.06] border border-white/[0.1] rounded-lg px-3 py-1.5 text-sm text-white"
+              >
+                <option value="all">All</option>
+                <option value="pre_trip">Pre-Trip</option>
+                <option value="manual">Manual</option>
+              </select>
+              <span className="text-xs text-slate-500 ml-2">Territory:</span>
+              <select
+                value={territoryFilter}
+                onChange={(e) => setTerritoryFilter(e.target.value)}
+                className="bg-white/[0.06] border border-white/[0.1] rounded-lg px-3 py-1.5 text-sm text-white"
+              >
+                <option value="all">All</option>
+                <option value="New York">New York</option>
+                <option value="DMV">DMV</option>
+              </select>
+              <span className="text-xs text-slate-500 ml-2">Priority:</span>
+              <select
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value)}
+                className="bg-white/[0.06] border border-white/[0.1] rounded-lg px-3 py-1.5 text-sm text-white"
+              >
+                <option value="all">All</option>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+
+            {issuesLoading ? (
+              <p className="text-slate-500">Loading issues...</p>
+            ) : filteredIssues.length === 0 ? (
+              <p className="text-slate-500">No open issues.</p>
+            ) : (
+              <div className="space-y-2">
+                {filteredIssues.map((issue) => {
+                  const vehicle = issue.vehicles
+                  const loc = (vehicle?.location ?? '').trim() || '—'
+                  return (
+                    <div
+                      key={issue.id}
+                      onClick={() => router.push(`/dashboard/vehicles/${issue.vehicle_id}`)}
+                      className={`flex items-center gap-4 p-4 rounded-xl bg-white/[0.04] border border-white/[0.06] border-l-4 cursor-pointer hover:bg-white/[0.06] transition-colors ${priorityBorder[issue.priority] || 'border-l-slate-500'}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-sm font-semibold text-white">{vehicle?.code ?? issue.vehicle_id}</span>
+                          <span className="text-sm text-white">{issue.title}</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] bg-white/[0.1] text-slate-400">
+                            {(issue.source ?? 'manual') === 'pre_trip' ? 'Pre-Trip Inspection' : 'Manual Report'}
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[10px] bg-white/[0.1] text-slate-400">{loc}</span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {new Date(issue.reported_date).toLocaleString()}
+                        </p>
+                      </div>
+                      <ChevronRight size={16} className="text-slate-500 flex-shrink-0" />
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab: Announcements */}
+        {activeTab === 'announcements' && (
+          <div className="space-y-6">
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowAnnouncementForm(!showAnnouncementForm)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white text-sm font-medium hover:bg-blue-600"
+              >
+                <Plus size={16} /> New Announcement
+              </button>
+            </div>
+
+            {showAnnouncementForm && (
+              <div className="p-6 rounded-2xl bg-white/[0.04] border border-white/[0.08]">
+                <h3 className="text-lg font-semibold text-white mb-4">New Announcement</h3>
+                <form onSubmit={handlePublishAnnouncement} className="space-y-4">
+                  <div>
+                    <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1">Title</label>
+                    <input
+                      type="text"
+                      value={announcementForm.title}
+                      onChange={(e) => setAnnouncementForm((f) => ({ ...f, title: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-white/[0.06] border border-white/[0.1] rounded-xl text-white placeholder:text-slate-500"
+                      placeholder="Announcement title"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1">Body</label>
+                    <textarea
+                      value={announcementForm.body}
+                      onChange={(e) => setAnnouncementForm((f) => ({ ...f, body: e.target.value }))}
+                      rows={4}
+                      className="w-full px-4 py-2.5 bg-white/[0.06] border border-white/[0.1] rounded-xl text-white placeholder:text-slate-500 resize-none"
+                      placeholder="Message to drivers"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 uppercase tracking-wider mb-2">Target</label>
+                    <div className="flex flex-wrap gap-2">
+                      {['all', 'New York', 'DMV'].map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setAnnouncementForm((f) => ({ ...f, target_territory: t === 'all' ? 'all' : t }))}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                            announcementForm.target_territory === (t === 'all' ? 'all' : t)
+                              ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
+                              : 'bg-white/[0.04] border border-white/[0.08] text-slate-400'
+                          }`}
+                        >
+                          {t === 'all' ? 'All Drivers' : t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1">Expiry (optional)</label>
+                    <input
+                      type="date"
+                      value={announcementForm.expires_at}
+                      onChange={(e) => setAnnouncementForm((f) => ({ ...f, expires_at: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-white/[0.06] border border-white/[0.1] rounded-xl text-white"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={announcementSaving}
+                    className="px-6 py-2.5 rounded-xl bg-blue-500 text-white font-medium disabled:opacity-50"
+                  >
+                    {announcementSaving ? 'Publishing...' : 'Publish'}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {announcementsLoading ? (
+              <p className="text-slate-500">Loading announcements...</p>
+            ) : announcements.length === 0 ? (
+              <p className="text-slate-500">No announcements yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {announcements.map((a) => (
+                  <div
+                    key={a.id}
+                    className="p-4 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-start justify-between gap-4"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-white">{a.title}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] ${a.is_active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'}`}>
+                          {a.is_active ? 'Active' : 'Expired'}
+                        </span>
+                        {(a as AnnouncementRow).target_territory && (
+                          <span className="text-xs text-slate-500">{(a as AnnouncementRow).target_territory}</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-400 mt-1 line-clamp-2">{a.body}</p>
+                      <p className="text-xs text-slate-600 mt-1">{new Date(a.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteAnnouncement(a.id)}
+                        className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab: Team */}
+        {activeTab === 'team' && (
+          <div className="space-y-6">
+            {companyConfig && (
+              <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/[0.08]">
+                <h3 className="text-sm font-semibold text-white mb-3">Company access codes</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white font-mono text-sm">
-                      {company.auth_key}
+                    <span className="text-xs text-slate-500 w-24">Manager code:</span>
+                    <code className="flex-1 px-3 py-2 rounded-lg bg-white/[0.06] text-sm font-mono text-white truncate">
+                      {companyConfig.manager_access_code || '—'}
                     </code>
                     <button
                       type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(company.auth_key)
-                        setMessage({ type: 'success', text: 'Key copied to clipboard' })
-                        setTimeout(() => setMessage(null), 2000)
-                      }}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium"
+                      onClick={() => copyCode('manager')}
+                      className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06]"
                     >
-                      Copy
+                      {copiedCode === 'manager' ? <Check size={14} /> : <Copy size={14} />}
                     </button>
                   </div>
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    Users enter this key on the activation page (or in Settings → Company) to join your company.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
-                No company assigned. Activate with a company key in Settings to see this section.
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Card Mappings Tab */}
-        {activeTab === 'cards' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Gas Card to Vehicle Mappings</h2>
-              <button
-                onClick={() => openCardModal()}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium"
-              >
-                Add Card Mapping
-              </button>
-            </div>
-
-            {cardMappings.length === 0 ? (
-              <p className="text-gray-600 dark:text-gray-400 text-center py-8">
-                No card mappings yet. Add your first mapping to get started.
-              </p>
-            ) : (
-              <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <div className="inline-block min-w-full align-middle px-4 sm:px-0">
-                  <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-gray-900/60">
-                    <tr className="text-left text-xs tracking-wide text-gray-500 dark:text-gray-400">
-                      <th className="px-4 py-3">Card Number</th>
-                      <th className="px-4 py-3">Vehicle Code</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Notes</th>
-                      <th className="px-4 py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {cardMappings.map((card) => (
-                      <tr key={card.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                        <td className="px-4 py-3 font-mono text-gray-900 dark:text-white">{card.card_number}</td>
-                        <td className="px-4 py-3 text-gray-700 dark:text-gray-200">{card.vehicle_code}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            card.active
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                          }`}>
-                            {card.active ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{card.notes || '—'}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => openCardModal(card)}
-                              className="px-3 py-1 rounded-md text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCardMapping(card.id)}
-                              className="px-3 py-1 rounded-md text-xs bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500 w-24">Driver code:</span>
+                    <code className="flex-1 px-3 py-2 rounded-lg bg-white/[0.06] text-sm font-mono text-white truncate">
+                      {companyConfig.driver_access_code || '—'}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => copyCode('driver')}
+                      className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06]"
+                    >
+                      {copiedCode === 'driver' ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
-          </div>
-        )}
 
-        {/* API Configuration Tab */}
-        {activeTab === 'api' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Voyager API Configuration</h2>
-            <form onSubmit={handleSaveApiConfig} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  API Key *
-                </label>
-                <input
-                  type="password"
-                  value={apiForm.api_key}
-                  onChange={(e) => setApiForm({ ...apiForm, api_key: e.target.value })}
-                  placeholder="Enter your Voyager API key"
-                  required
-                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Your Voyager API key (stored securely)
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  API Endpoint
-                </label>
-                <input
-                  type="url"
-                  value={apiForm.api_endpoint}
-                  onChange={(e) => setApiForm({ ...apiForm, api_endpoint: e.target.value })}
-                  placeholder="https://api.voyager.com"
-                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Account ID
-                </label>
-                <input
-                  type="text"
-                  value={apiForm.account_id}
-                  onChange={(e) => setApiForm({ ...apiForm, account_id: e.target.value })}
-                  placeholder="Your Voyager account ID"
-                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="enabled"
-                  checked={apiForm.enabled}
-                  onChange={(e) => setApiForm({ ...apiForm, enabled: e.target.checked })}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                />
-                <label htmlFor="enabled" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                  Enable automatic mileage sync
-                </label>
-              </div>
-              {apiConfig?.last_sync_at && (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Last sync: {new Date(apiConfig.last_sync_at).toLocaleString()}
-                </p>
-              )}
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : 'Save API Configuration'}
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* Card Mapping Modal */}
-        {showCardModal && (
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4"
-            onClick={() => {
-              setShowCardModal(false)
-              setEditingCard(null)
-            }}
-          >
-            <div
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6 max-w-[calc(100vw-2rem)] sm:max-w-md w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-                {editingCard ? 'Edit Card Mapping' : 'Add Card Mapping'}
-              </h3>
-              <form onSubmit={handleSaveCardMapping} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Card Number *
-                  </label>
-                  <input
-                    type="text"
-                    value={cardForm.card_number}
-                    onChange={(e) => setCardForm({ ...cardForm, card_number: e.target.value })}
-                    placeholder="e.g., z611"
-                    required
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Vehicle *
-                  </label>
-                  <select
-                    value={cardForm.vehicle_id}
-                    onChange={(e) => setCardForm({ ...cardForm, vehicle_id: e.target.value })}
-                    required
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+            {teamLoading ? (
+              <p className="text-slate-500">Loading team...</p>
+            ) : (
+              <div className="space-y-2">
+                {teamMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.04] border border-white/[0.06]"
                   >
-                    <option value="">Select a vehicle</option>
-                    {vehicles.map((vehicle) => (
-                      <option key={vehicle.id} value={vehicle.id}>
-                        {vehicle.code}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Notes
-                  </label>
-                  <textarea
-                    value={cardForm.notes}
-                    onChange={(e) => setCardForm({ ...cardForm, notes: e.target.value })}
-                    rows={3}
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                  />
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="active"
-                    checked={cardForm.active}
-                    onChange={(e) => setCardForm({ ...cardForm, active: e.target.checked })}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="active" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                    Active
-                  </label>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium disabled:opacity-50"
-                  >
-                    {saving ? 'Saving...' : editingCard ? 'Update' : 'Create'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCardModal(false)
-                      setEditingCard(null)
-                    }}
-                    className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-md text-sm font-medium"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
+                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-sm font-bold text-blue-300">
+                      {(member.full_name || member.email || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-white">{member.full_name || member.email || '—'}</div>
+                      <div className="text-xs text-slate-500">{member.email}</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="px-2 py-0.5 rounded text-[10px] bg-white/[0.1] text-slate-400">
+                          {member.role === 'owner' ? 'Owner' : member.role === 'manager' ? 'Manager' : 'Driver'}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] bg-white/[0.1] text-slate-400">
+                          {member.territory || 'All'}
+                        </span>
+                      </div>
+                    </div>
+                    {editingTerritoryId === member.id ? (
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={editingTerritoryValue}
+                          onChange={(e) => setEditingTerritoryValue(e.target.value)}
+                          className="bg-white/[0.06] border border-white/[0.1] rounded-lg px-2 py-1.5 text-sm text-white"
+                        >
+                          <option value="">All Territories</option>
+                          <option value="New York">New York</option>
+                          <option value="DMV">DMV</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveTerritory(member.id)}
+                          className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingTerritoryId(null)}
+                          className="px-3 py-1.5 rounded-lg bg-white/[0.1] text-slate-400 text-xs"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingTerritoryId(member.id)
+                          setEditingTerritoryValue(member.territory || '')
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] text-xs"
+                      >
+                        <Pencil size={12} /> Edit
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

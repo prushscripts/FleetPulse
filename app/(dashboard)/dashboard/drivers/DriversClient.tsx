@@ -1259,37 +1259,29 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                   <option value="DMV">DMV (DC/MD/VA)</option>
                   <option value="Other">Other</option>
                 </select>
-                <div className="flex items-center gap-4 mt-3">
-                  <label className="flex items-center gap-2.5 cursor-pointer group">
-                    <div
-                      onClick={() => setFormData({ ...formData, is_ny_driver: !formData.is_ny_driver })}
-                      className={`w-4 h-4 rounded border transition-all flex items-center justify-center cursor-pointer ${
-                        formData.is_ny_driver
-                          ? 'bg-blue-500 border-blue-500'
-                          : 'border-white/20 hover:border-white/40'
-                      }`}
-                    >
-                      {formData.is_ny_driver && <Check size={10} className="text-white" />}
-                    </div>
-                    <span className="text-sm text-slate-300 group-hover:text-white transition-colors">
-                      New York driver
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2.5 cursor-pointer group">
-                    <div
-                      onClick={() => setFormData({ ...formData, is_dmv_driver: !formData.is_dmv_driver })}
-                      className={`w-4 h-4 rounded border transition-all flex items-center justify-center cursor-pointer ${
-                        formData.is_dmv_driver
-                          ? 'bg-violet-500 border-violet-500'
-                          : 'border-white/20 hover:border-white/40'
-                      }`}
-                    >
-                      {formData.is_dmv_driver && <Check size={10} className="text-white" />}
-                    </div>
-                    <span className="text-sm text-slate-300 group-hover:text-white transition-colors">
-                      DMV driver
-                    </span>
-                  </label>
+                <div className="flex items-center gap-2 mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, is_ny_driver: !formData.is_ny_driver })}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      formData.is_ny_driver
+                        ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
+                        : 'bg-white/[0.04] border border-white/[0.08] text-slate-500'
+                    }`}
+                  >
+                    New York
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, is_dmv_driver: !formData.is_dmv_driver })}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      formData.is_dmv_driver
+                        ? 'bg-violet-500/20 border border-violet-500/40 text-violet-400'
+                        : 'bg-white/[0.04] border border-white/[0.08] text-slate-500'
+                    }`}
+                  >
+                    DMV
+                  </button>
                 </div>
                 <p className="text-xs text-slate-600 mt-2">
                   These tags filter which drivers appear when assigning to a vehicle.

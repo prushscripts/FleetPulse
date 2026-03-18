@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, CheckCircle2, ChevronLeft } from 'lucide-react'
+import { ArrowRight, CheckCircle2, ChevronLeft, Truck, AlertTriangle } from 'lucide-react'
 
 type InspectionType = 'pre_trip' | 'post_trip'
 
@@ -16,6 +16,8 @@ type DriverVehicle = {
   model: string | null
   current_mileage: number | null
   company_id: string | null
+  location?: string | null
+  oil_change_due_mileage?: number | null
 }
 
 type TemplateChecklistItem = {
@@ -25,17 +27,20 @@ type TemplateChecklistItem = {
   required: boolean
 }
 
-const DEFAULT_ITEMS: TemplateChecklistItem[] = [
-  { id: '1', category: 'Exterior', label: 'Lights & signals working', required: true },
-  { id: '2', category: 'Exterior', label: 'Tires & wheels condition', required: true },
-  { id: '3', category: 'Exterior', label: 'Body damage check', required: true },
-  { id: '4', category: 'Exterior', label: 'Windows & mirrors clean', required: true },
-  { id: '5', category: 'Interior', label: 'Brakes feel normal', required: true },
-  { id: '6', category: 'Interior', label: 'Steering responsive', required: true },
-  { id: '7', category: 'Interior', label: 'Horn working', required: true },
-  { id: '8', category: 'Interior', label: 'Seatbelt working', required: true },
-  { id: '9', category: 'Interior', label: 'No dashboard warning lights', required: true },
-  { id: '10', category: 'Safety', label: 'Fire extinguisher present', required: false },
+// Pre-trip only: Exterior 6 + Interior 6. No under hood, no fire extinguisher.
+const INSPECTION_ITEMS: TemplateChecklistItem[] = [
+  { id: 'ext-1', category: 'Exterior', label: 'Headlights & taillights working', required: true },
+  { id: 'ext-2', category: 'Exterior', label: 'Turn signals & hazards working', required: true },
+  { id: 'ext-3', category: 'Exterior', label: 'Tires — no visible damage or low pressure', required: true },
+  { id: 'ext-4', category: 'Exterior', label: 'No new body damage', required: true },
+  { id: 'ext-5', category: 'Exterior', label: 'Mirrors clean and properly adjusted', required: true },
+  { id: 'ext-6', category: 'Exterior', label: 'Windshield — no cracks or obstructions', required: true },
+  { id: 'int-1', category: 'Interior', label: 'Brakes feel normal', required: true },
+  { id: 'int-2', category: 'Interior', label: 'Steering feels normal', required: true },
+  { id: 'int-3', category: 'Interior', label: 'Horn works', required: true },
+  { id: 'int-4', category: 'Interior', label: 'Seatbelt works', required: true },
+  { id: 'int-5', category: 'Interior', label: 'No warning lights on dashboard', required: true },
+  { id: 'int-6', category: 'Interior', label: 'Wipers working', required: true },
 ]
 
 type ItemAnswer = {
@@ -93,6 +98,7 @@ export default function DriverInspectionFlowPage() {
   const [driverDisplayName, setDriverDisplayName] = useState<string>('Driver')
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [vehicle, setVehicle] = useState<DriverVehicle | null>(null)
+  const [openIssuesCount, setOpenIssuesCount] = useState(0)
   const [timestamp] = useState<Date>(() => new Date())
 
   const [items, setItems] = useState<TemplateChecklistItem[]>([])
@@ -161,78 +167,73 @@ export default function DriverInspectionFlowPage() {
         const display = nickname.trim() || (user?.email ? user.email.split('@')[0] : 'Driver')
         setDriverDisplayName(display)
 
-        // Find the driver record for this auth user.
-        // Important: older driver rows may have `user_id` unset, so we fall back to `email`.
+        // Bulletproof driver + vehicle: try user_id, then email, then assigned_vehicle_id for company.
         const userId = user?.id ?? null
-        const userEmail = user?.email ?? null
+        let did: string | null = null
+        let vehicleRow: DriverVehicle | null = null
 
         const { data: driverByUser } = userId
           ? await supabase.from('drivers').select('id').eq('user_id', userId).maybeSingle()
           : { data: null }
+        did = (driverByUser as { id?: string } | null)?.id ?? null
 
-        const { data: driverByEmail } =
-          !driverByUser && userEmail
-            ? await (cid
-                ? supabase.from('drivers').select('id').eq('email', userEmail).eq('company_id', cid).limit(1).maybeSingle()
-                : supabase.from('drivers').select('id').eq('email', userEmail).limit(1).maybeSingle())
-            : { data: null }
+        if (!did && user?.email) {
+          const { data: driverByEmail } = await supabase
+            .from('drivers')
+            .select('id')
+            .eq('email', user.email)
+            .limit(1)
+            .maybeSingle()
+          did = (driverByEmail as { id?: string } | null)?.id ?? null
+        }
 
-        const did = (driverByUser as { id?: string } | null)?.id ?? (driverByEmail as { id?: string } | null)?.id ?? null
+        if (!did && cid) {
+          const { data: driverByVehicle } = await supabase
+            .from('drivers')
+            .select('id')
+            .eq('company_id', cid)
+            .not('assigned_vehicle_id', 'is', null)
+            .limit(1)
+            .maybeSingle()
+          did = (driverByVehicle as { id?: string } | null)?.id ?? null
+        }
+
         setDriverId(did)
 
-        let vehicleRow: DriverVehicle | null = null
         if (did) {
           const { data: v } = await supabase
             .from('vehicles')
-            .select('id, code, year, make, model, current_mileage, company_id')
+            .select('id, code, year, make, model, current_mileage, company_id, location, oil_change_due_mileage')
             .or(`driver_id.eq.${did},assigned_driver_id.eq.${did}`)
             .limit(1)
             .maybeSingle()
           vehicleRow = (v as DriverVehicle | null) ?? null
         }
         setVehicle(vehicleRow)
+
+        if (vehicleRow?.id) {
+          const { count } = await supabase
+            .from('issues')
+            .select('*', { count: 'exact', head: true })
+            .eq('vehicle_id', vehicleRow.id)
+            .neq('status', 'resolved')
+          setOpenIssuesCount(count ?? 0)
+        } else {
+          setOpenIssuesCount(0)
+        }
         // Derive company_id from the assigned vehicle when user_metadata is missing/late.
         if (!cid && vehicleRow?.company_id) {
           setCompanyId(vehicleRow.company_id)
         }
 
-        let templateItems: TemplateChecklistItem[] = []
-        if (cid) {
-          const { data: row } = await supabase
-            .from('inspection_templates')
-            .select('items')
-            .eq('company_id', cid)
-            .eq('type', inspectionType)
-            .order('is_default', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-
-          const raw = (row as { items?: unknown } | null)?.items
-          if (Array.isArray(raw)) {
-            templateItems = raw
-              .map((r: any, idx: number) => ({
-                id: String(r?.id ?? r?.itemId ?? idx + 1),
-                category: String(r?.category ?? 'Safety'),
-                label: String(r?.label ?? r?.name ?? ''),
-                required: typeof r?.required === 'boolean' ? r.required : true,
-              }))
-              .filter((i) => i.id && i.label)
-          }
-        }
-
-        // Drivers do a general safety/quick inspection; strip out any "Under Hood" sections.
-        const allowedCategories = new Set(['Exterior', 'Interior', 'Safety'])
-        templateItems = templateItems.filter((i) => allowedCategories.has(i.category))
-
-        if (!templateItems.length) templateItems = DEFAULT_ITEMS
-
-        setItems(templateItems)
+        // Pre-trip: fixed checklist only (no template, no under hood, no fire extinguisher).
+        setItems(INSPECTION_ITEMS)
         setAnswers(Object.fromEntries(templateItems.map((i) => [i.id, { status: null, note: '' } as ItemAnswer])))
         setCategoryIndex(0)
         setOdometer('')
         setOverallNotes('')
         setSubmitError(null)
-        setPhase('confirm')
+        setPhase('vehicle')
       } catch {
         setLoadError('Unable to load inspection. Please go back and try again.')
       } finally {
@@ -261,9 +262,20 @@ export default function DriverInspectionFlowPage() {
     setOdometerError(null)
   }, [odometer, vehicle?.current_mileage])
 
-  // Mobile polish:
-  // - Reset scroll between steps so the next view starts at the top.
-  // - Helps avoid "stuck halfway" when the keyboard opens/closes.
+  // Prevent iOS zoom on input focus
+  useEffect(() => {
+    const viewport = document.querySelector('meta[name="viewport"]')
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1')
+    }
+    return () => {
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1')
+      }
+    }
+  }, [])
+
+  // Reset scroll between steps and after keyboard closes
   useEffect(() => {
     requestAnimationFrame(() => {
       try {
@@ -301,18 +313,23 @@ export default function DriverInspectionFlowPage() {
         note: answers[i.id]?.note || '',
       }))
 
-      const { error: insErr } = await supabase.from('inspections').insert({
-        company_id: effectiveCompanyId,
-        vehicle_id: vehicle.id,
-        driver_id: driverId,
-        submitted_by_user_id: user.id,
-        type: inspectionType,
-        status,
-        odometer: odometerValue,
-        notes: overallNotes || null,
-        results,
-      })
+      const { data: newInspection, error: insErr } = await supabase
+        .from('inspections')
+        .insert({
+          company_id: effectiveCompanyId,
+          vehicle_id: vehicle.id,
+          driver_id: driverId,
+          submitted_by_user_id: user.id,
+          type: inspectionType,
+          status,
+          odometer: odometerValue,
+          notes: overallNotes || null,
+          results,
+        })
+        .select('id')
+        .single()
       if (insErr) throw insErr
+      const inspectionId = (newInspection as { id?: string } | null)?.id ?? null
 
       for (const f of failedItems) {
         await supabase.from('issues').insert({
@@ -322,7 +339,34 @@ export default function DriverInspectionFlowPage() {
           status: 'open',
           priority: 'high',
           reported_date: new Date().toISOString().slice(0, 10),
+          source: 'pre_trip',
+          inspection_id: inspectionId,
         })
+      }
+
+      if (status === 'failed' && effectiveCompanyId && failedItems.length > 0) {
+        try {
+          await fetch('/api/notifications/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              company_id: effectiveCompanyId,
+              type: 'inspection_failed',
+              title: `Failed inspection — ${vehicle.code ?? vehicle.id}`,
+              body: `${driverDisplayName} submitted a pre-trip inspection with ${failedItems.length} failed item${failedItems.length > 1 ? 's' : ''}.`,
+              data: {
+                vehicle_id: vehicle.id,
+                vehicle_number: vehicle.code,
+                inspection_id: inspectionId,
+                driver_name: driverDisplayName,
+                failed_count: failedItems.length,
+              },
+              territory: vehicle.location ?? undefined,
+            }),
+          })
+        } catch (_) {
+          // Non-blocking
+        }
       }
 
       setPhase('success')
@@ -381,185 +425,302 @@ export default function DriverInspectionFlowPage() {
           }
         }}
       >
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors mb-6"
-        >
-          <ChevronLeft size={16} />
-          Back
-        </button>
+        {phase !== 'vehicle' && phase !== 'success' && (
+          <button
+            type="button"
+            onClick={() => {
+              if (phase === 'odometer') setPhase('vehicle')
+              else if (phase === 'checklist') {
+                if (categoryIndex > 0) setCategoryIndex((i) => i - 1)
+                else setPhase('odometer')
+              } else if (phase === 'summary') {
+                setCategoryIndex(categories.length - 1)
+                setPhase('checklist')
+              } else router.back()
+            }}
+            className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors mb-6"
+          >
+            <ChevronLeft size={16} />
+            Back
+          </button>
+        )}
 
         <AnimatePresence mode="wait">
-          {phase === 'confirm' && (
-          <motion.div
-            key="confirm"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-            className="min-h-[70vh] flex flex-col items-center justify-center text-center"
-          >
-            <p className="text-sm text-slate-400 mb-3">Quick Safety Check</p>
-            <p className="text-slate-500 text-sm mb-2">
-              {timestamp.toLocaleDateString()} · {driverDisplayName}
-            </p>
-            <div className="font-mono text-5xl font-bold text-white tracking-tight">
-              {vehicle?.code || '—'}
-            </div>
-            <p className="text-slate-400 mt-2">
-              {vehicle ? `${vehicle.year ?? ''} ${vehicle.make ?? ''} ${vehicle.model ?? ''}` : 'No assigned vehicle.'}
-            </p>
-
-            <button
-              type="button"
-              disabled={beginDisabled}
-              onClick={() => setPhase('odometer')}
-              className="w-full max-w-sm mt-8 min-h-[56px] rounded-2xl bg-blue-500 text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          {phase === 'vehicle' && (
+            <motion.div
+              key="vehicle"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+              className="min-h-screen bg-[#0A0F1E] flex flex-col items-center justify-center px-6 pb-8 pt-16"
             >
-              Begin Inspection <ArrowRight size={18} />
-            </button>
-            {beginDisabled && (
-              <p className="text-sm text-amber-400 mt-4">No vehicle assigned. Contact your fleet manager.</p>
-            )}
-          </motion.div>
-        )}
+              <div className="text-center mb-8">
+                <div className="text-xs text-slate-500 uppercase tracking-widest mb-2 font-mono">
+                  PRE-TRIP INSPECTION
+                </div>
+                <h1 className="text-2xl font-display font-bold text-white">Vehicle Check</h1>
+                <p className="text-sm text-slate-400 mt-1">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                </p>
+              </div>
+
+              <div className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6 mb-6 shadow-xl">
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                    <Truck size={22} className="text-blue-400" />
+                  </div>
+                  <div>
+                    <div className="text-xl font-mono font-bold text-white">{vehicle?.code ?? '—'}</div>
+                    <div className="text-sm text-slate-400">
+                      {vehicle ? `${vehicle.year ?? ''} ${vehicle.make ?? ''} ${vehicle.model ?? ''}` : 'No vehicle'}
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/[0.06]">
+                  <div>
+                    <div className="text-[10px] text-slate-600 uppercase tracking-wide mb-0.5">Mileage</div>
+                    <div className="font-mono text-sm text-white">
+                      {(vehicle?.current_mileage ?? 0).toLocaleString()} mi
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-slate-600 uppercase tracking-wide mb-0.5">Oil Status</div>
+                    <div
+                      className={`text-sm font-medium ${
+                        (vehicle?.current_mileage ?? 0) >= (vehicle?.oil_change_due_mileage ?? 0) && (vehicle?.oil_change_due_mileage ?? 0) > 0
+                          ? 'text-red-400'
+                          : 'text-emerald-400'
+                      }`}
+                    >
+                      {(vehicle?.current_mileage ?? 0) >= (vehicle?.oil_change_due_mileage ?? 0) && (vehicle?.oil_change_due_mileage ?? 0) > 0
+                        ? '⚠ Overdue'
+                        : '✓ OK'}
+                    </div>
+                  </div>
+                </div>
+                {openIssuesCount > 0 && (
+                  <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2 text-amber-400">
+                    <AlertTriangle size={14} />
+                    <span className="text-xs">
+                      {openIssuesCount} open issue{openIssuesCount > 1 ? 's' : ''} on this vehicle
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 mb-8 text-slate-500 text-xs">
+                <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-[10px] font-bold text-blue-300">
+                  {driverDisplayName.charAt(0).toUpperCase()}
+                </div>
+                <span>
+                  Inspector: <span className="text-white">{driverDisplayName}</span>
+                </span>
+              </div>
+
+              <button
+                type="button"
+                disabled={beginDisabled}
+                onClick={() => setPhase('odometer')}
+                className="w-full max-w-sm py-4 rounded-2xl bg-blue-500 text-white font-semibold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Begin Inspection <ArrowRight size={18} />
+              </button>
+              {beginDisabled && (
+                <p className="text-sm text-amber-400 mt-4">No vehicle assigned. Contact your fleet manager.</p>
+              )}
+            </motion.div>
+          )}
 
           {phase === 'odometer' && (
-          <motion.div
-            key="odometer"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-            className="max-w-xl mx-auto"
-          >
-            <h2 className="text-xl font-semibold text-white mb-2">Enter current odometer reading</h2>
-            <p className="text-sm text-slate-400 mb-5">Use the current mileage on your dashboard.</p>
-
-            <input
-              value={odometer}
-              onChange={(e) => setOdometer(e.target.value.replace(/[^\d]/g, ''))}
-              inputMode="numeric"
-              placeholder={vehicle?.current_mileage ? `${vehicle.current_mileage.toLocaleString()}` : '0'}
-              className="w-full px-4 py-4 bg-white/[0.04] border border-white/[0.1] rounded-2xl text-base font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-all min-h-[48px]"
-              style={{ fontSize: '16px' }}
-            />
-            {odometerError && <p className="text-sm text-red-400 mt-2">{odometerError}</p>}
-
-            <button
-              type="button"
-              disabled={!canContinueOdometer}
-              onClick={() => setPhase('checklist')}
-              className="w-full mt-6 min-h-[56px] rounded-2xl bg-blue-500 text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            <motion.div
+              key="odometer"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+              className="min-h-screen bg-[#0A0F1E] flex flex-col px-6 pt-16 pb-8"
             >
-              Continue <ArrowRight size={18} />
-            </button>
-          </motion.div>
-        )}
+              <button
+                type="button"
+                onClick={() => setPhase('vehicle')}
+                className="flex items-center gap-2 text-slate-400 text-sm mb-8 self-start"
+              >
+                <ChevronLeft size={16} /> Back
+              </button>
+              <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
+                <div className="text-xs text-slate-500 uppercase tracking-widest mb-2 font-mono text-center">
+                  STEP 1 OF 3
+                </div>
+                <h2 className="text-2xl font-display font-bold text-white text-center mb-2">Current Odometer</h2>
+                <p className="text-slate-400 text-sm text-center mb-8">Enter the mileage shown on the dashboard</p>
+                <div className="relative mb-8">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={odometer}
+                    onChange={(e) => setOdometer(e.target.value.replace(/[^\d]/g, ''))}
+                    placeholder={vehicle?.current_mileage?.toString() ?? ''}
+                    className="w-full text-center text-3xl font-mono font-bold text-white bg-white/[0.04] border-2 border-white/[0.1] rounded-2xl py-6 px-4 focus:outline-none focus:border-blue-500/60 transition-all"
+                    style={{ fontSize: '16px' }}
+                    onBlur={() => {
+                      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100)
+                    }}
+                  />
+                  <div className="text-center text-xs text-slate-600 mt-2">miles</div>
+                </div>
+                {odometerError && <p className="text-sm text-red-400 text-center mb-2">{odometerError}</p>}
+                <button
+                  type="button"
+                  disabled={!canContinueOdometer}
+                  onClick={() => {
+                    setPhase('checklist')
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                  }}
+                  className="w-full py-4 rounded-2xl bg-blue-500 text-white font-semibold text-base disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                >
+                  Continue <ArrowRight size={18} />
+                </button>
+              </div>
+            </motion.div>
+          )}
 
           {phase === 'checklist' && (
-          <motion.div
-            key="checklist"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-            className="max-w-xl mx-auto"
-          >
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-widest">Category</p>
-                <h2 className="text-2xl font-bold text-white mt-1">{activeCategory.toUpperCase()}</h2>
-              </div>
-              <p className="text-xs text-slate-400">
-                Category {Math.min(categoryIndex + 1, categories.length)} of {categories.length}
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {activeCategoryItems.map((it) => {
-                const a = answers[it.id] || { status: null, note: '' }
-                return (
-                  <div key={it.id} className="card-glass rounded-2xl p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-base text-white leading-snug">{it.label}</p>
-                      {it.required && (
-                        <span className="text-[10px] text-slate-500 uppercase tracking-wider">Required</span>
-                      )}
-                    </div>
-
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setAnswers((prev) => ({ ...prev, [it.id]: { ...a, status: 'pass' } }))
-                        }
-                        className={`min-h-[56px] rounded-xl font-semibold text-sm transition-all ${
-                          a.status === 'pass'
-                            ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
-                            : 'bg-white/[0.04] border border-white/[0.08] text-slate-400'
-                        }`}
-                      >
-                        ✓ Pass
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setAnswers((prev) => ({ ...prev, [it.id]: { ...a, status: 'fail' } }))
-                        }
-                        className={`min-h-[56px] rounded-xl font-semibold text-sm transition-all ${
-                          a.status === 'fail'
-                            ? 'bg-red-500/20 border border-red-500/40 text-red-300'
-                            : 'bg-white/[0.04] border border-white/[0.08] text-slate-400'
-                        }`}
-                      >
-                        ✗ Fail
-                      </button>
-                    </div>
-
-                    <AnimatePresence initial={false}>
-                      {a.status === 'fail' && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.18 }}
-                          className="overflow-hidden"
-                        >
-                          <textarea
-                            value={a.note}
-                            onChange={(e) =>
-                              setAnswers((prev) => ({ ...prev, [it.id]: { ...a, note: e.target.value } }))
-                            }
-                            placeholder="Why did you fail this item?"
-                            rows={3}
-                            className="mt-3 w-full px-4 py-3.5 bg-white/[0.04] border border-white/[0.1] rounded-xl text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-all resize-none"
-                            style={{ fontSize: '16px' }}
-                          />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )
-              })}
-            </div>
-
-            <button
-              type="button"
-              disabled={!requiredCompleteForActiveCategory}
-              onClick={() => {
-                const next = categoryIndex + 1
-                if (next >= categories.length) setPhase('summary')
-                else setCategoryIndex(next)
-              }}
-              className="w-full mt-6 min-h-[56px] rounded-2xl bg-blue-500 text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            <motion.div
+              key="checklist"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+              className="min-h-screen bg-[#0A0F1E] flex flex-col pt-16 pb-8"
             >
-              {categoryIndex + 1 >= categories.length ? 'Review & Submit' : 'Next Category'}{' '}
-              <ArrowRight size={18} />
-            </button>
-          </motion.div>
-        )}
+              <div className="px-6 mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-slate-500 font-mono">
+                    {categoryIndex + 1} / {categories.length}
+                  </span>
+                  <span className="text-xs text-slate-500">{activeCategory}</span>
+                </div>
+                <div className="h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-blue-500 rounded-full"
+                    animate={{
+                      width: `${((categoryIndex + 1) / categories.length) * 100}%`,
+                    }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+              </div>
+              <div className="px-6 mb-6">
+                <div className="text-xs text-slate-500 uppercase tracking-widest font-mono mb-1">
+                  CATEGORY {categoryIndex + 1}
+                </div>
+                <h2 className="text-2xl font-display font-bold text-white">{activeCategory}</h2>
+              </div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={categoryIndex}
+                  initial={{ opacity: 0, x: 40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -40 }}
+                  transition={{ duration: 0.25, ease: 'easeInOut' }}
+                  className="flex-1 px-6 space-y-3"
+                >
+                  {activeCategoryItems.map((it) => {
+                    const a = answers[it.id] || { status: null, note: '' }
+                    return (
+                      <div key={it.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] overflow-hidden">
+                        <div className="p-4">
+                          <p className="text-base text-white font-medium mb-4 leading-snug">{it.label}</p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setAnswers((prev) => ({ ...prev, [it.id]: { ...a, status: 'pass' } }))
+                              }
+                              className={`py-4 rounded-xl font-semibold text-sm transition-all active:scale-95 ${
+                                a.status === 'pass'
+                                  ? 'bg-emerald-500 text-white'
+                                  : 'bg-white/[0.04] text-slate-400 border border-white/[0.08]'
+                              }`}
+                            >
+                              ✓ Pass
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setAnswers((prev) => ({ ...prev, [it.id]: { ...a, status: 'fail' } }))
+                              }
+                              className={`py-4 rounded-xl font-semibold text-sm transition-all active:scale-95 ${
+                                a.status === 'fail'
+                                  ? 'bg-red-500 text-white'
+                                  : 'bg-white/[0.04] text-slate-400 border border-white/[0.08]'
+                              }`}
+                            >
+                              ✗ Fail
+                            </button>
+                          </div>
+                          <AnimatePresence initial={false}>
+                            {a.status === 'fail' && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="pt-3">
+                                  <textarea
+                                    value={a.note}
+                                    onChange={(e) =>
+                                      setAnswers((prev) => ({ ...prev, [it.id]: { ...a, note: e.target.value } }))
+                                    }
+                                    placeholder="Describe the issue... (required)"
+                                    rows={3}
+                                    className="w-full px-4 py-3 bg-white/[0.04] border border-red-500/30 rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-red-500/60 transition-all resize-none"
+                                    style={{ fontSize: '16px' }}
+                                    onBlur={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100)}
+                                  />
+                                  {(!a.note || !a.note.trim()) && (
+                                    <p className="text-xs text-red-400 mt-1">Please describe the issue to continue</p>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </motion.div>
+              </AnimatePresence>
+              <div className="px-6 mt-6">
+                <button
+                  type="button"
+                  disabled={
+                    !activeCategoryItems.every(
+                      (item) =>
+                        answers[item.id]?.status !== undefined &&
+                        (answers[item.id]?.status === 'pass' || (answers[item.id]?.note ?? '').trim() !== '')
+                    )
+                  }
+                  onClick={() => {
+                    if (categoryIndex < categories.length - 1) {
+                      setCategoryIndex((prev) => prev + 1)
+                      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50)
+                    } else {
+                      setPhase('summary')
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }
+                  }}
+                  className="w-full py-4 rounded-2xl bg-blue-500 text-white font-semibold text-base disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                >
+                  {categoryIndex < categories.length - 1 ? 'Next Category' : 'Review Summary'}{' '}
+                  <ArrowRight size={18} />
+                </button>
+              </div>
+            </motion.div>
+          )}
 
         {phase === 'summary' && (
           <motion.div
@@ -568,55 +729,78 @@ export default function DriverInspectionFlowPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-            className="max-w-xl mx-auto"
+            className="min-h-screen bg-[#0A0F1E] pt-16 pb-24 px-6"
           >
-            <h2 className="text-2xl font-bold text-white mb-2">Summary</h2>
-            <p className="text-sm text-slate-400 mb-5">
-              {passedCount} passed, {failedItems.length} failed
-            </p>
-
-            {failedItems.length > 0 && (
-              <div className="card-glass rounded-2xl p-4 border border-red-500/20 bg-red-500/[0.06] mb-4">
-                <p className="text-sm font-semibold text-red-200 mb-3">Failed items</p>
-                <div className="space-y-3">
-                  {failedItems.map((f) => (
-                    <div key={f.id} className="text-sm">
-                      <p className="text-white">{f.label}</p>
-                      {f.note?.trim() ? (
-                        <p className="text-xs text-slate-300 mt-1">{f.note}</p>
-                      ) : (
-                        <p className="text-xs text-slate-500 mt-1 italic">No notes</p>
-                      )}
-                    </div>
-                  ))}
+            <div className="text-xs text-slate-500 uppercase tracking-widest font-mono mb-2 text-center">
+              SUMMARY
+            </div>
+            <h2 className="text-2xl font-display font-bold text-white text-center mb-6">Review & Submit</h2>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4 text-center">
+                <div className="text-3xl font-mono font-bold text-emerald-400 mb-1">{passedCount}</div>
+                <div className="text-xs text-slate-500">Passed</div>
+              </div>
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4 text-center">
+                <div
+                  className={`text-3xl font-mono font-bold mb-1 ${
+                    failedItems.length > 0 ? 'text-red-400' : 'text-slate-600'
+                  }`}
+                >
+                  {failedItems.length}
                 </div>
+                <div className="text-xs text-slate-500">Failed</div>
+              </div>
+            </div>
+            {failedItems.length > 0 && (
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] overflow-hidden mb-4">
+                <div className="px-4 py-3 border-b border-white/[0.06]">
+                  <h3 className="text-sm font-semibold text-red-400 flex items-center gap-2">
+                    <AlertTriangle size={14} /> Failed items
+                  </h3>
+                </div>
+                {failedItems.map((f) => (
+                  <div
+                    key={f.id}
+                    className="px-4 py-3 border-b border-white/[0.04] last:border-0"
+                  >
+                    <p className="text-sm text-white mb-1">{f.label}</p>
+                    <p className="text-xs text-slate-500">{answers[f.id]?.note ?? ''}</p>
+                  </div>
+                ))}
               </div>
             )}
-
-            <div className="card-glass rounded-2xl p-4">
-              <label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Overall notes</label>
+            <div className="mb-6">
+              <label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">
+                Additional notes (optional)
+              </label>
               <textarea
                 value={overallNotes}
                 onChange={(e) => setOverallNotes(e.target.value)}
-              placeholder="Anything else your fleet manager should know..."
-              rows={4}
-              className="w-full px-4 py-3.5 bg-white/[0.04] border border-white/[0.1] rounded-xl text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-all resize-none"
-              style={{ fontSize: '16px' }}
-            />
+                placeholder="Any other observations about the vehicle..."
+                rows={3}
+                className="w-full px-4 py-3.5 bg-white/[0.04] border border-white/[0.1] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-all resize-none"
+                style={{ fontSize: '16px' }}
+                onBlur={() =>
+                  setTimeout(
+                    () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }),
+                    300
+                  )
+                }
+              />
             </div>
-
-            {submitError && <p className="text-sm text-red-300 mt-4">{submitError}</p>}
-
+            {submitError && <p className="text-sm text-red-300 mb-4">{submitError}</p>}
             <button
               type="button"
               onClick={submit}
               disabled={submitting}
-              className="w-full mt-6 min-h-[56px] rounded-2xl bg-blue-500 text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full py-4 rounded-2xl bg-blue-500 text-white font-semibold text-base disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {submitting ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                'Submit Inspection'
+                <>
+                  Submit Inspection <CheckCircle2 size={18} />
+                </>
               )}
             </button>
           </motion.div>
@@ -625,26 +809,39 @@ export default function DriverInspectionFlowPage() {
         {phase === 'success' && (
           <motion.div
             key="success"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-            className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="min-h-screen bg-[#0A0F1E] flex flex-col items-center justify-center px-6 text-center"
           >
-            <div className="w-20 h-20 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mb-6">
-              <CheckCircle2 size={34} className="text-emerald-400" />
-            </div>
-            <div className="text-3xl font-display font-bold text-white">Inspection Complete</div>
-            <div className="mt-2 text-sm text-slate-400">
-              {timestamp.toLocaleDateString()} at {timestamp.toLocaleTimeString()}
-            </div>
-
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 300, damping: 20 }}
+              className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 ${
+                failedItems.length > 0 ? 'bg-amber-500/10' : 'bg-emerald-500/10'
+              }`}
+            >
+              {failedItems.length > 0 ? (
+                <AlertTriangle size={36} className="text-amber-400" />
+              ) : (
+                <CheckCircle2 size={36} className="text-emerald-400" />
+              )}
+            </motion.div>
+            <h2 className="text-2xl font-display font-bold text-white mb-2">
+              {failedItems.length > 0 ? 'Inspection Submitted' : 'All Clear!'}
+            </h2>
+            <p className="text-slate-400 text-sm mb-2">
+              {failedItems.length > 0
+                ? `${failedItems.length} issue${failedItems.length > 1 ? 's' : ''} reported to your fleet manager`
+                : 'Vehicle passed all inspection items'}
+            </p>
+            <p className="text-xs text-slate-600 mb-8 font-mono">{new Date().toLocaleString()}</p>
             <button
               type="button"
-              className="w-full max-w-sm mt-8 min-h-[56px] rounded-2xl bg-blue-500 text-white font-semibold"
               onClick={() => router.push('/driver')}
+              className="rounded-2xl bg-blue-500 text-white px-8 py-3.5 flex items-center justify-center gap-2 font-semibold hover:bg-blue-600"
             >
-              Back to Home
+              Back to Dashboard <ArrowRight size={16} />
             </button>
           </motion.div>
         )}
