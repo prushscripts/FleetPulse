@@ -48,6 +48,8 @@ type ItemAnswer = {
   note: string
 }
 
+type Phase = 'vehicle' | 'confirm' | 'odometer' | 'checklist' | 'summary' | 'success'
+
 class InspectionErrorBoundary extends React.Component<
   { children: React.ReactNode; onBack: () => void },
   { hasError: boolean }
@@ -104,7 +106,7 @@ export default function DriverInspectionFlowPage() {
   const [items, setItems] = useState<TemplateChecklistItem[]>([])
   const [answers, setAnswers] = useState<Record<string, ItemAnswer>>({})
 
-  const [phase, setPhase] = useState<'confirm' | 'odometer' | 'checklist' | 'summary' | 'success'>('confirm')
+  const [phase, setPhase] = useState<Phase>('vehicle')
   const [categoryIndex, setCategoryIndex] = useState(0)
   const [odometer, setOdometer] = useState('')
   const [odometerError, setOdometerError] = useState<string | null>(null)
