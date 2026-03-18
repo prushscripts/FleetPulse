@@ -228,7 +228,7 @@ export default function DriverInspectionFlowPage() {
 
         // Pre-trip: fixed checklist only (no template, no under hood, no fire extinguisher).
         setItems(INSPECTION_ITEMS)
-        setAnswers(Object.fromEntries(templateItems.map((i) => [i.id, { status: null, note: '' } as ItemAnswer])))
+        setAnswers(Object.fromEntries(INSPECTION_ITEMS.map((i) => [i.id, { status: null, note: '' } as ItemAnswer])))
         setCategoryIndex(0)
         setOdometer('')
         setOverallNotes('')
