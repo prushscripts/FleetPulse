@@ -156,86 +156,163 @@ export default function DriverInspectionFlowPage() {
     [items, answers],
   )
 
+  // Normalize API vehicle shape to DriverVehicle (vehicles table uses code, current_mileage).
+  const toDriverVehicle = (v: Record<string, unknown> | null): DriverVehicle | null => {
+    if (!v || typeof v.id !== 'string') return null
+    return {
+      id: v.id as string,
+      code: (v.code ?? v.truck_number ?? null) as string | null,
+      year: typeof v.year === 'number' ? v.year : null,
+      make: (v.make ?? null) as string | null,
+      model: (v.model ?? null) as string | null,
+      current_mileage: typeof v.current_mileage === 'number' ? v.current_mileage : (v.mileage as number) ?? null,
+      company_id: (v.company_id ?? null) as string | null,
+      location: (v.location ?? null) as string | null,
+      oil_change_due_mileage: typeof v.oil_change_due_mileage === 'number' ? v.oil_change_due_mileage : null,
+    }
+  }
+
   useEffect(() => {
+    const loadDriverAndVehicle = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const cid = (user.user_metadata?.company_id as string) || null
+      setCompanyId(cid)
+      const nickname = (user.user_metadata?.nickname as string | undefined) || ''
+      const display = nickname.trim() || (user.email ? user.email.split('@')[0] : 'Driver')
+      setDriverDisplayName(display)
+
+      type DriverRow = { id: string; [k: string]: unknown }
+      type VehicleRow = Record<string, unknown>
+      let driver: DriverRow | null = null
+      let vehicleRow: DriverVehicle | null = null
+
+      const vehicleSelect = 'id, code, year, make, model, current_mileage, company_id, location, oil_change_due_mileage'
+
+      // METHOD 1: Find driver by user_id, then vehicle by driver_id or assigned_driver_id
+      let { data: d1 } = await supabase.from('drivers').select('id').eq('user_id', user.id).maybeSingle()
+      driver = d1 as DriverRow | null
+      if (driver) {
+        const { data: v } = await supabase
+          .from('vehicles')
+          .select(vehicleSelect)
+          .or(`driver_id.eq.${driver.id},assigned_driver_id.eq.${driver.id}`)
+          .limit(1)
+          .maybeSingle()
+        vehicleRow = toDriverVehicle(v as VehicleRow | null)
+      }
+      console.log('Inspection lookup METHOD 1 (user_id): driver found:', !!driver, 'vehicle found:', !!vehicleRow)
+
+      // METHOD 2: Find driver by email
+      if (!driver?.id || !vehicleRow) {
+        const { data: d2 } = await supabase
+          .from('drivers')
+          .select('id')
+          .eq('email', user.email ?? '')
+          .limit(1)
+          .maybeSingle()
+        if (d2) driver = d2 as DriverRow
+        if (driver && !vehicleRow) {
+          const { data: v } = await supabase
+            .from('vehicles')
+            .select(vehicleSelect)
+            .or(`driver_id.eq.${driver.id},assigned_driver_id.eq.${driver.id}`)
+            .limit(1)
+            .maybeSingle()
+          vehicleRow = toDriverVehicle(v as VehicleRow | null)
+        }
+      }
+      console.log('Inspection lookup METHOD 2 (email): driver found:', !!driver, 'vehicle found:', !!vehicleRow)
+
+      // METHOD 3: Vehicle directly by assigned_driver_id / driver_id (driver already found)
+      if (driver && !vehicleRow) {
+        const { data: v } = await supabase
+          .from('vehicles')
+          .select(vehicleSelect)
+          .or(`driver_id.eq.${driver.id},assigned_driver_id.eq.${driver.id}`)
+          .limit(1)
+          .maybeSingle()
+        vehicleRow = toDriverVehicle(v as VehicleRow | null)
+      }
+      console.log('Inspection lookup METHOD 3 (vehicle by driver id): vehicle found:', !!vehicleRow)
+
+      // METHOD 4: Profile company_id then driver by company_id + email
+      if (!driver && cid) {
+        const { data: d4 } = await supabase
+          .from('drivers')
+          .select('id')
+          .eq('company_id', cid)
+          .eq('email', user.email ?? '')
+          .maybeSingle()
+        if (d4) driver = d4 as DriverRow
+        if (driver && !vehicleRow) {
+          const { data: v } = await supabase
+            .from('vehicles')
+            .select(vehicleSelect)
+            .or(`driver_id.eq.${driver.id},assigned_driver_id.eq.${driver.id}`)
+            .limit(1)
+            .maybeSingle()
+          vehicleRow = toDriverVehicle(v as VehicleRow | null)
+        }
+      }
+      if (!driver && !cid) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('company_id')
+          .eq('id', user.id)
+          .maybeSingle()
+        const profileCompanyId = (profile as { company_id?: string } | null)?.company_id
+        if (profileCompanyId) {
+          const { data: d4 } = await supabase
+            .from('drivers')
+            .select('id')
+            .eq('company_id', profileCompanyId)
+            .eq('email', user.email ?? '')
+            .maybeSingle()
+          if (d4) driver = d4 as DriverRow
+          if (driver && !vehicleRow) {
+            const { data: v } = await supabase
+              .from('vehicles')
+              .select(vehicleSelect)
+              .or(`driver_id.eq.${driver.id},assigned_driver_id.eq.${driver.id}`)
+              .limit(1)
+              .maybeSingle()
+            vehicleRow = toDriverVehicle(v as VehicleRow | null)
+          }
+        }
+      }
+      console.log('Inspection lookup METHOD 4 (profile/company+email): driver found:', !!driver, 'vehicle found:', !!vehicleRow)
+
+      setDriverId(driver?.id ?? null)
+      setVehicle(vehicleRow)
+
+      if (vehicleRow?.id) {
+        const { count } = await supabase
+          .from('issues')
+          .select('*', { count: 'exact', head: true })
+          .eq('vehicle_id', vehicleRow.id)
+          .neq('status', 'resolved')
+        setOpenIssuesCount(count ?? 0)
+      } else {
+        setOpenIssuesCount(0)
+      }
+      if (!cid && vehicleRow?.company_id) setCompanyId(vehicleRow.company_id)
+
+      setItems(INSPECTION_ITEMS)
+      setAnswers(Object.fromEntries(INSPECTION_ITEMS.map((i) => [i.id, { status: null, note: '' } as ItemAnswer])))
+      setCategoryIndex(0)
+      setOdometer('')
+      setOverallNotes('')
+      setSubmitError(null)
+      setPhase('vehicle')
+    }
+
     const run = async () => {
       setLoading(true)
       setLoadError(null)
       try {
-        const { data: { user } } = await supabase.auth.getUser()
-        const cid = (user?.user_metadata?.company_id as string) || null
-        setCompanyId(cid)
-
-        const nickname = (user?.user_metadata?.nickname as string | undefined) || ''
-        const display = nickname.trim() || (user?.email ? user.email.split('@')[0] : 'Driver')
-        setDriverDisplayName(display)
-
-        // Bulletproof driver + vehicle: try user_id, then email, then assigned_vehicle_id for company.
-        const userId = user?.id ?? null
-        let did: string | null = null
-        let vehicleRow: DriverVehicle | null = null
-
-        const { data: driverByUser } = userId
-          ? await supabase.from('drivers').select('id').eq('user_id', userId).maybeSingle()
-          : { data: null }
-        did = (driverByUser as { id?: string } | null)?.id ?? null
-
-        if (!did && user?.email) {
-          const { data: driverByEmail } = await supabase
-            .from('drivers')
-            .select('id')
-            .eq('email', user.email)
-            .limit(1)
-            .maybeSingle()
-          did = (driverByEmail as { id?: string } | null)?.id ?? null
-        }
-
-        if (!did && cid) {
-          const { data: driverByVehicle } = await supabase
-            .from('drivers')
-            .select('id')
-            .eq('company_id', cid)
-            .not('assigned_vehicle_id', 'is', null)
-            .limit(1)
-            .maybeSingle()
-          did = (driverByVehicle as { id?: string } | null)?.id ?? null
-        }
-
-        setDriverId(did)
-
-        if (did) {
-          const { data: v } = await supabase
-            .from('vehicles')
-            .select('id, code, year, make, model, current_mileage, company_id, location, oil_change_due_mileage')
-            .or(`driver_id.eq.${did},assigned_driver_id.eq.${did}`)
-            .limit(1)
-            .maybeSingle()
-          vehicleRow = (v as DriverVehicle | null) ?? null
-        }
-        setVehicle(vehicleRow)
-
-        if (vehicleRow?.id) {
-          const { count } = await supabase
-            .from('issues')
-            .select('*', { count: 'exact', head: true })
-            .eq('vehicle_id', vehicleRow.id)
-            .neq('status', 'resolved')
-          setOpenIssuesCount(count ?? 0)
-        } else {
-          setOpenIssuesCount(0)
-        }
-        // Derive company_id from the assigned vehicle when user_metadata is missing/late.
-        if (!cid && vehicleRow?.company_id) {
-          setCompanyId(vehicleRow.company_id)
-        }
-
-        // Pre-trip: fixed checklist only (no template, no under hood, no fire extinguisher).
-        setItems(INSPECTION_ITEMS)
-        setAnswers(Object.fromEntries(INSPECTION_ITEMS.map((i) => [i.id, { status: null, note: '' } as ItemAnswer])))
-        setCategoryIndex(0)
-        setOdometer('')
-        setOverallNotes('')
-        setSubmitError(null)
-        setPhase('vehicle')
+        await loadDriverAndVehicle()
       } catch {
         setLoadError('Unable to load inspection. Please go back and try again.')
       } finally {
