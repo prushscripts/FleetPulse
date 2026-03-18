@@ -19,6 +19,15 @@ import {
 
 type AdminTab = 'issues' | 'announcements' | 'team'
 
+// Kept for compatibility with preview tooling that imports this type.
+// This is a type-only export and does not affect runtime logic.
+export type AdminInitialData = {
+  company: { id: string; name: string; auth_key: string } | null
+  vehicles: Array<{ id: string; code: string }>
+  cardMappings: unknown[]
+  apiConfig: unknown | null
+}
+
 interface AdminClientProps {
   user: User
   initialTab?: string | null
