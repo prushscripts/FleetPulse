@@ -151,8 +151,8 @@ export default function IntroAnimation({
               <Image
                 src="/branding/fleetpulse-logo.png"
                 alt="FleetPulse"
-                width={220}
-                height={52}
+                width={280}
+                height={66}
                 style={{ opacity: 1 }}
                 priority
               />
@@ -160,8 +160,8 @@ export default function IntroAnimation({
               <p
                 style={{
                   color: 'rgba(148,163,184,0.8)',
-                  fontSize: 11,
-                  letterSpacing: '0.25em',
+                  fontSize: 13,
+                  letterSpacing: '0.22em',
                   textTransform: 'uppercase',
                   margin: 0,
                   fontFamily: 'Geist, sans-serif',
