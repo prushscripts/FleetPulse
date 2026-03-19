@@ -174,7 +174,13 @@ export default function FleetHealthClient() {
         healthScore: 0,
         scoreLabel: 'No data',
         scoreColor: 'bg-slate-500/10 text-slate-400',
-        attentionVehicles: [] as { id: string; truckNumber: string; oilOverdueMiles: number; openIssues: number }[],
+        attentionVehicles: [] as {
+          id: string
+          truckNumber: string
+          oilOverdueMiles: number
+          openIssues: number
+          hasFailed: boolean
+        }[],
         highMileageVehicles: [] as { id: string; truckNumber: string; mileage: number }[],
         vanCount: 0,
         truckCount: 0,
