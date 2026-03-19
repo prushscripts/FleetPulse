@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Papa from 'papaparse'
-import { Search, Upload, Plus, FileText, Edit2, Truck, CheckCircle, AlertTriangle, Wrench, ClipboardCheck, ArrowRight, UserPlus, Copy, User } from 'lucide-react'
+import { Search, Upload, Plus, FileText, Edit2, Truck, CheckCircle, AlertTriangle, Wrench, ClipboardCheck, ArrowRight, UserPlus, Copy, User, ChevronRight } from 'lucide-react'
 import { normalizeTier, SubscriptionTier, TIER_CONFIG } from '@/lib/tiers'
 import { getUserDisplayName } from '@/lib/user-utils'
 import type { VehicleWithStats } from '@/lib/dashboard-types'
@@ -805,7 +805,7 @@ export default function DashboardClient(
                       <div className="text-sm text-white font-medium">{v.code}</div>
                       <div className="text-xs text-slate-400 mt-0.5">Oil change overdue · {(v.current_mileage ?? 0).toLocaleString()} mi</div>
                     </div>
-                    <button type="button" onClick={() => navigateToVehicle(v.id)} className="text-[11px] text-blue-400 hover:text-blue-300 flex-shrink-0">View</button>
+                    <button type="button" onClick={() => openVehiclePanel(v)} className="text-[11px] text-blue-400 hover:text-blue-300 flex-shrink-0">View</button>
                   </div>
                 ))
               )}
@@ -1263,14 +1263,19 @@ export default function DashboardClient(
                 const due = vehicle.oil_change_due_mileage ?? 0
                 const oilOverdueMiles = due > 0 && current >= due ? current - due : 0
                 const milesUntilOil = due > 0 ? due - current : 0
+                const OIL_DUE_SOON_MI = 500
                 const borderClass =
                   oilOverdueMiles > 0
                     ? 'border-l-red-500'
-                    : milesUntilOil > 0 && milesUntilOil <= 2000
-                      ? 'border-l-amber-500/70'
-                      : 'border-l-emerald-500/40'
-                const statusLabel = (vehicle.status || 'active') === 'active' ? 'Active' : (vehicle.status === 'out_of_service' ? 'Out of service' : vehicle.status === 'in_shop' ? 'In shop' : vehicle.status ?? 'Active')
+                    : milesUntilOil > 0 && milesUntilOil <= OIL_DUE_SOON_MI
+                      ? 'border-l-amber-500'
+                      : 'border-l-emerald-500'
                 const ymm = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ')
+                const issueCount = vehicle.open_issues_count ?? 0
+                const overdueK =
+                  oilOverdueMiles >= 1000
+                    ? `+${(oilOverdueMiles / 1000).toFixed(1)}k mi overdue`
+                    : `+${oilOverdueMiles.toLocaleString()} mi overdue`
                 return (
                   <motion.div
                     key={vehicle.id}
@@ -1286,78 +1291,45 @@ export default function DashboardClient(
                         openVehiclePanel(vehicle)
                       }
                     }}
-                    className={`group flex items-center gap-4 px-4 py-3.5 border-l-4 ${borderClass} border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.03] transition-all duration-150 cursor-pointer ${lastVehicleId === vehicle.id ? 'ring-1 ring-inset ring-blue-500/20' : ''}`}
+                    className={`group flex items-center gap-3 px-4 py-3 border-l-[3px] ${borderClass} border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.03] transition-all duration-150 cursor-pointer ${lastVehicleId === vehicle.id ? 'ring-1 ring-inset ring-blue-500/20' : ''}`}
                   >
-                    {/* Left: truck number, ymm, status */}
-                    <div className="min-w-0 flex-shrink-0" style={{ width: 'clamp(120px, 18%, 180px)' }}>
-                      <div className="font-mono font-bold text-base text-white truncate">{vehicle.code}</div>
-                      <div className="text-[11px] text-slate-500 truncate mt-0.5">{ymm || '—'}</div>
-                      <span className={`inline-block mt-1.5 px-2 py-0.5 rounded text-[10px] font-medium ${(vehicle.status || 'active') === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'}`}>
-                        {statusLabel}
-                      </span>
+                    <div className="font-mono font-bold text-white text-sm w-16 flex-shrink-0 tabular-nums">
+                      {vehicle.code}
                     </div>
-                    {/* Middle: driver, phone, territory */}
-                    <div className="min-w-0 flex-1 flex items-center gap-4 flex-wrap">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <User size={12} className="text-slate-500 flex-shrink-0" />
+                    <div className="min-w-0 flex-1 flex items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs text-slate-500 truncate">{ymm || '—'}</div>
                         {vehicle.driver_name ? (
-                          <span className="text-sm text-slate-300 truncate">{vehicle.driver_name}</span>
+                          <div className="text-xs text-slate-400 truncate mt-0.5">{vehicle.driver_name}</div>
                         ) : (
-                          <span className="text-sm text-slate-600 italic">Unassigned</span>
+                          <div className="text-xs text-slate-500 italic mt-0.5">Unassigned</div>
                         )}
                       </div>
-                      {vehicle.driver_phone && (
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-slate-500 font-mono">{vehicle.driver_phone}</span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigator.clipboard.writeText(vehicle.driver_phone ?? '')
-                              showToast('Copied', 'Phone copied.')
-                            }}
-                            className="p-1 rounded text-slate-500 hover:text-white hover:bg-white/[0.06]"
-                            aria-label="Copy phone"
-                          >
-                            <Copy size={11} />
-                          </button>
-                        </div>
-                      )}
-                      <span className="px-2 py-0.5 rounded text-[10px] bg-white/[0.08] text-slate-400 uppercase tracking-wide">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide bg-white/[0.08] text-slate-400 flex-shrink-0">
                         {getTerritory(vehicle)}
                       </span>
+                      {issueCount > 0 && (
+                        <span className="badge badge-warning text-[10px] whitespace-nowrap flex-shrink-0">
+                          ⚠ {issueCount} issue{issueCount > 1 ? 's' : ''}
+                        </span>
+                      )}
                     </div>
-                    {/* Right: mileage, oil due, miles until */}
-                    <div className="flex items-center gap-4 flex-shrink-0">
-                      <div className="text-right">
-                        <div className="font-mono text-sm text-white">{current.toLocaleString()}</div>
-                        <div className="text-[10px] text-slate-600">mi</div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`font-mono text-sm ${oilOverdueMiles > 0 ? 'text-red-400' : 'text-slate-300'}`}>{due.toLocaleString()}</div>
-                        <div className="text-[10px] text-slate-600">oil due</div>
-                      </div>
-                      <div className="text-right min-w-[4rem]">
-                        {oilOverdueMiles > 0 ? (
-                          <div className="text-[11px] font-mono text-red-400">+{oilOverdueMiles.toLocaleString()} overdue</div>
-                        ) : milesUntilOil <= 2000 && milesUntilOil > 0 ? (
-                          <div className="text-[11px] font-mono text-amber-400">{milesUntilOil.toLocaleString()} mi</div>
-                        ) : milesUntilOil > 0 ? (
-                          <div className="text-[11px] font-mono text-slate-500">{milesUntilOil.toLocaleString()} mi</div>
-                        ) : (
-                          <div className="text-[11px] text-slate-600">—</div>
-                        )}
-                      </div>
+                    <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                      <span className="font-mono text-xs text-slate-400 tabular-nums whitespace-nowrap">
+                        {current.toLocaleString()} mi
+                      </span>
+                      <span className="text-slate-600 hidden sm:inline">|</span>
+                      {oilOverdueMiles > 0 ? (
+                        <span className="text-[10px] font-semibold font-mono text-red-400 whitespace-nowrap">{overdueK}</span>
+                      ) : milesUntilOil > 0 && milesUntilOil <= OIL_DUE_SOON_MI ? (
+                        <span className="text-[10px] font-mono text-amber-400 whitespace-nowrap">
+                          Due in {milesUntilOil.toLocaleString()} mi
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-semibold text-emerald-400 whitespace-nowrap">Oil OK</span>
+                      )}
+                      <ChevronRight size={16} className="text-slate-600 group-hover:text-slate-400 flex-shrink-0" />
                     </div>
-                    {/* Far right: copy summary */}
-                    <button
-                      type="button"
-                      onClick={(e) => copyVehicleSummary(e, vehicle)}
-                      className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/[0.06] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label="Copy vehicle summary"
-                    >
-                      <Copy size={14} />
-                    </button>
                   </motion.div>
                 )
               })}
@@ -1546,7 +1518,7 @@ export default function DashboardClient(
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation()
-                      navigateToVehicle(vehicle.id)
+                      openVehiclePanel(vehicle)
                     }}
                     className="text-xs font-medium tracking-wide text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
                   >

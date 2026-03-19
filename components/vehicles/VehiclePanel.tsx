@@ -78,7 +78,7 @@ export default function VehiclePanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-[2px]"
           />
 
           <motion.div
@@ -93,7 +93,7 @@ export default function VehiclePanel({
               opacity: 0,
               transition: { duration: 0.2, ease: 'easeIn' },
             }}
-            className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-lg bg-[#0A0F1E] border-l border-white/[0.08] shadow-2xl flex flex-col overflow-hidden"
+            className="fixed right-0 top-0 bottom-0 z-[60] w-full max-w-lg bg-[#0A0F1E] border-l border-white/[0.08] shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Panel header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] flex-shrink-0">

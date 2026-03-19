@@ -15,9 +15,10 @@ import {
   Copy,
   Check,
   ChevronRight,
+  MessageSquare,
 } from 'lucide-react'
 
-type AdminTab = 'issues' | 'announcements' | 'team'
+type AdminTab = 'issues' | 'announcements' | 'team' | 'messages'
 
 // Kept for compatibility with preview tooling that imports this type.
 // This is a type-only export and does not affect runtime logic.
@@ -67,6 +68,29 @@ type ProfileRow = {
   territory: string | null
 }
 
+function timeAgoMessages(dateStr: string): string {
+  const d = new Date(dateStr)
+  const now = new Date()
+  const s = Math.floor((now.getTime() - d.getTime()) / 1000)
+  if (s < 60) return 'just now'
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
+  if (s < 604800) return `${Math.floor(s / 86400)}d ago`
+  return d.toLocaleDateString()
+}
+
+function dedupeSentMessages<T extends { title: string; body: string; created_at: string }>(rows: T[]): T[] {
+  const seen = new Set<string>()
+  const out: T[] = []
+  for (const r of rows) {
+    const key = `${r.title}\n${r.body}\n${r.created_at.slice(0, 19)}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(r)
+  }
+  return out
+}
+
 export default function AdminClient({
   user,
   initialTab,
@@ -78,7 +102,12 @@ export default function AdminClient({
   const companyId = (user?.user_metadata?.company_id as string) || null
 
   const [activeTab, setActiveTab] = useState<AdminTab>(() => {
-    if (initialTab === 'issues' || initialTab === 'announcements' || initialTab === 'team')
+    if (
+      initialTab === 'issues' ||
+      initialTab === 'announcements' ||
+      initialTab === 'team' ||
+      initialTab === 'messages'
+    )
       return initialTab
     return 'issues'
   })
@@ -111,6 +140,18 @@ export default function AdminClient({
   const [editingTerritoryId, setEditingTerritoryId] = useState<string | null>(null)
   const [editingTerritoryValue, setEditingTerritoryValue] = useState<string>('')
   const [copiedCode, setCopiedCode] = useState<'manager' | 'driver' | null>(null)
+
+  const [msgRecipient, setMsgRecipient] = useState('all')
+  const [msgTitle, setMsgTitle] = useState('')
+  const [msgBody, setMsgBody] = useState('')
+  const [msgSending, setMsgSending] = useState(false)
+  const [msgSuccess, setMsgSuccess] = useState(false)
+  const [sentMessages, setSentMessages] = useState<
+    Array<{ id: string; title: string; body: string; recipient_territory: string | null; created_at: string; recipient_user_id?: string | null }>
+  >([])
+  const [drivers, setDrivers] = useState<
+    Array<{ id: string; first_name: string | null; last_name: string | null; location: string | null; user_id: string | null }>
+  >([])
 
   useEffect(() => {
     if (initialTab === 'issues' && (inspectionId || vehicleId)) setActiveTab('issues')
@@ -211,6 +252,87 @@ export default function AdminClient({
   useEffect(() => {
     if (activeTab === 'team') loadTeam()
   }, [activeTab, loadTeam])
+
+  const loadMessagesTab = useCallback(async () => {
+    if (!companyId) return
+    try {
+      let { data: driversData, error: driversErr } = await supabase
+        .from('drivers')
+        .select('id, first_name, last_name, location, user_id')
+        .eq('company_id', companyId)
+        .eq('active', true)
+        .order('first_name')
+
+      if (driversErr) {
+        const fb = await supabase
+          .from('drivers')
+          .select('id, first_name, last_name, location, user_id')
+          .eq('company_id', companyId)
+          .order('first_name')
+        driversData = fb.data
+      }
+
+      setDrivers(driversData ?? [])
+
+      const { data: msgsData } = await supabase
+        .from('notifications')
+        .select('id, title, body, recipient_territory, created_at, recipient_user_id')
+        .eq('company_id', companyId)
+        .eq('type', 'announcement')
+        .order('created_at', { ascending: false })
+        .limit(200)
+
+      setSentMessages(dedupeSentMessages(msgsData ?? []))
+    } catch (e) {
+      console.error(e)
+      setDrivers([])
+      setSentMessages([])
+    }
+  }, [companyId, supabase])
+
+  useEffect(() => {
+    if (activeTab === 'messages') void loadMessagesTab()
+  }, [activeTab, loadMessagesTab])
+
+  const handleSendMessage = async () => {
+    if (!msgTitle.trim() || !msgBody.trim() || !companyId) return
+    setMsgSending(true)
+    setMsgSuccess(false)
+    setToast(null)
+    try {
+      const res = await fetch('/api/notifications/manager-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: msgTitle.trim(),
+          body: msgBody.trim(),
+          recipient: msgRecipient,
+        }),
+      })
+      const json = (await res.json().catch(() => ({}))) as { error?: string }
+      if (!res.ok) throw new Error(json.error || 'Failed to send message')
+
+      setMsgTitle('')
+      setMsgBody('')
+      setMsgRecipient('all')
+      setMsgSuccess(true)
+      window.setTimeout(() => setMsgSuccess(false), 3000)
+
+      const { data } = await supabase
+        .from('notifications')
+        .select('id, title, body, recipient_territory, created_at, recipient_user_id')
+        .eq('company_id', companyId)
+        .eq('type', 'announcement')
+        .order('created_at', { ascending: false })
+        .limit(200)
+      setSentMessages(dedupeSentMessages(data ?? []))
+    } catch (e: unknown) {
+      console.error('Send message error:', e)
+      setToast({ type: 'error', message: (e as Error).message || 'Failed to send message' })
+    } finally {
+      setMsgSending(false)
+    }
+  }
 
   const filteredIssues = issues.filter((issue) => {
     if (inspectionId && (issue.inspection_id ?? null) !== inspectionId) return false
@@ -314,7 +436,7 @@ export default function AdminClient({
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <div className="mb-8">
           <h1 className="text-2xl font-display font-bold text-white">Admin</h1>
-          <p className="text-sm text-slate-400 mt-1">Issues, announcements, and team</p>
+          <p className="text-sm text-slate-400 mt-1">Issues, announcements, team, and driver messages</p>
         </div>
 
         {toast && (
@@ -327,20 +449,28 @@ export default function AdminClient({
           </div>
         )}
 
-        <div className="flex gap-2 border-b border-white/[0.08] mb-6">
-          {(['issues', 'announcements', 'team'] as const).map((tab) => (
+        <div className="flex gap-2 border-b border-white/[0.08] mb-6 flex-wrap">
+          {(
+            [
+              { id: 'issues' as const, label: 'Issues', icon: ClipboardCheck },
+              { id: 'announcements' as const, label: 'Announcements', icon: Megaphone },
+              { id: 'team' as const, label: 'Team', icon: Users },
+              { id: 'messages' as const, label: 'Messages', icon: MessageSquare },
+            ] as const
+          ).map(({ id, label, icon: Icon }) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={id}
+              type="button"
+              onClick={() => setActiveTab(id)}
               className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${
-                activeTab === tab
+                activeTab === id
                   ? 'bg-white/[0.08] text-white border-b-2 border-blue-500'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              {tab === 'issues' && <span className="flex items-center gap-2"><ClipboardCheck size={14} /> Issues</span>}
-              {tab === 'announcements' && <span className="flex items-center gap-2"><Megaphone size={14} /> Announcements</span>}
-              {tab === 'team' && <span className="flex items-center gap-2"><Users size={14} /> Team</span>}
+              <span className="flex items-center gap-2">
+                <Icon size={14} /> {label}
+              </span>
             </button>
           ))}
         </div>
@@ -551,6 +681,114 @@ export default function AdminClient({
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Tab: Messages (driver notifications) */}
+        {activeTab === 'messages' && (
+          <div className="space-y-4">
+            <div className="card-glass rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-white/[0.06]">
+                <h2 className="text-sm font-semibold text-white">Send Message to Driver</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Messages appear as notifications in the driver&apos;s app
+                </p>
+              </div>
+              <div className="px-5 py-5 space-y-4">
+                <div>
+                  <label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Send To</label>
+                  <select
+                    value={msgRecipient}
+                    onChange={(e) => setMsgRecipient(e.target.value)}
+                    className="input-field w-full"
+                  >
+                    <option value="all">Everyone (all drivers)</option>
+                    <option value="ny">New York drivers only</option>
+                    <option value="dmv">DMV drivers only</option>
+                    {drivers.map((d) => (
+                      <option key={d.id} value={d.user_id ?? d.id}>
+                        {d.first_name} {d.last_name} — {d.location ?? 'Unknown'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Title</label>
+                  <input
+                    type="text"
+                    value={msgTitle}
+                    onChange={(e) => setMsgTitle(e.target.value)}
+                    placeholder="e.g. Route change today"
+                    className="input-field w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Message</label>
+                  <textarea
+                    value={msgBody}
+                    onChange={(e) => setMsgBody(e.target.value)}
+                    placeholder="Type your message to drivers..."
+                    rows={3}
+                    className="input-field resize-none w-full"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => void handleSendMessage()}
+                  disabled={!msgTitle.trim() || !msgBody.trim() || msgSending}
+                  className="btn-primary px-6 py-2.5 flex items-center gap-2 disabled:opacity-50"
+                >
+                  {msgSending ? (
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <MessageSquare size={14} />
+                  )}
+                  {msgSending ? 'Sending...' : 'Send Message'}
+                </button>
+
+                {msgSuccess && (
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
+                    ✓ Message sent successfully
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="card-glass rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-white/[0.06]">
+                <h2 className="text-sm font-semibold text-white">Recent Messages</h2>
+              </div>
+              <div className="divide-y divide-white/[0.04]">
+                {sentMessages.length === 0 ? (
+                  <div className="px-5 py-8 text-center text-slate-500 text-sm">No messages sent yet</div>
+                ) : (
+                  sentMessages.map((msg) => (
+                    <div key={msg.id} className="px-5 py-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white">{msg.title}</p>
+                          <p className="text-xs text-slate-400 mt-1">{msg.body}</p>
+                          <p className="text-[10px] text-slate-600 mt-2">
+                            To:{' '}
+                            {msg.recipient_user_id
+                              ? 'Individual'
+                              : msg.recipient_territory === 'New York'
+                                ? 'New York'
+                                : msg.recipient_territory === 'DMV'
+                                  ? 'DMV'
+                                  : 'Everyone'}{' '}
+                            · {timeAgoMessages(msg.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
 

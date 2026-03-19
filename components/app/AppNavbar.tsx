@@ -88,7 +88,9 @@ export default function AppNavbar() {
         initial,
       })
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', u.id).maybeSingle()
-      setUserRole((profile as { role?: string } | null)?.role ?? null)
+      const fromProfile = (profile as { role?: string } | null)?.role
+      const fromMeta = u.user_metadata?.role as string | undefined
+      setUserRole(fromProfile ?? fromMeta ?? null)
       const companyId = u.user_metadata?.company_id as string | undefined
       if (companyId) {
         fetch(`/api/company-config?company_id=${encodeURIComponent(companyId)}`)
@@ -256,14 +258,10 @@ export default function AppNavbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        {(userRole === 'owner' || userRole === 'manager') && (
-        <div ref={notifRef} className="relative">
+        <div ref={notifRef} className="relative z-[60]">
           <button
             type="button"
-            onClick={() => {
-              setNotifOpen(!notifOpen)
-              if (!notifOpen && unreadCount > 0) void markAllRead()
-            }}
+            onClick={() => setNotifOpen(!notifOpen)}
             className="relative w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
             aria-label="Notifications"
           >
@@ -272,7 +270,7 @@ export default function AppNavbar() {
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center px-1"
+                className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1 shadow-sm"
               >
                 {unreadCount > 9 ? '9+' : unreadCount}
               </motion.span>
@@ -285,18 +283,18 @@ export default function AppNavbar() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.96 }}
                 transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-[#0F1629] border border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden z-50"
+                className="absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] card-glass rounded-2xl shadow-2xl overflow-hidden z-[70] border border-white/[0.08]"
               >
-                <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <span className="text-sm font-semibold text-white">Notifications</span>
                     {unreadCount > 0 && (
-                      <span className="px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-[10px] font-semibold">
+                      <span className="px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] font-semibold">
                         {unreadCount} new
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     {notifications.length > 0 && (
                       <>
                         <button
@@ -310,10 +308,10 @@ export default function AppNavbar() {
                         <button
                           type="button"
                           onClick={() => void clearAll()}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/[0.06] transition-all"
-                          title="Clear all"
+                          className="px-2 py-1 rounded-lg text-[11px] text-slate-400 hover:text-red-400 hover:bg-red-500/[0.08] transition-all"
+                            title="Clear all notifications"
                         >
-                          <Trash2 size={13} />
+                          Clear all
                         </button>
                       </>
                     )}
@@ -333,7 +331,7 @@ export default function AppNavbar() {
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 8 }}
-                        className={`group flex items-start gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0 cursor-pointer hover:bg-white/[0.03] transition-colors ${!notif.read ? 'bg-blue-500/[0.03]' : ''}`}
+                        className={`group flex items-start gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0 cursor-pointer hover:bg-white/[0.03] transition-colors ${!notif.read ? 'bg-red-500/[0.04]' : ''}`}
                         onClick={() => handleNotifClick(notif)}
                       >
                         <div
@@ -361,7 +359,7 @@ export default function AppNavbar() {
                               {notif.title}
                             </p>
                             {!notif.read && (
-                              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0 mt-1" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0 mt-1" />
                             )}
                           </div>
                           <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{notif.body}</p>
@@ -387,7 +385,6 @@ export default function AppNavbar() {
             )}
           </AnimatePresence>
         </div>
-        )}
 
         <div className="relative" ref={menuRef}>
           <button
