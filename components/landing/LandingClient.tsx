@@ -22,9 +22,11 @@ export default function LandingClient() {
       <IntroAnimation onComplete={handleIntroComplete} />
 
       <motion.div
-        initial={{ opacity: introComplete ? 1 : 0, scale: introComplete ? 1 : 1.02 }}
-        animate={{ opacity: introComplete ? 1 : 0, scale: introComplete ? 1 : 1.02 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={
+          introComplete ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.97 }
+        }
+        transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
         className="min-h-screen w-full"
       >
         <HeroSection />

@@ -8,7 +8,7 @@ const TOTAL_DURATION_MS = 2400
 const OVERLAY_EXIT_MS = 500
 
 /**
- * Landing mission-control boot overlay. ~2.4s then curtain exit. No CSS ring classes.
+ * Landing intro: rings → heartbeat flash → zoom fade exit. onComplete after exit settles.
  */
 export default function IntroAnimation({
   onComplete,
@@ -16,10 +16,15 @@ export default function IntroAnimation({
   onComplete: () => void
 }) {
   const [visible, setVisible] = useState(true)
+  const [heartbeat, setHeartbeat] = useState(false)
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(false), TOTAL_DURATION_MS)
-    return () => clearTimeout(t)
+    const tHeartbeat = window.setTimeout(() => setHeartbeat(true), TOTAL_DURATION_MS - 300)
+    const tExit = window.setTimeout(() => setVisible(false), TOTAL_DURATION_MS)
+    return () => {
+      clearTimeout(tHeartbeat)
+      clearTimeout(tExit)
+    }
   }, [])
 
   useEffect(() => {
@@ -35,109 +40,140 @@ export default function IntroAnimation({
         {visible && (
           <motion.div
             key="landing-intro-overlay"
-            initial={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 1, scale: 1 }}
             exit={{
               opacity: 0,
-              y: '-100%',
-              transition: { duration: OVERLAY_EXIT_MS / 1000, ease: [0.76, 0, 0.24, 1] },
+              scale: 1.08,
+              transition: { duration: 0.5, ease: [0.76, 0, 0.24, 1] },
             }}
             className="fixed inset-0 z-[100] bg-[#0A0F1E] overflow-hidden will-change-transform"
-            style={{ transformOrigin: 'center top' }}
+            style={{ transformOrigin: '50% 50%' }}
           >
+            {heartbeat && (
+              <motion.div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  pointerEvents: 'none',
+                  background:
+                    'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(59,130,246,0.35) 0%, transparent 70%)',
+                }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: [0, 1, 0], scale: [0.8, 1.15, 1.4] }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+              />
+            )}
+
+            {/* Full screen radial glow */}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
-                background:
-                  'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(59,130,246,0.18) 0%, transparent 70%)',
                 pointerEvents: 'none',
+                background:
+                  'radial-gradient(ellipse 55% 45% at 50% 50%, rgba(59,130,246,0.22) 0%, rgba(59,130,246,0.06) 40%, transparent 70%)',
               }}
             />
 
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              {[0, 0.2, 0.4, 0.65, 0.9].map((delay, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                  style={{
-                    border: `${i === 0 ? 1.5 : 1}px solid rgba(59,130,246,${Math.max(0.15, 0.7 - i * 0.12)})`,
-                    width: 120,
-                    height: 120,
-                  }}
-                  animate={{
-                    width: ['120px', `${900 + i * 120}px`],
-                    height: ['120px', `${900 + i * 120}px`],
-                    opacity: [0.8, 0],
-                  }}
-                  transition={{
-                    duration: 1.8,
-                    delay,
-                    ease: [0.2, 0.8, 0.4, 1],
-                    repeat: Infinity,
-                    repeatDelay: 0.8,
-                  }}
-                />
-              ))}
-            </div>
+            {/* 5 expanding rings — all perfectly centered */}
+            {[
+              { delay: 0, color: 'rgba(59,130,246,0.75)', width: 2 },
+              { delay: 0.25, color: 'rgba(59,130,246,0.55)', width: 1.5 },
+              { delay: 0.5, color: 'rgba(59,130,246,0.4)', width: 1 },
+              { delay: 0.75, color: 'rgba(59,130,246,0.25)', width: 1 },
+              { delay: 1.0, color: 'rgba(59,130,246,0.15)', width: 0.5 },
+            ].map((ring, i) => (
+              <motion.div
+                key={i}
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  borderRadius: '50%',
+                  border: `${ring.width}px solid ${ring.color}`,
+                  translateX: '-50%',
+                  translateY: '-50%',
+                }}
+                initial={{ width: 0, height: 0, opacity: 1 }}
+                animate={{ width: 1600, height: 1600, opacity: 0 }}
+                transition={{
+                  duration: 2.2,
+                  delay: ring.delay,
+                  ease: [0.1, 0.4, 0.6, 1],
+                  repeat: Infinity,
+                  repeatDelay: 0.5,
+                }}
+              />
+            ))}
 
-            <motion.div
-              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: 6,
-                backgroundColor: '#3B82F6',
-                boxShadow: '0 0 20px 6px rgba(59,130,246,0.6)',
-              }}
-              animate={{ scale: [1, 1.4, 1], opacity: [1, 0.6, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            />
-
+            {/* Glowing center dot — larger and brighter */}
             <motion.div
               style={{
                 position: 'absolute',
-                bottom: '38%',
-                left: 0,
-                right: 0,
+                top: '50%',
+                left: '50%',
+                translateX: '-50%',
+                translateY: '-50%',
+                width: 16,
+                height: 16,
+                borderRadius: '50%',
+                backgroundColor: '#3B82F6',
+                boxShadow:
+                  '0 0 30px 10px rgba(59,130,246,0.7), 0 0 60px 20px rgba(59,130,246,0.3)',
+              }}
+              animate={{
+                scale: [1, 1.6, 1],
+                boxShadow: [
+                  '0 0 30px 10px rgba(59,130,246,0.7), 0 0 60px 20px rgba(59,130,246,0.3)',
+                  '0 0 50px 18px rgba(59,130,246,0.9), 0 0 100px 40px rgba(59,130,246,0.5)',
+                  '0 0 30px 10px rgba(59,130,246,0.7), 0 0 60px 20px rgba(59,130,246,0.3)',
+                ],
+              }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+            />
+
+            {/* Logo block — centered vertically, positioned slightly below center */}
+            <motion.div
+              style={{
+                position: 'absolute',
+                top: '54%',
+                left: '50%',
+                translateX: '-50%',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 8,
+                gap: 10,
               }}
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
+              transition={{ delay: 0.4, duration: 0.6, ease: 'easeOut' }}
             >
               <Image
                 src="/branding/fleetpulse-logo.png"
                 alt="FleetPulse"
-                width={180}
-                height={40}
-                style={{ opacity: 0.9 }}
+                width={220}
+                height={52}
+                style={{ opacity: 1 }}
                 priority
               />
-              <div
-                style={{
-                  width: 32,
-                  height: 1.5,
-                  backgroundColor: 'rgba(59,130,246,0.6)',
-                  borderRadius: 1,
-                }}
-              />
+              <div style={{ width: 48, height: 2, backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 1 }} />
               <p
                 style={{
-                  color: 'rgba(148,163,184,0.7)',
+                  color: 'rgba(148,163,184,0.8)',
                   fontSize: 11,
-                  letterSpacing: '0.2em',
+                  letterSpacing: '0.25em',
                   textTransform: 'uppercase',
-                  fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+                  margin: 0,
+                  fontFamily: 'Geist, sans-serif',
+                  fontWeight: 500,
                 }}
               >
                 Fleet Management System
               </p>
             </motion.div>
 
-            <motion.div
+            {/* Progress bar at bottom */}
+            <div
               style={{
                 position: 'absolute',
                 bottom: 0,
@@ -148,12 +184,18 @@ export default function IntroAnimation({
               }}
             >
               <motion.div
-                style={{ height: '100%', backgroundColor: '#3B82F6', borderRadius: 1 }}
-                initial={{ width: '0%' }}
-                animate={{ width: '100%' }}
-                transition={{ duration: 2.0, ease: 'linear' }}
+                style={{
+                  height: '100%',
+                  backgroundColor: '#3B82F6',
+                  borderRadius: 1,
+                  originX: 0,
+                  transformOrigin: 'left center',
+                }}
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 2.2, ease: 'linear' }}
               />
-            </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
