@@ -130,7 +130,7 @@ export default function WelcomeClient() {
               Start free trial
             </Link>
             <a
-              href="mailto:fleetpulse@fastmail.com?subject=FleetPulse%20purchase%20inquiry"
+              href="mailto:support@fleetpulsehq.com?subject=FleetPulse%20purchase%20inquiry"
               className="inline-flex items-center gap-2 px-10 py-4 rounded-xl border border-white/20 text-white/90 font-semibold hover:bg-white/10 transition-all duration-200"
             >
               Purchase / Contact sales

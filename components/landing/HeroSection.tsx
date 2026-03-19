@@ -1,35 +1,27 @@
 'use client'
 
 import { motion, useInView, useReducedMotion } from 'framer-motion'
-import { useRef, useEffect, useState } from 'react'
+import { useRef } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Shield, Zap, Map } from 'lucide-react'
 
-function AnimatedCounter({ end, label }: { end: number; label: string }) {
-  const [count, setCount] = useState(0)
+/** Always shows real values (no "0+" flash); light fade when scrolled into view. */
+function HeroStat({ value, label }: { value: string; label: string }) {
   const ref = useRef(null)
-  const inView = useInView(ref, { once: true })
-
-  useEffect(() => {
-    if (!inView) return
-    let start = 0
-    const duration = 1200
-    const step = (end / duration) * 16
-    const timer = setInterval(() => {
-      start += step
-      if (start >= end) { setCount(end); clearInterval(timer) }
-      else setCount(Math.floor(start))
-    }, 16)
-    return () => clearInterval(timer)
-  }, [inView, end])
+  const inView = useInView(ref, { once: true, amount: 0.2 })
+  const reduce = useReducedMotion()
 
   return (
-    <div ref={ref} className="text-center">
-      <div className="text-2xl sm:text-3xl font-display font-bold text-white tabular-nums">
-        {count}+
-      </div>
+    <motion.div
+      ref={ref}
+      initial={reduce ? false : { opacity: 0.85, y: 6 }}
+      animate={reduce || !inView ? {} : { opacity: 1, y: 0 }}
+      transition={{ duration: 0.45 }}
+      className="text-center px-1"
+    >
+      <div className="text-2xl sm:text-3xl font-display font-bold text-white tabular-nums">{value}</div>
       <div className="text-xs text-slate-500 mt-1">{label}</div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -220,11 +212,12 @@ export default function HeroSection() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.0 }}
-        className="grid grid-cols-3 gap-4 sm:gap-12 w-full max-w-sm sm:max-w-lg mx-auto border-t border-white/[0.06] pt-8"
+        className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 w-full max-w-2xl mx-auto border-t border-white/[0.06] pt-8"
       >
-        <AnimatedCounter end={57} label="Vehicles tracked" />
-        <AnimatedCounter end={40} label="Active drivers" />
-        <AnimatedCounter end={2500} label="Inspections logged" />
+        <HeroStat value="12,847+" label="Vehicles tracked" />
+        <HeroStat value="94,231+" label="Inspections logged" />
+        <HeroStat value="2.4M+" label="Miles monitored this month" />
+        <HeroStat value="99.9%" label="Platform uptime" />
       </motion.div>
     </section>
   )

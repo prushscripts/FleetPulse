@@ -38,7 +38,7 @@ export default function CtaSection() {
                 Start your free trial
                 <ArrowRight size={15} />
               </Link>
-              <a href="mailto:fleetpulse@fastmail.com" className="btn-ghost w-full sm:w-auto text-center px-8 py-3.5 min-h-[48px] flex items-center justify-center">
+              <a href="mailto:support@fleetpulsehq.com" className="btn-ghost w-full sm:w-auto text-center px-8 py-3.5 min-h-[48px] flex items-center justify-center">
                 Talk to sales
               </a>
             </div>

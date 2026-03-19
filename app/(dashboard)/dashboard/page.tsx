@@ -1,5 +1,8 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+
+export const metadata: Metadata = { title: 'Vehicles — FleetPulse' }
 import { buildPlateMap, buildTerritoryMap } from '@/lib/dashboard-maps'
 import DashboardClient from './DashboardClient'
 import TabSlideTransition from '@/components/animations/TabSlideTransition'

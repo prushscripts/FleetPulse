@@ -23,7 +23,7 @@ export default function Footer() {
           <div>
             <div className="text-xs text-slate-600 uppercase tracking-wider mb-4">Company</div>
             <div className="flex flex-col gap-2.5">
-              {[['About', '/about'], ['Contact', 'mailto:fleetpulse@fastmail.com']].map(([label, href]) => (
+              {[['About', '/about'], ['Contact', 'mailto:support@fleetpulsehq.com']].map(([label, href]) => (
                 <Link key={label} href={href} className="text-sm text-slate-400 hover:text-white transition-colors">{label}</Link>
               ))}
             </div>

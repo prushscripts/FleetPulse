@@ -756,7 +756,7 @@ export default function DashboardClient(
             <span className="status-dot active" />
             <span className="text-xs text-slate-500 uppercase tracking-wider font-medium">Fleet is operational</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-display font-bold text-white">Good morning, {companyName}</h1>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-white">Good morning, {userDisplayName}</h1>
           <p className="text-slate-400 text-sm mt-1">Here&apos;s what&apos;s happening with your fleet today.</p>
         </div>
 

@@ -1,4 +1,7 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
+
+export const metadata: Metadata = { title: 'Admin — FleetPulse' }
 import { redirect } from 'next/navigation'
 import AdminClient from './AdminClient'
 import TabSlideTransition from '@/components/animations/TabSlideTransition'

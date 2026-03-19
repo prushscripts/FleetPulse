@@ -1,4 +1,7 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
+
+export const metadata: Metadata = { title: 'Drivers — FleetPulse' }
 import { redirect } from 'next/navigation'
 import DriversClient from './DriversClient'
 import TabSlideTransition from '@/components/animations/TabSlideTransition'

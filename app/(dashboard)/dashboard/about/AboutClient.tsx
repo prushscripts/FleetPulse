@@ -78,7 +78,7 @@ export default function AboutClient() {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-500/20 bg-blue-500/[0.06] text-xs text-blue-400 mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-            FleetPulse v2.0 — Now with inspections & driver portal
+            What&apos;s included in your plan
           </div>
           <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-4 tracking-tight">
             Built for fleets that

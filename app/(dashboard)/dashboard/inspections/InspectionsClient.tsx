@@ -13,6 +13,7 @@ type Inspection = {
   status: 'passed' | 'failed' | 'needs_review' | 'pending'
   submitted_at: string
   odometer: number | null
+  vehicles?: { code: string | null; location?: string | null } | null
 }
 
 export default function InspectionsClient() {
@@ -37,7 +38,7 @@ export default function InspectionsClient() {
         }
         const { data } = await supabase
           .from('inspections')
-          .select('id, vehicle_id, type, status, submitted_at, odometer')
+          .select('id, vehicle_id, type, status, submitted_at, odometer, vehicles(code, location)')
           .eq('company_id', cid)
           .order('submitted_at', { ascending: false })
         setRows((data as Inspection[]) || [])
@@ -55,7 +56,7 @@ export default function InspectionsClient() {
       if (filter === 'failed' && r.status !== 'failed') return false
       if (!query.trim()) return true
       const q = query.toLowerCase()
-      return `${r.vehicle_id || ''} ${r.type} ${r.status}`.toLowerCase().includes(q)
+      return `${r.vehicles?.code || r.vehicle_id || ''} ${r.type} ${r.status}`.toLowerCase().includes(q)
     })
   }, [rows, filter, query])
 
@@ -106,12 +107,13 @@ export default function InspectionsClient() {
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input className="input-field pl-9 pr-8 h-9 text-sm" placeholder="Search inspections..." value={query} onChange={(e) => setQuery(e.target.value)} />
             </div>
-            <div className="flex items-center gap-1 overflow-x-auto">
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
               {(['all', 'pre_trip', 'post_trip', 'failed'] as const).map((tab) => (
                 <button
                   key={tab}
+                  type="button"
                   onClick={() => setFilter(tab)}
-                  className={`px-3 py-1.5 text-xs rounded-lg ${filter === tab ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30' : 'text-slate-500'}`}
+                  className={`flex-shrink-0 px-3 py-1.5 text-xs rounded-lg whitespace-nowrap ${filter === tab ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30' : 'text-slate-500'}`}
                 >
                   {tab === 'all' ? 'All' : tab === 'pre_trip' ? 'Pre-Trip' : tab === 'post_trip' ? 'Post-Trip' : 'Failed'}
                 </button>
@@ -137,7 +139,9 @@ export default function InspectionsClient() {
                     r.status === 'passed' ? 'border-l-emerald-500/60' : r.status === 'failed' ? 'border-l-red-500/60' : 'border-l-amber-500/60'
                   } hover:bg-white/[0.03] transition-colors`}>
                     <div className="min-w-0">
-                      <div className="text-sm text-white font-mono">{r.vehicle_id || 'Vehicle'}</div>
+                      <div className="text-sm text-white font-mono">
+                        {r.vehicles?.code ?? (r.vehicle_id ? `${r.vehicle_id.slice(0, 8)}…` : '—')}
+                      </div>
                       <div className="text-xs text-slate-500 mt-0.5">
                         {r.type === 'pre_trip' ? 'Pre-Trip' : r.type === 'post_trip' ? 'Post-Trip' : 'Custom'} · {new Date(r.submitted_at).toLocaleString()}
                       </div>

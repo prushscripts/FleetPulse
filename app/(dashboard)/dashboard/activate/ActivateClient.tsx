@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function ActivateClient({ userDisplayName }: { userDisplayName: string }) {
@@ -10,7 +9,6 @@ export default function ActivateClient({ userDisplayName }: { userDisplayName: s
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
-  const router = useRouter()
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,87 +48,64 @@ export default function ActivateClient({ userDisplayName }: { userDisplayName: s
         },
       })
       if (updateError) throw updateError
-      window.location.href = '/home'
-    } catch (err: any) {
-      setError(err?.message || 'Activation failed. Try again.')
+      window.location.href = '/dashboard'
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Activation failed. Try again.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Activate your account
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Enter your Company Authentication ID (from your welcome email or your administrator) to access your company’s fleet data. You can share this ID with your team so they can sign up and join the same company.
-            </p>
-          </div>
+    <div className="min-h-screen bg-[#0A0F1E] flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md card-glass rounded-2xl p-8">
+        <h1 className="text-2xl font-display font-bold text-white mb-2">Activate your account</h1>
+        <p className="text-sm text-slate-400 mb-8">
+          Enter your Company Authentication ID (from your welcome email or your administrator) to access your company&apos;s fleet data. You can share this ID with your team so they can sign up and join the same company.
+        </p>
 
-          <div className="mb-6 p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Signed in as</p>
-            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{userDisplayName}</p>
-            <Link
-              href="/dashboard/settings"
-              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-1 inline-block"
-            >
-              Change password or account details
-            </Link>
-          </div>
-
-          <form onSubmit={handleActivate} className="space-y-4">
-            <div>
-              <label htmlFor="companyKey" className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Company Authentication ID
-                <span
-                  className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-gray-400 dark:border-gray-500 text-gray-500 dark:text-gray-400 cursor-help text-xs font-bold"
-                  title="Found in your FleetPulse welcome email, or ask your company administrator."
-                >
-                  ?
-                </span>
-              </label>
-              <input
-                id="companyKey"
-                type="text"
-                value={companyKey}
-                onChange={(e) => setCompanyKey(e.target.value)}
-                placeholder=""
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                autoComplete="off"
-                autoFocus
-              />
-              <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                Your administrator or purchaser will provide this key.
-              </p>
-            </div>
-
-            {error && (
-              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
-            >
-              {loading ? 'Activating…' : 'Activate'}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
-            Don’t have a key? Contact your fleet administrator or{' '}
-            <a href="mailto:fleetpulse@fastmail.com" className="text-indigo-600 dark:text-indigo-400 hover:underline">
-              FleetPulse support
-            </a>
-            .
-          </p>
+        <div className="mb-6 p-3 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+          <p className="text-xs text-slate-500 mb-1">Signed in as</p>
+          <p className="text-sm text-white font-medium truncate">{userDisplayName}</p>
+          <Link href="/dashboard/settings" className="text-xs text-blue-400 hover:text-blue-300 mt-1 inline-block">
+            Change password or account details
+          </Link>
         </div>
+
+        <form onSubmit={handleActivate} className="space-y-4">
+          <div>
+            <label htmlFor="companyKey" className="text-xs text-slate-500 uppercase tracking-wider mb-1.5 block">
+              Company Authentication ID
+            </label>
+            <input
+              id="companyKey"
+              type="text"
+              value={companyKey}
+              onChange={(e) => setCompanyKey(e.target.value)}
+              autoComplete="off"
+              autoFocus
+              className="input-field w-full"
+              placeholder=""
+            />
+            <p className="mt-1.5 text-xs text-slate-600">Your administrator or purchaser will provide this key.</p>
+          </div>
+
+          {error && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
+          )}
+
+          <button type="submit" disabled={loading} className="btn-primary w-full py-3">
+            {loading ? 'Activating…' : 'Activate'}
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-xs text-slate-500">
+          Don&apos;t have a key? Contact your fleet administrator or{' '}
+          <a href="mailto:support@fleetpulsehq.com" className="text-blue-400 hover:text-blue-300">
+            FleetPulse support
+          </a>
+          .
+        </p>
       </div>
     </div>
   )

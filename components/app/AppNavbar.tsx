@@ -39,7 +39,7 @@ type NavItem = {
 const BASE_NAV_ITEMS: NavItem[] = [
   { key: 'health', href: '/dashboard/fleet-health', label: 'Health', icon: Activity },
   { key: 'home', href: '/dashboard', label: 'Home', icon: LayoutDashboard },
-  { key: 'vehicles', href: '/dashboard', label: 'Vehicles', icon: Truck },
+  { key: 'vehicles', href: '/dashboard/vehicles', label: 'Vehicles', icon: Truck },
   { key: 'drivers', href: '/dashboard/drivers', label: 'Drivers', icon: Users },
   { key: 'inspections', href: '/dashboard/inspections', label: 'Inspections', icon: ClipboardCheck },
   { key: 'admin', href: '/dashboard/admin', label: 'Admin', icon: Shield, adminOnly: true },
@@ -205,7 +205,15 @@ export default function AppNavbar() {
   }
 
   const isActive = (href: string) => {
-    if (href === '/dashboard') return pathname === '/dashboard' || pathname?.startsWith('/dashboard/vehicles')
+    if (href === '/dashboard') {
+      return pathname === '/dashboard' || pathname === '/dashboard/home'
+    }
+    if (href === '/dashboard/vehicles') {
+      return pathname === '/dashboard/vehicles' || pathname?.startsWith('/dashboard/vehicles/')
+    }
+    if (href === '/dashboard/fleet-health') {
+      return pathname === '/dashboard/fleet-health' || pathname?.startsWith('/dashboard/fleet-health/')
+    }
     return pathname === href || pathname?.startsWith(href + '/')
   }
 
@@ -277,7 +285,7 @@ export default function AppNavbar() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.96 }}
                 transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-2 w-80 bg-[#0F1629] border border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden z-50"
+                className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-[#0F1629] border border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden z-50"
               >
                 <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
                   <div className="flex items-center gap-2">

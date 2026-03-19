@@ -72,7 +72,7 @@ export default async function DriverHomePage() {
     (assignedVehicle?.current_mileage ?? 0) >= (assignedVehicle?.oil_change_due_mileage ?? Number.MAX_SAFE_INTEGER)
 
   return (
-    <div className="min-h-screen bg-[#0A0F1E] pt-6 pb-24 px-4 space-y-0">
+    <div className="min-h-screen bg-[#0A0F1E] pt-6 pb-28 px-4 space-y-4">
       <header className="mb-4">
         <h1 className="text-2xl font-display font-bold text-white">
           {greeting}, {displayName} 👋

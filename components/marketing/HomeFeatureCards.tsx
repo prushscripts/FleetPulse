@@ -46,12 +46,12 @@ export default function HomeFeatureCards() {
         return (
           <ScrollReveal key={idx} delay={idx * 50}>
             <div className="group relative bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 cursor-default select-none overflow-hidden">
-              <div className="absolute inset-0 bg-indigo-50/0 dark:bg-indigo-900/0 group-hover:bg-indigo-50/30 dark:group-hover:bg-indigo-900/10 rounded-lg transition-colors duration-200" />
+              <div className="absolute inset-0 bg-blue-500/0 dark:bg-blue-500/0 group-hover:bg-blue-500/[0.06] dark:group-hover:bg-blue-500/10 rounded-lg transition-colors duration-200" />
               <div className="relative">
-                <div className="mb-3 transform group-hover:scale-110 transition-transform duration-200 text-indigo-600 dark:text-indigo-400">
+                <div className="mb-3 transform group-hover:scale-110 transition-transform duration-200 text-blue-500 dark:text-blue-400">
                   {Icon && <Icon className="w-8 h-8" strokeWidth={1.8} />}
                 </div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
                   {feature.title}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed select-none cursor-default">{feature.description}</p>

@@ -5,7 +5,7 @@ import LandingNavbar from '@/components/layout/LandingNavbar'
 import PageTransitionWrapper from '@/components/animations/PageTransitionWrapper'
 import RouteTransition from '@/components/animations/RouteTransition'
 
-const LANDING_PATHS = ['/', '/login', '/signup', '/privacy', '/terms']
+const LANDING_PATHS = ['/', '/login', '/signup', '/privacy', '/terms', '/forgot-password', '/reset-password']
 const DASHBOARD_ROUTES = ['/dashboard', '/driver']
 
 /**
