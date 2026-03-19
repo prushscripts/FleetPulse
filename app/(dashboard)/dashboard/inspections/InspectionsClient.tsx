@@ -13,7 +13,7 @@ type Inspection = {
   status: 'passed' | 'failed' | 'needs_review' | 'pending'
   submitted_at: string
   odometer: number | null
-  vehicles?: { code: string | null; location?: string | null } | null
+  vehicles?: Array<{ code: string | null; location?: string | null }> | null
 }
 
 export default function InspectionsClient() {
@@ -41,13 +41,16 @@ export default function InspectionsClient() {
           .select('id, vehicle_id, type, status, submitted_at, odometer, vehicles(code, location)')
           .eq('company_id', cid)
           .order('submitted_at', { ascending: false })
-        setRows((data as Inspection[]) || [])
+        setRows((data as unknown as Inspection[]) || [])
       } finally {
         setLoading(false)
       }
     }
     run()
   }, [supabase])
+
+  const getVehicleCode = (v: Inspection['vehicles']) =>
+    Array.isArray(v) ? v[0]?.code : undefined
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -56,7 +59,7 @@ export default function InspectionsClient() {
       if (filter === 'failed' && r.status !== 'failed') return false
       if (!query.trim()) return true
       const q = query.toLowerCase()
-      return `${r.vehicles?.code || r.vehicle_id || ''} ${r.type} ${r.status}`.toLowerCase().includes(q)
+      return `${getVehicleCode(r.vehicles) || r.vehicle_id || ''} ${r.type} ${r.status}`.toLowerCase().includes(q)
     })
   }, [rows, filter, query])
 
@@ -140,7 +143,7 @@ export default function InspectionsClient() {
                   } hover:bg-white/[0.03] transition-colors`}>
                     <div className="min-w-0">
                       <div className="text-sm text-white font-mono">
-                        {r.vehicles?.code ?? (r.vehicle_id ? `${r.vehicle_id.slice(0, 8)}…` : '—')}
+                        {getVehicleCode(r.vehicles) ?? (r.vehicle_id ? `${r.vehicle_id.slice(0, 8)}…` : '—')}
                       </div>
                       <div className="text-xs text-slate-500 mt-0.5">
                         {r.type === 'pre_trip' ? 'Pre-Trip' : r.type === 'post_trip' ? 'Post-Trip' : 'Custom'} · {new Date(r.submitted_at).toLocaleString()}
