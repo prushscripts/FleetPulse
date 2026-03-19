@@ -1,7 +1,8 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import AppNavbar from './AppNavbar'
 import BottomTabBar from './BottomTabBar'
 import NicknamePromptModal from './NicknamePromptModal'
@@ -12,7 +13,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [key, setKey] = useState(pathname)
   const [showNicknamePrompt, setShowNicknamePrompt] = useState(false)
+  const freshLoginZoomRef = useRef(false)
+  const sessionReadRef = useRef(false)
   const supabase = createClient()
+
+  if (typeof window !== 'undefined' && !sessionReadRef.current) {
+    sessionReadRef.current = true
+    try {
+      if (sessionStorage.getItem('fp_fresh_login') === '1') {
+        sessionStorage.removeItem('fp_fresh_login')
+        freshLoginZoomRef.current = true
+      }
+    } catch {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
     setLoading(true)
@@ -57,9 +72,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <AppNavbar />
 
-      <main key={key} className="page-enter pt-16 pb-24 md:pb-8 min-h-screen">
+      <motion.main
+        key={key}
+        className="page-enter pt-16 pb-24 md:pb-8 min-h-screen"
+        initial={freshLoginZoomRef.current ? { opacity: 0, scale: 0.96 } : false}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{
+          duration: freshLoginZoomRef.current ? 0.5 : 0.35,
+          ease: [0.25, 0.46, 0.45, 0.94],
+        }}
+        onAnimationComplete={() => {
+          freshLoginZoomRef.current = false
+        }}
+      >
         {children}
-      </main>
+      </motion.main>
 
       <BottomTabBar />
 

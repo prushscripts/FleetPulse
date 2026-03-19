@@ -38,7 +38,7 @@ type NavItem = {
 
 const BASE_NAV_ITEMS: NavItem[] = [
   { key: 'health', href: '/dashboard/fleet-health', label: 'Health', icon: Activity },
-  { key: 'home', href: '/dashboard', label: 'Home', icon: LayoutDashboard },
+  { key: 'home', href: '/dashboard/home', label: 'Home', icon: LayoutDashboard },
   { key: 'vehicles', href: '/dashboard/vehicles', label: 'Vehicles', icon: Truck },
   { key: 'drivers', href: '/dashboard/drivers', label: 'Drivers', icon: Users },
   { key: 'inspections', href: '/dashboard/inspections', label: 'Inspections', icon: ClipboardCheck },
@@ -205,8 +205,8 @@ export default function AppNavbar() {
   }
 
   const isActive = (href: string) => {
-    if (href === '/dashboard') {
-      return pathname === '/dashboard' || pathname === '/dashboard/home'
+    if (href === '/dashboard/home') {
+      return pathname === '/dashboard/home' || pathname === '/dashboard'
     }
     if (href === '/dashboard/vehicles') {
       return pathname === '/dashboard/vehicles' || pathname?.startsWith('/dashboard/vehicles/')

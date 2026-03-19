@@ -7,7 +7,7 @@ import { motion } from 'framer-motion'
 
 const tabs = [
   { href: '/dashboard/fleet-health', label: 'Health', icon: Activity },
-  { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
+  { href: '/dashboard/home', label: 'Home', icon: LayoutDashboard },
   { href: '/dashboard/vehicles', label: 'Vehicles', icon: Truck },
   { href: '/dashboard/drivers', label: 'Drivers', icon: Users },
   { href: '/dashboard/inspections', label: 'Inspections', icon: ClipboardCheck },
@@ -17,8 +17,8 @@ export default function BottomTabBar() {
   const pathname = usePathname()
 
   const isActive = (href: string) => {
-    if (href === '/dashboard') {
-      return pathname === '/dashboard' || pathname === '/dashboard/home'
+    if (href === '/dashboard/home') {
+      return pathname === '/dashboard/home' || pathname === '/dashboard'
     }
     if (href === '/dashboard/vehicles') {
       return pathname === '/dashboard/vehicles' || pathname?.startsWith('/dashboard/vehicles/')

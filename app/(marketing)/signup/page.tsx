@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -10,7 +10,8 @@ import { createClient } from '@/lib/supabase/client'
 import EntryAnimation from '@/components/animations/EntryAnimation'
 import ConstellationBackground from '@/components/animations/ConstellationBackground'
 
-const inputClass = 'w-full px-4 py-3 min-h-[48px] bg-white/[0.04] border border-white/[0.1] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/20 transition-all'
+const inputClass =
+  'w-full px-4 py-3 min-h-[48px] bg-white/[0.04] border border-white/[0.1] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/20 transition-all'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -23,8 +24,26 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [showEntry, setShowEntry] = useState(false)
   const [redirectOnComplete, setRedirectOnComplete] = useState<string | null>(null)
+  const [uiReady, setUiReady] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    let cancelled = false
+    const maxWait = setTimeout(() => {
+      if (!cancelled) setUiReady(true)
+    }, 300)
+    supabase.auth.getSession().finally(() => {
+      if (!cancelled) {
+        clearTimeout(maxWait)
+        setUiReady(true)
+      }
+    })
+    return () => {
+      cancelled = true
+      clearTimeout(maxWait)
+    }
+  }, [supabase])
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,11 +58,8 @@ export default function SignupPage() {
     }
     setLoading(true)
     try {
-      const formattedNickname = nickname.trim()
-        ? nickname.trim().charAt(0).toUpperCase() + nickname.trim().slice(1)
-        : ''
+      const formattedNickname = nickname.trim() ? nickname.trim().charAt(0).toUpperCase() + nickname.trim().slice(1) : ''
 
-      // Step 1: Validate access code FIRST before creating any account
       const codeRes = await fetch('/api/validate-access-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,7 +104,6 @@ export default function SignupPage() {
         return
       }
 
-      // Ensure company_name + companies list exist in user_metadata for the rest of the app.
       await supabase.auth.updateUser({
         data: {
           company_id: companyId,
@@ -99,9 +114,14 @@ export default function SignupPage() {
         },
       })
 
+      try {
+        if (role !== 'driver') sessionStorage.setItem('fp_fresh_login', '1')
+      } catch {
+        /* ignore */
+      }
+
       setRedirectOnComplete(role === 'driver' ? '/driver' : '/dashboard/fleet-health')
       setShowEntry(true)
-      // Sync role and company_id to profiles so RLS and driver portal layout work
       await fetch('/api/sync-profile', { method: 'POST', credentials: 'include' })
       setLoading(false)
     } catch (err: unknown) {
@@ -122,14 +142,37 @@ export default function SignupPage() {
       )}
       <div className={`min-h-screen min-h-[100dvh] bg-navy-900 flex relative overflow-hidden ${showEntry ? 'pointer-events-none' : ''}`}>
         <div className="hidden lg:flex lg:w-[42%] xl:w-[45%] relative bg-[#0F1629] border-r border-white/[0.06] flex-col justify-between p-12 overflow-hidden min-h-screen">
+          <div
+            className="absolute inset-0 pointer-events-none z-[1]"
+            style={{
+              background: 'radial-gradient(ellipse at 40% 60%, rgba(59,130,246,0.18) 0%, transparent 55%)',
+            }}
+          />
           <ConstellationBackground />
-          <div className="relative z-10">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card-glass p-6 rounded-2xl mb-6">
-              <p className="text-sm text-slate-300 leading-relaxed mb-4">
+
+          {!uiReady && (
+            <div className="absolute top-1/2 left-10 right-10 z-10 space-y-3 max-w-sm">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="skeleton-pulse h-8 w-full rounded-xl" />
+              ))}
+            </div>
+          )}
+
+          <div className={`relative z-10 transition-opacity duration-300 ${!uiReady ? 'opacity-0' : 'opacity-100'}`}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="card-glass p-6 rounded-2xl mb-6"
+            >
+              <div className="text-amber-400 text-sm mb-2">★★★★★</div>
+              <p className="text-sm text-slate-300 leading-relaxed mb-4 italic">
                 &quot;We cut maintenance surprises by 40% in the first quarter. FleetPulse pays for itself.&quot;
               </p>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-semibold text-blue-400">JD</div>
+                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-semibold text-blue-400">
+                  JD
+                </div>
                 <div>
                   <div className="text-xs font-medium text-white">Fleet Director</div>
                   <div className="text-[10px] text-slate-500">Regional logistics, 80+ vehicles</div>
@@ -143,140 +186,217 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-8">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="w-full max-w-sm">
-            <div className="lg:hidden mb-8 flex justify-center">
-              <Link href="/">
-                <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={1600} height={410} className="h-10 w-auto" />
-              </Link>
-            </div>
+        <div className="flex-1 flex items-center justify-center p-6 sm:p-8 w-full relative z-10">
+          <div className="w-full max-w-sm">
+            <AnimatePresence mode="wait">
+              {!uiReady ? (
+                <motion.div
+                  key="signup-skeleton"
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-4"
+                >
+                  <div className="lg:hidden mb-8 flex justify-center">
+                    <div className="skeleton-pulse h-10 w-40 rounded-xl" />
+                  </div>
+                  <div className="skeleton-pulse h-8 w-2/3 rounded-xl" />
+                  <div className="skeleton-pulse h-4 w-full rounded-xl" />
+                  <div className="space-y-3 pt-4">
+                    <div className="skeleton-pulse h-12 w-full rounded-xl" />
+                    <div className="skeleton-pulse h-12 w-full rounded-xl" />
+                    <div className="skeleton-pulse h-12 w-full rounded-xl" />
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="signup-form"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="w-full"
+                >
+                  <div className="lg:hidden mb-8 flex justify-center">
+                    <Link href="/">
+                      <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={1600} height={410} className="h-10 w-auto" />
+                    </Link>
+                  </div>
 
-            <div className="mb-8">
-              <h1 className="text-2xl sm:text-3xl font-display font-bold text-white mb-2">Create your account</h1>
-              <p className="text-sm text-slate-400">Start managing your fleet today</p>
-            </div>
+                  <div className="mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-display font-bold text-white mb-2">Create your account</h1>
+                    <p className="text-sm text-slate-400">Start managing your fleet today</p>
+                  </div>
 
-            <form onSubmit={handleSignup} action="#" method="get" className="space-y-4">
-              {error && (
-                <div className={`px-3 py-2 rounded-xl text-sm ${error.includes('verify') || error.includes('check your email') ? 'bg-blue-500/10 border border-blue-500/30 text-blue-300' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
-                  {error}
-                </div>
+                  <form onSubmit={handleSignup} action="#" method="get" className="space-y-4">
+                    {error && (
+                      <div
+                        className={`px-3 py-2 rounded-xl text-sm ${
+                          error.includes('verify') || error.includes('check your email')
+                            ? 'bg-blue-500/10 border border-blue-500/30 text-blue-300'
+                            : 'bg-red-500/10 border border-red-500/30 text-red-400'
+                        }`}
+                      >
+                        {error}
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Email</label>
+                      <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@company.com"
+                        className={inputClass}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Password</label>
+                      <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        autoComplete="new-password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className={inputClass}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Confirm password</label>
+                      <input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type="password"
+                        autoComplete="new-password"
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className={inputClass}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">I am a...</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setRole('manager')}
+                          className={`px-3 py-2 rounded-xl border text-sm ${
+                            role === 'manager'
+                              ? 'border-blue-500/40 bg-blue-500/10 text-white'
+                              : 'border-white/[0.1] bg-white/[0.03] text-slate-400'
+                          }`}
+                        >
+                          Fleet Manager
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRole('driver')}
+                          className={`px-3 py-2 rounded-xl border text-sm ${
+                            role === 'driver'
+                              ? 'border-blue-500/40 bg-blue-500/10 text-white'
+                              : 'border-white/[0.1] bg-white/[0.03] text-slate-400'
+                          }`}
+                        >
+                          Driver
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Name / nickname</label>
+                      <input
+                        id="nickname"
+                        name="nickname"
+                        type="text"
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value)}
+                        placeholder="e.g. James"
+                        maxLength={30}
+                        className={inputClass}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                        {role === 'manager' ? 'Manager Access Code' : 'Driver Access Code'}
+                      </label>
+                      <input
+                        id="accessCode"
+                        name="accessCode"
+                        type="password"
+                        autoComplete="off"
+                        required
+                        value={accessCode}
+                        onChange={(e) => setAccessCode(e.target.value)}
+                        placeholder={
+                          role === 'manager' ? 'Contact your administrator for access' : 'Contact your fleet manager for your code'
+                        }
+                        className={inputClass}
+                      />
+                      <p className="text-[11px] text-slate-500">
+                        {role === 'manager'
+                          ? 'Required to create a manager account'
+                          : 'Your fleet manager will provide this code'}
+                      </p>
+                      {error && !error.includes('verify') && !error.includes('check your email') && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20"
+                        >
+                          <AlertCircle size={14} className="text-red-400 flex-shrink-0" />
+                          <p className="text-xs text-red-400">{error}</p>
+                        </motion.div>
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 min-h-[48px] mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {loading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Creating account...
+                        </>
+                      ) : (
+                        <>
+                          Create account <ArrowRight size={15} />
+                        </>
+                      )}
+                    </button>
+
+                    <p className="text-center text-[11px] text-slate-500 mt-4">🔒 Secure SSL · No credit card required</p>
+                  </form>
+
+                  <p className="text-center text-sm text-slate-500 mt-6">
+                    Already have an account?{' '}
+                    <Link href="/login" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
+                      Sign in
+                    </Link>
+                  </p>
+
+                  <div className="mt-8 pt-6 border-t border-white/[0.06] text-center">
+                    <Link href="/" className="text-xs text-slate-600 hover:text-slate-400 transition-colors">
+                      ← Back to homepage
+                    </Link>
+                  </div>
+                </motion.div>
               )}
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Email</label>
-                <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className={inputClass} />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Password</label>
-                <input id="password" name="password" type="password" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className={inputClass} />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Confirm password</label>
-                <input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className={inputClass} />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">I am a...</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRole('manager')}
-                    className={`px-3 py-2 rounded-xl border text-sm ${
-                      role === 'manager'
-                        ? 'border-blue-500/40 bg-blue-500/10 text-white'
-                        : 'border-white/[0.1] bg-white/[0.03] text-slate-400'
-                    }`}
-                  >
-                    Fleet Manager
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole('driver')}
-                    className={`px-3 py-2 rounded-xl border text-sm ${
-                      role === 'driver'
-                        ? 'border-blue-500/40 bg-blue-500/10 text-white'
-                        : 'border-white/[0.1] bg-white/[0.03] text-slate-400'
-                    }`}
-                  >
-                    Driver
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Name / nickname</label>
-                <input
-                  id="nickname"
-                  name="nickname"
-                  type="text"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder="e.g. James"
-                  maxLength={30}
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  {role === 'manager' ? 'Manager Access Code' : 'Driver Access Code'}
-                </label>
-                <input
-                  id="accessCode"
-                  name="accessCode"
-                  type="password"
-                  autoComplete="off"
-                  required
-                  value={accessCode}
-                  onChange={(e) => setAccessCode(e.target.value)}
-                  placeholder={role === 'manager' ? 'Contact your administrator for access' : 'Contact your fleet manager for your code'}
-                  className={inputClass}
-                />
-                <p className="text-[11px] text-slate-500">
-                  {role === 'manager'
-                    ? 'Required to create a manager account'
-                    : 'Your fleet manager will provide this code'}
-                </p>
-                {error && !error.includes('verify') && !error.includes('check your email') && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20"
-                  >
-                    <AlertCircle size={14} className="text-red-400 flex-shrink-0" />
-                    <p className="text-xs text-red-400">{error}</p>
-                  </motion.div>
-                )}
-              </div>
-
-              {/* Company is now derived from the role access code (multi-tenant). */}
-
-              <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 min-h-[48px] mt-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Creating account...
-                  </>
-                ) : (
-                  <>Create account <ArrowRight size={15} /></>
-                )}
-              </button>
-
-              <p className="text-center text-[11px] text-slate-500 mt-4">🔒 Secure SSL · No credit card required</p>
-            </form>
-
-            <p className="text-center text-sm text-slate-500 mt-6">
-              Already have an account?{' '}
-              <Link href="/login" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">Sign in</Link>
-            </p>
-
-            <div className="mt-8 pt-6 border-t border-white/[0.06] text-center">
-              <Link href="/" className="text-xs text-slate-600 hover:text-slate-400 transition-colors">← Back to homepage</Link>
-            </div>
-          </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </>

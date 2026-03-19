@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Droplets,
   AlertCircle,
@@ -12,6 +11,7 @@ import {
   ChevronRight,
   Gauge,
   Truck,
+  X,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -29,9 +29,17 @@ type VehicleRow = {
 }
 
 type IssueRow = {
+  id: string
   vehicle_id: string
+  title: string
   status: string
   priority?: string | null
+  vehicles?: { code: string | null } | { code: string | null }[] | null
+}
+
+function issueVehicleCode(veh: IssueRow['vehicles']): string | null {
+  if (veh == null) return null
+  return Array.isArray(veh) ? veh[0]?.code ?? null : veh.code
 }
 
 type InspectionRow = {
@@ -56,13 +64,13 @@ function getTerritory(code: string | null): 'New York' | 'DMV' {
 }
 
 export default function FleetHealthClient() {
-  const router = useRouter()
   const [vehicles, setVehicles] = useState<VehicleRow[]>([])
   const [issues, setIssues] = useState<IssueRow[]>([])
   const [inspections, setInspections] = useState<InspectionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [justLandedFromLogin, setJustLandedFromLogin] = useState(false)
+  const [issuesOpen, setIssuesOpen] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -95,7 +103,7 @@ export default function FleetHealthClient() {
 
         const { data: issuesData, error: issErr } = await supabase
           .from('issues')
-          .select('vehicle_id, status, priority')
+          .select('id, vehicle_id, title, status, priority, vehicles(code)')
           .neq('status', 'resolved')
         if (issErr) throw issErr
         const issuesFiltered = (issuesData || []).filter((i: IssueRow) => vehicleIds.includes(i.vehicle_id))
@@ -257,6 +265,10 @@ export default function FleetHealthClient() {
       return (b.hasFailed ? 1 : 0) - (a.hasFailed ? 1 : 0)
     })
 
+    const attentionFiltered = attentionList.filter(
+      (a) => a.oilOverdueMiles > 0 || a.openIssues > 0 || a.hasFailed
+    )
+
     const highMileage = vehicles
       .map((v) => ({
         id: v.id,
@@ -297,7 +309,7 @@ export default function FleetHealthClient() {
       healthScore: score,
       scoreLabel,
       scoreColor,
-      attentionVehicles: attentionList,
+      attentionVehicles: attentionFiltered,
       highMileageVehicles: highMileage,
       vanCount: van,
       truckCount: truck,
@@ -449,7 +461,18 @@ export default function FleetHealthClient() {
           </div>
         </div>
 
-        <div className="card-glass rounded-2xl p-5">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setIssuesOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              setIssuesOpen(true)
+            }
+          }}
+          className="card-glass rounded-2xl p-5 cursor-pointer hover:border-white/20 transition-colors border border-transparent"
+        >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               <AlertCircle size={14} className="text-rose-400" />
@@ -519,43 +542,54 @@ export default function FleetHealthClient() {
           </Link>
         </div>
         <div className="divide-y divide-white/[0.04]">
-          {attentionVehicles.slice(0, 8).map((vehicle) => (
-            <div
-              key={vehicle.id}
-              className={`flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition-colors cursor-pointer border-l-2 ${
-                vehicle.oilOverdueMiles > 5000
-                  ? 'border-l-red-500'
-                  : vehicle.oilOverdueMiles > 0
-                    ? 'border-l-amber-500'
-                    : 'border-l-emerald-500/30'
-              }`}
-              onClick={() => router.push(`/dashboard/vehicles/${vehicle.id}`)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  router.push(`/dashboard/vehicles/${vehicle.id}`)
-                }
-              }}
+          {attentionVehicles.slice(0, 8).map((v) => (
+            <Link
+              href={`/dashboard/vehicles/${v.id}`}
+              key={v.id}
+              className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.03] transition-colors border-b border-white/[0.04] last:border-0 group"
             >
-              <span className="font-mono font-semibold text-sm text-white w-16">
-                {vehicle.truckNumber}
-              </span>
-              <div className="flex items-center gap-2 flex-1 flex-wrap">
-                {vehicle.oilOverdueMiles > 0 && (
-                  <span className="badge badge-danger text-[10px]">
-                    Oil +{vehicle.oilOverdueMiles.toLocaleString()} mi
-                  </span>
-                )}
-                {vehicle.openIssues > 0 && (
-                  <span className="badge badge-warning text-[10px]">
-                    {vehicle.openIssues} issue{vehicle.openIssues > 1 ? 's' : ''}
-                  </span>
+              <div
+                className={`w-1 h-10 rounded-full flex-shrink-0 ${
+                  v.oilOverdueMiles > 100000
+                    ? 'bg-red-500'
+                    : v.oilOverdueMiles > 50000
+                      ? 'bg-amber-500'
+                      : 'bg-amber-400'
+                }`}
+              />
+
+              <div className="w-16 flex-shrink-0">
+                <span className="text-sm font-mono font-bold text-white">{v.truckNumber}</span>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                {v.oilOverdueMiles > 0 ? (
+                  <>
+                    <p className="text-xs text-slate-400">Oil overdue by</p>
+                    <p className="text-sm font-mono font-semibold text-red-400">+{v.oilOverdueMiles.toLocaleString()} mi</p>
+                  </>
+                ) : (
+                  <p className="text-xs text-slate-500">Oil — on track</p>
                 )}
               </div>
-              <ChevronRight size={14} className="text-slate-600 flex-shrink-0" />
-            </div>
+
+              {v.openIssues > 0 && (
+                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <AlertTriangle size={10} className="text-amber-400" />
+                  <span className="text-xs text-amber-400 font-medium">
+                    {v.openIssues} issue{v.openIssues > 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
+
+              {v.hasFailed && (
+                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <span className="text-xs text-red-400 font-medium">Failed insp.</span>
+                </div>
+              )}
+
+              <ChevronRight size={14} className="text-slate-600 group-hover:text-slate-400 transition-colors flex-shrink-0" />
+            </Link>
           ))}
         </div>
       </div>
@@ -626,6 +660,85 @@ export default function FleetHealthClient() {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {issuesOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+              onClick={() => setIssuesOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, x: 40, scale: 0.97 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 40, scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-[#0F1629] border-l border-white/[0.08] shadow-2xl overflow-y-auto"
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-display font-bold text-white">Open Issues</h2>
+                  <button
+                    type="button"
+                    onClick={() => setIssuesOpen(false)}
+                    className="p-2 hover:bg-white/[0.06] rounded-lg text-slate-400 hover:text-white transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+                {(['critical', 'high', 'medium', 'low'] as const).map((priority) => {
+                  const priorityIssues = issues.filter((i) => {
+                    if (i.status === 'resolved') return false
+                    const p = (i.priority || 'low').toLowerCase()
+                    if (priority === 'low') return p === 'low' || !i.priority
+                    return p === priority
+                  })
+                  if (!priorityIssues.length) return null
+                  return (
+                    <div key={priority} className="mb-6">
+                      <div className="text-xs uppercase tracking-wider text-slate-500 mb-3">{priority}</div>
+                      <div className="space-y-2">
+                        {priorityIssues.map((issue) => (
+                          <Link
+                            key={issue.id}
+                            href={`/dashboard/vehicles/${issue.vehicle_id}`}
+                            onClick={() => setIssuesOpen(false)}
+                            className="block p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-blue-500/30 hover:bg-blue-500/[0.04] transition-all"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-mono font-semibold text-white">
+                                {issueVehicleCode(issue.vehicles) ?? '—'}
+                              </span>
+                              <span
+                                className={`badge ${
+                                  priority === 'critical'
+                                    ? 'badge-danger'
+                                    : priority === 'high'
+                                      ? 'badge-warning'
+                                      : 'badge-active'
+                                }`}
+                              >
+                                {priority}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-400 mt-1 truncate">{issue.title}</p>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+                {issues.filter((i) => i.status !== 'resolved').length === 0 && (
+                  <p className="text-slate-500 text-sm text-center py-8">No open issues</p>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 

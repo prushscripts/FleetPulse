@@ -1,0 +1,535 @@
+You are working on FleetPulse, a Next.js 14 fleet management SaaS (App Router, Tailwind CSS, Supabase, Framer Motion). Design system: dark navy #0A0F1E base, #0F1629 surface, #151D35 elevated, blue accent #3B82F6, utility classes .card-glass .btn-primary .btn-ghost .input-field .badge .status-dot. Fonts: Syne (display), Geist (body), Geist Mono (numbers). Read every file fully before editing. Do not change logic unrelated to each fix.
+
+---
+
+## FIX 1 — Landing page intro animation needs more impact
+File: components/animations/IntroAnimation.tsx
+
+The current 3-ring pulse is too small and subtle. Upgrade it:
+
+1. Make the 3 pulse rings much larger — start at w-48 h-48 and expand to scale(4) not scale(1.8). Use staggered delays of 0s, 0.35s, 0.7s.
+2. Add a 4th outer ring at w-64 h-64 with delay 1.0s, opacity starting at 0.3.
+3. Add a subtle blue radial glow behind the logo: absolute div, w-96 h-96, background radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%), blur-3xl, animate opacity 0→0.6→0 over 2s.
+4. The logo should scale from 0.85→1.0 on enter (not just fade), duration 0.5s ease-out.
+5. Exit animation: overlay should slide UP (y: '-100%') with a faster ease [0.76, 0, 0.24, 1] over 500ms (snappier curtain pull).
+6. Total duration: keep at ~2200ms but make every ms count — rings should be LARGE and dramatic.
+
+Add these keyframes to app/globals.css:
+@keyframes introPulseExpand {
+  0% { transform: scale(0.5); opacity: 0.7; }
+  100% { transform: scale(4); opacity: 0; }
+}
+.intro-pulse-ring {
+  animation: introPulseExpand 1.8s ease-out forwards;
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(59,130,246,0.5);
+  width: 192px;
+  height: 192px;
+}
+.intro-pulse-ring-1 { animation-delay: 0s; }
+.intro-pulse-ring-2 { animation-delay: 0.35s; }
+.intro-pulse-ring-3 { animation-delay: 0.7s; }
+.intro-pulse-ring-4 { animation-delay: 1.0s; border-color: rgba(59,130,246,0.25); width: 256px; height: 256px; }
+
+---
+
+## FIX 2 — Landing page "Sign in to dashboard" CTA is unclickable
+File: components/landing/HeroSection.tsx
+
+Find the "Sign in to dashboard" button/link. It is currently either:
+- A <button> with no onClick/href
+- A <Link> with href="" or href="#"
+- Wrapped in a div that has pointer-events-none
+
+Fix: Make it a proper Next.js <Link href="/login"> with className="btn-ghost ...". Ensure it has no pointer-events-none on it or any parent. Test that it renders as an <a> tag pointing to /login.
+
+---
+
+## FIX 3 — Login page load: replace blurry sphere with premium page transition
+File: app/(marketing)/login/page.tsx
+
+The current behavior: when navigating to /login, the page blurs with a sphere in the center. This is the `loading` state blur (`blur-md` class on the page wrapper) while Supabase initializes.
+
+Replace this with a premium skeleton approach:
+1. Remove the `blur-md` class from the page wrapper entirely.
+2. Instead, while `loading === true`, show skeleton placeholders:
+   - Left panel: show the stats card as a skeleton (4 skeleton rows, each h-8 rounded-xl skeleton class)
+   - Right panel: show skeleton inputs (2 skeleton bars h-12 rounded-xl, 1 skeleton button h-12 rounded-xl)
+3. When `loading === false`, use AnimatePresence to fade in the real content with:
+   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+4. The page should feel instant — skeleton for ~300ms max, then real content fades in smoothly.
+
+---
+
+## FIX 4 — Login page left panel: animated constellation background
+File: app/(marketing)/login/page.tsx
+
+The left panel currently has static dots. Replace `ConstellationBackground` (or the static dot background) with a fully animated version.
+
+Create/replace components/animations/ConstellationBackground.tsx with this implementation:
+```tsx
+'use client'
+import { useEffect, useRef } from 'react'
+
+export default function ConstellationBackground() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    let animationId: number
+    const particles: Array<{
+      x: number; y: number; vx: number; vy: number; radius: number; opacity: number
+    }> = []
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth
+      canvas.height = canvas.offsetHeight
+    }
+    resize()
+    window.addEventListener('resize', resize)
+
+    // Create 80 particles
+    for (let i = 0; i < 80; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        radius: Math.random() * 1.5 + 0.5,
+        opacity: Math.random() * 0.5 + 0.2,
+      })
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Update + draw particles
+      particles.forEach(p => {
+        p.x += p.vx
+        p.y += p.vy
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1
+
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(59, 130, 246, ${p.opacity})`
+        ctx.fill()
+      })
+
+      // Draw connecting lines between nearby particles
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x
+          const dy = particles[i].y - particles[j].y
+          const dist = Math.sqrt(dx * dx + dy * dy)
+          if (dist < 120) {
+            ctx.beginPath()
+            ctx.moveTo(particles[i].x, particles[i].y)
+            ctx.lineTo(particles[j].x, particles[j].y)
+            ctx.strokeStyle = `rgba(59, 130, 246, ${0.15 * (1 - dist / 120)})`
+            ctx.lineWidth = 0.5
+            ctx.stroke()
+          }
+        }
+      }
+
+      animationId = requestAnimationFrame(draw)
+    }
+    draw()
+
+    return () => {
+      window.removeEventListener('resize', resize)
+      cancelAnimationFrame(animationId)
+    }
+  }, [])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full"
+      style={{ opacity: 0.6 }}
+    />
+  )
+}
+```
+
+Use this component in the left panel of the login page. Make sure the left panel has `position: relative` and `overflow: hidden`.
+
+---
+
+## FIX 5 — Signup page: match login left panel quality + animated background
+File: app/(marketing)/signup/page.tsx
+
+The signup page left panel is empty/dead. Apply the same ConstellationBackground from FIX 4. Also:
+
+1. Add the same radial glow overlay as the login page (blue radial-gradient ellipse at 40% 60%)
+2. The left panel should show a different testimonial quote — currently it shows one, make sure it's styled identically to login: card-glass rounded-2xl p-6, star rating, italic quote text, attribution
+3. Add the "Secured by 256-bit SSL" badge at the bottom of the left panel matching login
+4. Apply the same page load treatment as FIX 3 — skeleton while loading, no blur sphere
+
+---
+
+## FIX 6 — "Signing in..." loading state: replace tiny box with full-screen premium loader
+File: app/(marketing)/login/page.tsx
+
+When the user clicks Sign In and `loading === true`, instead of the current tiny blurred card with spinner:
+
+Replace with the LoginTransition component pattern. When loading starts:
+1. Show a full-screen overlay (fixed inset-0 z-[9999] bg-[#050A14]) — same as LoginTransition
+2. Show the FleetPulse logo centered with the expanding rings animation from LoginTransition.tsx
+3. Show status text below: "Authenticating..." → after 800ms → "Loading your fleet..." 
+4. This overlay should already be running when the user clicks Sign In, THEN transition seamlessly into the existing LoginTransition component (which runs after auth succeeds)
+
+So the flow is:
+- User clicks Sign In → full-screen "Authenticating..." overlay immediately
+- Auth succeeds → overlay transitions into LoginTransition (the existing rings + "Fleet is ready" screen)
+- LoginTransition completes → redirect to dashboard
+
+If auth fails → overlay dismisses and shows error in the form.
+
+---
+
+## FIX 7 — Post-login transition: add dramatic zoom-in entrance to first dashboard page
+File: components/animations/LoginTransition.tsx AND components/app/AppShell.tsx
+
+After LoginTransition completes and the dashboard loads, the first page should have a dramatic entrance. Currently it just fades in normally.
+
+In AppShell.tsx, detect if this is a fresh login (check sessionStorage key 'fp_fresh_login', set it in login page after auth success, cleared after first render in AppShell).
+
+If fp_fresh_login is set:
+- First page renders with: initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+- Clear the sessionStorage key after the animation
+- Normal page navigations within the dashboard use the existing lighter transition
+
+In login page, after successful auth and before redirect, set:
+  sessionStorage.setItem('fp_fresh_login', '1')
+
+---
+
+## FIX 8 — Fleet Health: Open Issues panel should be clickable with floating panel
+File: app/(dashboard)/dashboard/fleet-health/FleetHealthClient.tsx
+
+The "Open Issues" card (showing Critical/High/Medium/Low counts) is currently static. Make it interactive:
+
+1. Add `cursor-pointer` and `hover:border-white/20 transition-colors` to the Open Issues card
+2. Add state: `const [issuesOpen, setIssuesOpen] = useState(false)`
+3. When card is clicked, setIssuesOpen(true)
+4. Render an AnimatePresence floating panel overlay:
+```tsx
+<AnimatePresence>
+  {issuesOpen && (
+    <>
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        onClick={() => setIssuesOpen(false)}
+      />
+      {/* Panel */}
+      <motion.div
+        initial={{ opacity: 0, x: 40, scale: 0.97 }}
+        animate={{ opacity: 1, x: 0, scale: 1 }}
+        exit={{ opacity: 0, x: 40, scale: 0.97 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-[#0F1629] border-l border-white/[0.08] shadow-2xl overflow-y-auto"
+      >
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-display font-bold text-white">Open Issues</h2>
+            <button onClick={() => setIssuesOpen(false)} className="p-2 hover:bg-white/[0.06] rounded-lg text-slate-400 hover:text-white transition-colors">
+              <X size={18} />
+            </button>
+          </div>
+          {/* List issues grouped by priority */}
+          {['critical', 'high', 'medium', 'low'].map(priority => {
+            const priorityIssues = issues.filter(i => i.priority === priority && i.status !== 'resolved')
+            if (!priorityIssues.length) return null
+            return (
+              <div key={priority} className="mb-6">
+                <div className="text-xs uppercase tracking-wider text-slate-500 mb-3">{priority}</div>
+                <div className="space-y-2">
+                  {priorityIssues.map(issue => (
+                    <Link
+                      key={issue.id}
+                      href={`/dashboard/vehicles/${issue.vehicle_id}`}
+                      onClick={() => setIssuesOpen(false)}
+                      className="block p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-blue-500/30 hover:bg-blue-500/[0.04] transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-mono font-semibold text-white">{issue.vehicles?.code ?? '—'}</span>
+                        <span className={`badge ${
+                          priority === 'critical' ? 'badge-danger' :
+                          priority === 'high' ? 'badge-warning' : 'badge-active'
+                        }`}>{priority}</span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1 truncate">{issue.title}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+          {issues.filter(i => i.status !== 'resolved').length === 0 && (
+            <p className="text-slate-500 text-sm text-center py-8">No open issues</p>
+          )}
+        </div>
+      </motion.div>
+    </>
+  )}
+</AnimatePresence>
+```
+
+For this to work, the issues query needs to include vehicle code. Update the issues fetch to:
+  .select('id, vehicle_id, title, priority, status, vehicles(code)')
+
+Add `import { X } from 'lucide-react'` and `import Link from 'next/link'` if not already present.
+
+---
+
+## FIX 9 — Fleet Health: "Vehicles needing attention" panel redesign
+File: app/(dashboard)/dashboard/fleet-health/FleetHealthClient.tsx
+
+The current panel shows: truck number | oil badge | empty space | chevron
+
+Redesign each row to be data-dense and visually rich:
+
+Replace the current row JSX with:
+```tsx
+<Link
+  href={`/dashboard/vehicles/${v.id}`}
+  key={v.id}
+  className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.03] transition-colors border-b border-white/[0.04] last:border-0 group"
+>
+  {/* Left: color indicator bar */}
+  <div className={`w-1 h-10 rounded-full flex-shrink-0 ${
+    v.oilOverdueMiles > 100000 ? 'bg-red-500' :
+    v.oilOverdueMiles > 50000 ? 'bg-amber-500' : 'bg-amber-400'
+  }`} />
+  
+  {/* Truck number */}
+  <div className="w-16 flex-shrink-0">
+    <span className="text-sm font-mono font-bold text-white">{v.truckNumber}</span>
+  </div>
+  
+  {/* Oil status */}
+  <div className="flex-1">
+    <p className="text-xs text-slate-400">Oil overdue by</p>
+    <p className="text-sm font-mono font-semibold text-red-400">+{v.oilOverdueMiles.toLocaleString()} mi</p>
+  </div>
+  
+  {/* Open issues count */}
+  {v.openIssues > 0 && (
+    <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+      <AlertTriangle size={10} className="text-amber-400" />
+      <span className="text-xs text-amber-400 font-medium">{v.openIssues} issue{v.openIssues > 1 ? 's' : ''}</span>
+    </div>
+  )}
+  
+  {/* Failed inspection badge */}
+  {v.hasFailed && (
+    <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20">
+      <span className="text-xs text-red-400 font-medium">Failed insp.</span>
+    </div>
+  )}
+  
+  <ChevronRight size={14} className="text-slate-600 group-hover:text-slate-400 transition-colors flex-shrink-0" />
+</Link>
+```
+
+Import Link from 'next/link' and ChevronRight from 'lucide-react' if not present. Make the entire panel section a Link-based list so every row is clickable to that vehicle's page.
+
+---
+
+## FIX 10 — Dashboard Home page: complete redesign as Inspection Command Center
+File: app/(dashboard)/dashboard/DashboardClient.tsx (and the server page that calls it)
+
+This is a major redesign. The current home page shows KPI cards + active alerts + recent inspections. Replace it entirely with an inspection-focused command center.
+
+### Step 1: Update the data fetching
+The server page (app/(dashboard)/dashboard/home/page.tsx or similar) needs to fetch:
+- vehicles with assigned_driver_id and driver info
+- inspections from last 7 days
+- drivers list
+
+Add these queries alongside existing ones:
+```tsx
+// Fetch inspections from last 7 days
+const sevenDaysAgo = new Date()
+sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+const { data: recentInspections } = await supabase
+  .from('inspections')
+  .select('id, vehicle_id, driver_id, type, status, submitted_at, vehicles(code), drivers(first_name, last_name)')
+  .eq('company_id', companyId)
+  .gte('submitted_at', sevenDaysAgo.toISOString())
+  .order('submitted_at', { ascending: false })
+```
+
+Pass recentInspections and vehicles (with driver info) to DashboardClient.
+
+### Step 2: Redesign DashboardClient layout
+
+Replace the entire return JSX with this new layout:
+HEADER (keep existing):
+"Good morning, {name}" + status dot + subtitle
+KPI ROW (compact, 4 cards in a row — make them COMPACT not spacious):
+Total Vehicles | Active | Oil Overdue | Inspections This Week
+Each card: p-3 not p-5, value text-2xl not text-4xl, tighter layout
+MAIN GRID (2 columns on desktop, 1 on mobile):
+LEFT COLUMN:
+Panel 1: "Trucks Pending Inspection Today"
+
+Header: "Pending Inspections" + count badge
+List of vehicles that have NO inspection submitted today
+Each row: [truck number] [assigned driver name or "Unassigned"] [Send Reminder button]
+"Send Reminder" button: onClick opens a small inline message composer
+
+Text input pre-filled with "Don't forget your pre-trip inspection today, [truck code]."
+Send button → calls /api/notifications/create with the driver's user_id
+Success: button shows checkmark + "Sent" for 2s
+
+
+If all done: green checkmark + "All inspections complete today 🎉"
+
+Panel 2: "Inspection Accuracy This Week"
+
+Two stats side by side:
+Left: "New York" → X% (inspections done / vehicles in NY)
+Right: "DMV" → X% (inspections done / vehicles in DMV)
+Progress bar under each percentage
+Colors: green if >80%, amber if 50-80%, red if <50%
+
+RIGHT COLUMN:
+Panel 3: "Completed Inspections This Week"
+
+Scrollable list (max-h-80 overflow-y-auto)
+Each row: [driver name] [truck code] [passed/failed badge] [time ago]
+Click row → navigate to /dashboard/inspections (future: specific inspection)
+Empty state: "No inspections this week yet"
+
+Panel 4: "Active Alerts" (keep but make compact)
+
+Same oil overdue list but max 5 items, compact rows
+"View all →" link to fleet-health page
+
+
+### Step 3: Send Reminder inline composer
+
+For the "Send Reminder" button in Panel 1, implement this inline:
+```tsx
+const [reminderVehicleId, setReminderVehicleId] = useState<string | null>(null)
+const [reminderMsg, setReminderMsg] = useState('')
+const [reminderSent, setReminderSent] = useState<string | null>(null)
+
+const sendReminder = async (driverUserId: string, vehicleCode: string, driverId: string) => {
+  const msg = reminderMsg || `Don't forget your pre-trip inspection today for truck ${vehicleCode}.`
+  const res = await fetch('/api/notifications/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      company_id: companyId,
+      recipient_user_id: driverUserId,
+      type: 'announcement',
+      title: 'Inspection Reminder',
+      body: msg,
+    })
+  })
+  if (res.ok) {
+    setReminderSent(driverId)
+    setReminderVehicleId(null)
+    setTimeout(() => setReminderSent(null), 3000)
+  }
+}
+```
+
+Render the composer inline in the row when `reminderVehicleId === vehicle.id`:
+```tsx
+<div className="mt-2 flex gap-2">
+  <input
+    className="input-field text-xs py-1.5 flex-1"
+    value={reminderMsg}
+    onChange={e => setReminderMsg(e.target.value)}
+    placeholder={`Don't forget your inspection for ${vehicle.code}...`}
+  />
+  <button
+    onClick={() => sendReminder(vehicle.driverUserId, vehicle.code, vehicle.driverId)}
+    className="btn-primary text-xs px-3 py-1.5"
+  >
+    Send
+  </button>
+  <button
+    onClick={() => setReminderVehicleId(null)}
+    className="btn-ghost text-xs px-2 py-1.5"
+  >
+    Cancel
+  </button>
+</div>
+```
+
+### Step 4: Compact KPI cards
+In the KPI card grid, change:
+- Card padding: `p-3` instead of `p-4 sm:p-5`
+- Value font size: `text-2xl` instead of text-3xl
+- Icon size: w-6 h-6 instead of w-7 h-7
+- Remove the large empty space — cards should feel data-dense
+
+---
+
+## FIX 11 — Dashboard Home: vehicles list should NOT show on /dashboard route
+File: app/(dashboard)/dashboard/page.tsx
+
+Currently /dashboard shows the Fleet Overview (vehicle list) — DashboardClient includes the vehicle grid. The vehicle list belongs in /dashboard/vehicles ONLY.
+
+The /dashboard route should redirect to /dashboard/home:
+```tsx
+// app/(dashboard)/dashboard/page.tsx
+import { redirect } from 'next/navigation'
+export default function DashboardPage() {
+  redirect('/dashboard/home')
+}
+```
+
+Verify that app/(dashboard)/dashboard/home/page.tsx exists and renders the redesigned DashboardClient. If it doesn't exist, create it as a copy of the current dashboard page.tsx and apply FIX 10 to it.
+
+The /dashboard/vehicles/page.tsx should remain the Fleet Overview with the vehicle list (DashboardClient with the vehicle grid).
+
+---
+
+## AFTER ALL FIXES — globals.css additions needed
+Add to app/globals.css:
+```css
+/* Constellation canvas fade-in */
+canvas.constellation {
+  animation: pageFadeIn 1s ease-out forwards;
+}
+
+/* Premium skeleton pulse */
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+.skeleton-pulse {
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+  background: rgba(255,255,255,0.06);
+  border-radius: 12px;
+}
+```
+
+---
+
+## TYPESCRIPT / BUILD CHECK
+After all edits:
+1. Run npx tsc --noEmit
+2. Ensure AnimatePresence is imported from 'framer-motion' wherever used
+3. Ensure X, ChevronRight, AlertTriangle are imported from 'lucide-react' wherever used
+4. Ensure Link is imported from 'next/link' wherever used
+5. The issues fetch in FleetHealthClient needs vehicles joined — verify the type includes `vehicles?: { code: string | null } | null`
+6. The recentInspections fetch type needs: `vehicles?: { code: string | null } | null` and `drivers?: { first_name: string; last_name: string } | null` — handle array joins with [0] pattern same as InspectionsClient fix
+7. Deploy via 1Deploy.bat when all type errors are resolved

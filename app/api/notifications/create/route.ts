@@ -8,21 +8,53 @@ type Body = {
   body: string
   data?: Record<string, unknown>
   territory?: string | null
+  /** When set, send a single notification to this user (e.g. driver reminder). */
+  recipient_user_id?: string | null
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as Body
-    const { company_id, type, title, body: bodyText, data, territory } = body
+    const { company_id, type, title, body: bodyText, data, territory, recipient_user_id } = body
 
     if (!company_id || !type || !title || !bodyText) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const supabase = createAdminClient()
+
+    if (recipient_user_id) {
+      const { data: profile, error: profileErr } = await supabase
+        .from('profiles')
+        .select('id, company_id')
+        .eq('id', recipient_user_id)
+        .maybeSingle()
+
+      if (profileErr) {
+        return NextResponse.json({ error: profileErr.message }, { status: 500 })
+      }
+      if (!profile || (profile as { company_id?: string }).company_id !== company_id) {
+        return NextResponse.json({ error: 'Invalid recipient for this company' }, { status: 403 })
+      }
+
+      const { error } = await supabase.from('notifications').insert({
+        company_id,
+        recipient_user_id,
+        type,
+        title,
+        body: bodyText,
+        data: data ?? {},
+        recipient_territory: territory ?? null,
+        read: false,
+        deleted: false,
+      })
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, sent: 1 })
+    }
 
     const { data: managers, error: managersError } = await supabase
       .from('profiles')

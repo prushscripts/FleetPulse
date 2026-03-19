@@ -208,21 +208,69 @@ body {
     animation: landingIntroPulse 0.8s ease-out forwards;
   }
 
-  /* Landing intro: radar/sonar pulse rings (blue #3B82F6), 2–3 concentric rings */
-  @keyframes landingIntroPulseRing {
-    0% { transform: scale(0.6); opacity: 0.7; border-width: 2px; }
-    100% { transform: scale(1.8); opacity: 0; border-width: 1px; }
+  /* Landing intro: large radar pulse rings (scale 0.5 → 4) */
+  @keyframes introPulseExpand {
+    0% {
+      transform: scale(0.5);
+      opacity: 0.7;
+    }
+    100% {
+      transform: scale(4);
+      opacity: 0;
+    }
   }
-  .landing-intro-pulse-ring {
-    animation: landingIntroPulseRing 1s ease-out forwards;
+  .intro-pulse-ring {
+    animation: introPulseExpand 1.8s ease-out forwards;
+    position: absolute;
     border-radius: 50%;
-    border-style: solid;
-    border-color: rgba(59, 130, 246, 0.6);
+    border: 1.5px solid rgba(59, 130, 246, 0.5);
+    width: 192px;
+    height: 192px;
     pointer-events: none;
   }
-  .landing-intro-pulse-ring-1 { animation-delay: 0s; }
-  .landing-intro-pulse-ring-2 { animation-delay: 0.25s; }
-  .landing-intro-pulse-ring-3 { animation-delay: 0.5s; }
+  .intro-pulse-ring-1 {
+    animation-delay: 0s;
+  }
+  .intro-pulse-ring-2 {
+    animation-delay: 0.35s;
+  }
+  .intro-pulse-ring-3 {
+    animation-delay: 0.7s;
+  }
+  @keyframes introPulseExpandSoft {
+    0% {
+      transform: scale(0.5);
+      opacity: 0.3;
+    }
+    100% {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+  .intro-pulse-ring-4 {
+    animation: introPulseExpandSoft 1.8s ease-out forwards;
+    animation-delay: 1s;
+    border-color: rgba(59, 130, 246, 0.25);
+    width: 256px;
+    height: 256px;
+  }
+
+  @keyframes introRadialGlow {
+    0% {
+      opacity: 0;
+    }
+    35% {
+      opacity: 0.6;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+  .intro-radial-glow {
+    animation: introRadialGlow 2s ease-out forwards;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
 
   /* Site intro: purple pulse burst after video (scale 1 → 1.6, opacity 1 → 0, 700ms) */
   @keyframes introPulseBurstScale {
@@ -429,6 +477,27 @@ body {
   .btn-consistent:hover {
     filter: brightness(1.05);
     transform: scale(1.02);
+  }
+
+  /* Constellation canvas fade-in (login/signup) */
+  canvas.constellation {
+    animation: pageFadeIn 1s ease-out forwards;
+  }
+
+  /* Premium skeleton pulse (login/signup loading) */
+  @keyframes skeletonPulse {
+    0%,
+    100% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+  .skeleton-pulse {
+    animation: skeletonPulse 1.5s ease-in-out infinite;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
   }
 }
 
