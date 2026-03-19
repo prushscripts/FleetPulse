@@ -10,9 +10,6 @@ import { createClient } from '@/lib/supabase/client'
 import EntryAnimation from '@/components/animations/EntryAnimation'
 import ConstellationBackground from '@/components/animations/ConstellationBackground'
 
-const inputClass =
-  'w-full px-4 py-3 min-h-[48px] bg-white/[0.04] border border-white/[0.1] rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/20 transition-all'
-
 export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -140,53 +137,65 @@ export default function SignupPage() {
           }}
         />
       )}
-      <div className={`min-h-screen min-h-[100dvh] bg-navy-900 flex relative overflow-hidden ${showEntry ? 'pointer-events-none' : ''}`}>
-        <div className="hidden lg:flex lg:w-[42%] xl:w-[45%] relative bg-[#0F1629] border-r border-white/[0.06] flex-col justify-between p-12 overflow-hidden min-h-screen">
+      <div
+        className={`min-h-screen min-h-[100dvh] bg-[#0A0F1E] flex flex-row relative ${showEntry ? 'pointer-events-none' : ''}`}
+      >
+        {/* LEFT — match login structure */}
+        <div
+          className="hidden lg:flex lg:w-[42%] xl:w-[45%] bg-[#0F1629] border-r border-white/[0.06] flex-col justify-between p-12 min-h-screen"
+          style={{ position: 'relative', overflow: 'hidden' }}
+        >
+          <ConstellationBackground />
           <div
-            className="absolute inset-0 pointer-events-none z-[1]"
+            className="absolute w-96 h-96 rounded-full pointer-events-none z-[1] blur-3xl"
             style={{
-              background: 'radial-gradient(ellipse at 40% 60%, rgba(59,130,246,0.18) 0%, transparent 55%)',
+              top: '40%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)',
             }}
           />
-          <ConstellationBackground />
 
           {!uiReady && (
-            <div className="absolute top-1/2 left-10 right-10 z-10 space-y-3 max-w-sm">
+            <div className="absolute top-1/2 left-10 right-10 z-[10] space-y-3 max-w-sm -translate-y-1/2">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="skeleton-pulse h-8 w-full rounded-xl" />
               ))}
             </div>
           )}
 
-          <div className={`relative z-10 transition-opacity duration-300 ${!uiReady ? 'opacity-0' : 'opacity-100'}`}>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="card-glass p-6 rounded-2xl mb-6"
-            >
-              <div className="text-amber-400 text-sm mb-2">★★★★★</div>
-              <p className="text-sm text-slate-300 leading-relaxed mb-4 italic">
-                &quot;We cut maintenance surprises by 40% in the first quarter. FleetPulse pays for itself.&quot;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-semibold text-blue-400">
-                  JD
+          {uiReady && (
+            <div className="relative z-10 mt-auto flex flex-col gap-8">
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="card-glass rounded-2xl p-6"
+              >
+                <div className="text-amber-400 text-sm mb-3 tracking-tight">★★★★★</div>
+                <p className="text-sm text-slate-300 leading-relaxed italic mb-5">
+                  &quot;We cut maintenance surprises by 40% in the first quarter. FleetPulse pays for itself.&quot;
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-semibold text-blue-400 shrink-0">
+                    JD
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-white">Fleet Director</div>
+                    <div className="text-xs text-slate-500">Regional logistics, 80+ vehicles</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-xs font-medium text-white">Fleet Director</div>
-                  <div className="text-[10px] text-slate-500">Regional logistics, 80+ vehicles</div>
-                </div>
+              </motion.div>
+              <div className="flex items-center gap-2 text-xs text-slate-600">
+                <Lock size={12} className="text-slate-600 shrink-0" />
+                Secured by 256-bit SSL
               </div>
-            </motion.div>
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <Lock size={12} className="text-slate-600" />
-              Secured by 256-bit SSL
             </div>
-          </div>
+          )}
         </div>
 
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-8 w-full relative z-10">
+        {/* RIGHT — centered form */}
+        <div className="flex-1 flex items-center justify-center min-h-screen min-h-[100dvh] p-6 sm:p-8 w-full">
           <div className="w-full max-w-sm">
             <AnimatePresence mode="wait">
               {!uiReady ? (
@@ -197,15 +206,15 @@ export default function SignupPage() {
                   transition={{ duration: 0.2 }}
                   className="space-y-4"
                 >
-                  <div className="lg:hidden mb-8 flex justify-center">
+                  <div className="lg:hidden mb-6 flex justify-center">
                     <div className="skeleton-pulse h-10 w-40 rounded-xl" />
                   </div>
-                  <div className="skeleton-pulse h-8 w-2/3 rounded-xl" />
+                  <div className="skeleton-pulse h-9 w-2/3 rounded-xl" />
                   <div className="skeleton-pulse h-4 w-full rounded-xl" />
-                  <div className="space-y-3 pt-4">
-                    <div className="skeleton-pulse h-12 w-full rounded-xl" />
-                    <div className="skeleton-pulse h-12 w-full rounded-xl" />
-                    <div className="skeleton-pulse h-12 w-full rounded-xl" />
+                  <div className="space-y-3 pt-2">
+                    <div className="skeleton-pulse h-11 w-full rounded-xl" />
+                    <div className="skeleton-pulse h-11 w-full rounded-xl" />
+                    <div className="skeleton-pulse h-11 w-full rounded-xl" />
                   </div>
                 </motion.div>
               ) : (
@@ -218,19 +227,25 @@ export default function SignupPage() {
                 >
                   <div className="lg:hidden mb-8 flex justify-center">
                     <Link href="/">
-                      <Image src="/branding/fleetpulse-navbar.png" alt="FleetPulse" width={1600} height={410} className="h-10 w-auto" />
+                      <Image
+                        src="/branding/fleetpulse-navbar.png"
+                        alt="FleetPulse"
+                        width={1600}
+                        height={410}
+                        className="h-10 w-auto"
+                      />
                     </Link>
                   </div>
 
                   <div className="mb-8">
-                    <h1 className="text-2xl sm:text-3xl font-display font-bold text-white mb-2">Create your account</h1>
-                    <p className="text-sm text-slate-400">Start managing your fleet today</p>
+                    <h1 className="text-3xl font-display font-bold text-white mb-2">Create your account</h1>
+                    <p className="text-slate-400 text-sm">Start managing your fleet today</p>
                   </div>
 
-                  <form onSubmit={handleSignup} action="#" method="get" className="space-y-4">
+                  <form onSubmit={handleSignup} action="#" method="get" className="space-y-3.5">
                     {error && (
                       <div
-                        className={`px-3 py-2 rounded-xl text-sm ${
+                        className={`px-3 py-2.5 rounded-xl text-sm ${
                           error.includes('verify') || error.includes('check your email')
                             ? 'bg-blue-500/10 border border-blue-500/30 text-blue-300'
                             : 'bg-red-500/10 border border-red-500/30 text-red-400'
@@ -241,7 +256,9 @@ export default function SignupPage() {
                     )}
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Email</label>
+                      <label htmlFor="email" className="block text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Email
+                      </label>
                       <input
                         id="email"
                         name="email"
@@ -251,12 +268,14 @@ export default function SignupPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@company.com"
-                        className={inputClass}
+                        className="input-field min-h-[48px] py-3"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Password</label>
+                      <label htmlFor="password" className="block text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Password
+                      </label>
                       <input
                         id="password"
                         name="password"
@@ -266,12 +285,14 @@ export default function SignupPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className={inputClass}
+                        className="input-field min-h-[48px] py-3"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Confirm password</label>
+                      <label htmlFor="confirmPassword" className="block text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Confirm password
+                      </label>
                       <input
                         id="confirmPassword"
                         name="confirmPassword"
@@ -281,20 +302,20 @@ export default function SignupPage() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
-                        className={inputClass}
+                        className="input-field min-h-[48px] py-3"
                       />
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">I am a...</label>
+                    <div className="space-y-2 pt-0.5">
+                      <span className="block text-xs font-medium text-slate-500 uppercase tracking-wider">I am a...</span>
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
                           onClick={() => setRole('manager')}
-                          className={`px-3 py-2 rounded-xl border text-sm ${
+                          className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
                             role === 'manager'
-                              ? 'border-blue-500/40 bg-blue-500/10 text-white'
-                              : 'border-white/[0.1] bg-white/[0.03] text-slate-400'
+                              ? 'border-blue-500/50 bg-blue-500 text-white shadow-lg shadow-blue-500/10'
+                              : 'border-white/[0.1] bg-white/[0.03] text-slate-400 hover:border-white/[0.14] hover:bg-white/[0.05]'
                           }`}
                         >
                           Fleet Manager
@@ -302,10 +323,10 @@ export default function SignupPage() {
                         <button
                           type="button"
                           onClick={() => setRole('driver')}
-                          className={`px-3 py-2 rounded-xl border text-sm ${
+                          className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
                             role === 'driver'
-                              ? 'border-blue-500/40 bg-blue-500/10 text-white'
-                              : 'border-white/[0.1] bg-white/[0.03] text-slate-400'
+                              ? 'border-blue-500/50 bg-blue-500 text-white shadow-lg shadow-blue-500/10'
+                              : 'border-white/[0.1] bg-white/[0.03] text-slate-400 hover:border-white/[0.14] hover:bg-white/[0.05]'
                           }`}
                         >
                           Driver
@@ -314,7 +335,9 @@ export default function SignupPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Name / nickname</label>
+                      <label htmlFor="nickname" className="block text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Name / nickname
+                      </label>
                       <input
                         id="nickname"
                         name="nickname"
@@ -323,12 +346,12 @@ export default function SignupPage() {
                         onChange={(e) => setNickname(e.target.value)}
                         placeholder="e.g. James"
                         maxLength={30}
-                        className={inputClass}
+                        className="input-field min-h-[48px] py-3"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      <label htmlFor="accessCode" className="block text-xs font-medium text-slate-500 uppercase tracking-wider">
                         {role === 'manager' ? 'Manager Access Code' : 'Driver Access Code'}
                       </label>
                       <input
@@ -342,9 +365,9 @@ export default function SignupPage() {
                         placeholder={
                           role === 'manager' ? 'Contact your administrator for access' : 'Contact your fleet manager for your code'
                         }
-                        className={inputClass}
+                        className="input-field min-h-[48px] py-3"
                       />
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-[11px] text-slate-500 leading-snug">
                         {role === 'manager'
                           ? 'Required to create a manager account'
                           : 'Your fleet manager will provide this code'}
@@ -364,7 +387,7 @@ export default function SignupPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 min-h-[48px] mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="btn-primary w-full flex items-center justify-center gap-2 py-3 mt-2 min-h-[48px] disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {loading ? (
                         <>
@@ -378,7 +401,7 @@ export default function SignupPage() {
                       )}
                     </button>
 
-                    <p className="text-center text-[11px] text-slate-500 mt-4">🔒 Secure SSL · No credit card required</p>
+                    <p className="text-center text-[11px] text-slate-500 pt-1">🔒 Secure SSL · No credit card required</p>
                   </form>
 
                   <p className="text-center text-sm text-slate-500 mt-6">

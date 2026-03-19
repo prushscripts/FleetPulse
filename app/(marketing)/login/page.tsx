@@ -192,15 +192,18 @@ export default function LoginPage() {
         </div>
       )}
 
-      {/* LEFT PANEL — desktop */}
-      <div className="hidden lg:flex lg:w-[42%] xl:w-[45%] relative bg-[#0F1629] border-r border-white/[0.06] flex-col justify-between p-12 overflow-hidden min-h-screen">
+      {/* LEFT PANEL — desktop (canvas must be first child for correct fill) */}
+      <div
+        className="hidden lg:flex lg:w-[42%] xl:w-[45%] bg-[#0F1629] border-r border-white/[0.06] flex-col justify-between p-12 min-h-screen"
+        style={{ position: 'relative', overflow: 'hidden' }}
+      >
+        <ConstellationBackground />
         <div
           className="absolute inset-0 pointer-events-none z-[1]"
           style={{
             background: 'radial-gradient(ellipse at 40% 60%, rgba(59,130,246,0.18) 0%, transparent 55%)',
           }}
         />
-        <ConstellationBackground />
 
         {!uiReady && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 z-10 space-y-3">

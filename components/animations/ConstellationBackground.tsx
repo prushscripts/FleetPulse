@@ -11,101 +11,102 @@ export default function ConstellationBackground() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    let animationId: number
-    const particles: Array<{
+    let animId: number
+    let w = 0
+    let h = 0
+
+    const resize = () => {
+      w = canvas.offsetWidth
+      h = canvas.offsetHeight
+      canvas.width = w
+      canvas.height = h
+    }
+    resize()
+
+    const obs = new ResizeObserver(resize)
+    obs.observe(canvas)
+
+    type Particle = {
       x: number
       y: number
       vx: number
       vy: number
-      radius: number
-      opacity: number
-    }> = []
-
-    const resize = () => {
-      canvas.width = canvas.offsetWidth
-      canvas.height = canvas.offsetHeight
-    }
-    resize()
-    window.addEventListener('resize', resize)
-
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      for (let i = 0; i < 80; i++) {
-        particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          vx: 0,
-          vy: 0,
-          radius: Math.random() * 1.5 + 0.5,
-          opacity: Math.random() * 0.5 + 0.2,
-        })
-      }
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      particles.forEach((p) => {
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(59, 130, 246, ${p.opacity})`
-        ctx.fill()
-      })
-      return () => window.removeEventListener('resize', resize)
+      r: number
+      alpha: number
+      alphaDir: number
     }
 
-    for (let i = 0; i < 80; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        radius: Math.random() * 1.5 + 0.5,
-        opacity: Math.random() * 0.5 + 0.2,
-      })
-    }
+    const COUNT = 70
+    const MAX_DIST = 130
+    const particles: Particle[] = Array.from({ length: COUNT }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+      r: Math.random() * 1.8 + 0.6,
+      alpha: Math.random() * 0.5 + 0.15,
+      alphaDir: Math.random() > 0.5 ? 1 : -1,
+    }))
 
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+    const tick = () => {
+      ctx.clearRect(0, 0, w, h)
 
-      particles.forEach((p) => {
+      for (const p of particles) {
         p.x += p.vx
         p.y += p.vy
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1
+        if (p.x < 0) p.x = w
+        if (p.x > w) p.x = 0
+        if (p.y < 0) p.y = h
+        if (p.y > h) p.y = 0
+
+        p.alpha += p.alphaDir * 0.003
+        if (p.alpha > 0.65) p.alphaDir = -1
+        if (p.alpha < 0.1) p.alphaDir = 1
 
         ctx.beginPath()
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(59, 130, 246, ${p.opacity})`
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(59,130,246,${p.alpha})`
         ctx.fill()
-      })
+      }
 
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
+      for (let i = 0; i < COUNT; i++) {
+        for (let j = i + 1; j < COUNT; j++) {
           const dx = particles[i].x - particles[j].x
           const dy = particles[i].y - particles[j].y
           const dist = Math.sqrt(dx * dx + dy * dy)
-          if (dist < 120) {
+          if (dist < MAX_DIST) {
+            const lineAlpha = (1 - dist / MAX_DIST) * 0.18
             ctx.beginPath()
             ctx.moveTo(particles[i].x, particles[i].y)
             ctx.lineTo(particles[j].x, particles[j].y)
-            ctx.strokeStyle = `rgba(59, 130, 246, ${0.15 * (1 - dist / 120)})`
-            ctx.lineWidth = 0.5
+            ctx.strokeStyle = `rgba(59,130,246,${lineAlpha})`
+            ctx.lineWidth = 0.6
             ctx.stroke()
           }
         }
       }
 
-      animationId = requestAnimationFrame(draw)
+      animId = requestAnimationFrame(tick)
     }
-    draw()
+
+    tick()
 
     return () => {
-      window.removeEventListener('resize', resize)
-      cancelAnimationFrame(animationId)
+      obs.disconnect()
+      cancelAnimationFrame(animId)
     }
   }, [])
 
   return (
     <canvas
       ref={canvasRef}
-      className="constellation absolute inset-0 w-full h-full"
-      style={{ opacity: 0.6 }}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        display: 'block',
+      }}
       aria-hidden
     />
   )
