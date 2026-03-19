@@ -326,7 +326,7 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
 
       // Refresh local admin flags so the UI immediately reflects the toggle.
       await loadAdminFlags()
-      showToast('Access updated', nextIsAdmin ? 'Admin access enabled.' : 'Driver access enabled.')
+      showToast('Role updated', 'Role updated successfully.')
     } catch (e: any) {
       showToast('Update failed', e?.message || 'Unable to update admin access.')
     } finally {
@@ -695,24 +695,30 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                                   const isAdmin = driverAdminFlags[emailKey] ?? false
                                   const isUpdating = togglingAdminByEmail[emailKey] ?? false
                                   return (
-                                    <div className="flex items-center justify-center gap-1.5">
-                                      <span className="text-[11px] text-gray-500 dark:text-gray-400">Admin</span>
+                                    <div className="flex items-center justify-center gap-1 rounded-lg p-0.5 bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 w-fit mx-auto">
                                       <button
                                         type="button"
-                                        role="switch"
-                                        aria-checked={isAdmin}
                                         disabled={isUpdating}
-                                        onClick={() => toggleDriverAdmin(emailKey, !isAdmin)}
-                                        className={`relative inline-flex h-5 w-9 rounded-full transition-colors flex-shrink-0 ${
-                                          isAdmin ? 'bg-emerald-500/20' : 'bg-gray-200 dark:bg-gray-700'
-                                        }`}
+                                        onClick={() => toggleDriverAdmin(emailKey, false)}
+                                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all min-w-[4rem] ${
+                                          !isAdmin
+                                            ? 'bg-blue-500 text-white shadow-sm'
+                                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                        } ${isUpdating ? 'opacity-60 pointer-events-none' : ''}`}
                                       >
-                                        <span
-                                          className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${
-                                            isAdmin ? 'translate-x-5' : 'translate-x-0.5'
-                                          }`}
-                                        />
-                                        <span className="sr-only">{isAdmin ? 'Admin on' : 'Admin off'}</span>
+                                        {isUpdating && !isAdmin ? '…' : 'Driver'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={isUpdating}
+                                        onClick={() => toggleDriverAdmin(emailKey, true)}
+                                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all min-w-[4rem] ${
+                                          isAdmin
+                                            ? 'bg-blue-500 text-white shadow-sm'
+                                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                        } ${isUpdating ? 'opacity-60 pointer-events-none' : ''}`}
+                                      >
+                                        {isUpdating && isAdmin ? '…' : 'Admin'}
                                       </button>
                                     </div>
                                   )
@@ -854,32 +860,37 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                             </div>
                           </div>
 
-                          {/* Admin toggle */}
+                          {/* Role: Driver / Admin pills */}
                           {driver.email && (
                             (() => {
                               const emailKey = driver.email!.toLowerCase()
                               const isAdmin = driverAdminFlags[emailKey] ?? false
                               const isUpdating = togglingAdminByEmail[emailKey] ?? false
                               return (
-                                <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
-                                  <span className="text-[11px] text-gray-500 dark:text-gray-400">Admin</span>
-                                  <button
-                                    type="button"
-                                    role="switch"
-                                    aria-checked={isAdmin}
-                                    disabled={!driver.email || isUpdating}
-                                    onClick={() => toggleDriverAdmin(emailKey, !isAdmin)}
-                                    className={`relative inline-flex h-5 w-9 rounded-full transition-colors flex-shrink-0 ${
-                                      isAdmin ? 'bg-emerald-500/20' : 'bg-gray-200 dark:bg-gray-700'
-                                    }`}
-                                  >
-                                    <span
-                                      className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${
-                                        isAdmin ? 'translate-x-5' : 'translate-x-0.5'
-                                      }`}
-                                    />
-                                    <span className="sr-only">{isAdmin ? 'Admin on' : 'Admin off'}</span>
-                                  </button>
+                                <div className="pt-2 border-t border-gray-200 dark:border-gray-700 min-w-0 overflow-hidden">
+                                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-1.5">Role</p>
+                                  <div className="flex rounded-lg p-0.5 bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 w-full max-w-[12rem]">
+                                    <button
+                                      type="button"
+                                      disabled={isUpdating}
+                                      onClick={() => toggleDriverAdmin(emailKey, false)}
+                                      className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                        !isAdmin ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                      } ${isUpdating ? 'opacity-60 pointer-events-none' : ''}`}
+                                    >
+                                      {isUpdating && !isAdmin ? '…' : 'Driver'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={isUpdating}
+                                      onClick={() => toggleDriverAdmin(emailKey, true)}
+                                      className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                        isAdmin ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                      } ${isUpdating ? 'opacity-60 pointer-events-none' : ''}`}
+                                    >
+                                      {isUpdating && isAdmin ? '…' : 'Admin'}
+                                    </button>
+                                  </div>
                                 </div>
                               )
                             })()
@@ -1020,32 +1031,37 @@ export default function DriversClient({ companyId }: { companyId?: string }) {
                       )}
                     </div>
 
-                    {/* Admin toggle */}
+                    {/* Role: Driver / Admin pills */}
                     {driver.email && (
                       (() => {
                         const emailKey = driver.email!.toLowerCase()
                         const isAdmin = driverAdminFlags[emailKey] ?? false
                         const isUpdating = togglingAdminByEmail[emailKey] ?? false
                         return (
-                          <div className="mt-3 flex items-center justify-between gap-2">
-                            <span className="text-[11px] text-gray-500 dark:text-gray-400">Admin</span>
-                            <button
-                              type="button"
-                              role="switch"
-                              aria-checked={isAdmin}
-                              disabled={isUpdating}
-                              onClick={() => toggleDriverAdmin(emailKey, !isAdmin)}
-                              className={`relative inline-flex h-5 w-9 rounded-full transition-colors flex-shrink-0 ${
-                                isAdmin ? 'bg-emerald-500/20' : 'bg-gray-200 dark:bg-gray-700'
-                              }`}
-                            >
-                              <span
-                                className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${
-                                  isAdmin ? 'translate-x-5' : 'translate-x-0.5'
-                                }`}
-                              />
-                              <span className="sr-only">{isAdmin ? 'Admin on' : 'Admin off'}</span>
-                            </button>
+                          <div className="mt-3 min-w-0 overflow-hidden">
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-1.5">Role</p>
+                            <div className="flex rounded-lg p-0.5 bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 w-full max-w-[12rem]">
+                              <button
+                                type="button"
+                                disabled={isUpdating}
+                                onClick={() => toggleDriverAdmin(emailKey, false)}
+                                className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                  !isAdmin ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                } ${isUpdating ? 'opacity-60 pointer-events-none' : ''}`}
+                              >
+                                {isUpdating && !isAdmin ? '…' : 'Driver'}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isUpdating}
+                                onClick={() => toggleDriverAdmin(emailKey, true)}
+                                className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                  isAdmin ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                } ${isUpdating ? 'opacity-60 pointer-events-none' : ''}`}
+                              >
+                                {isUpdating && isAdmin ? '…' : 'Admin'}
+                              </button>
+                            </div>
                           </div>
                         )
                       })()

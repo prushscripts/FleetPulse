@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import IntroAnimation from '@/components/animations/IntroAnimation'
 import HeroSection from '@/components/landing/HeroSection'
@@ -8,38 +8,17 @@ import FeaturesSection from '@/components/landing/FeaturesSection'
 import CtaSection from '@/components/landing/CtaSection'
 import Footer from '@/components/landing/Footer'
 
-const INTRO_STORAGE_KEY = 'fp_intro_shown'
-
 /**
- * Client wrapper for the landing page. Shows intro video once per session,
- * then fades in the full landing content.
+ * Client wrapper for the landing page. Intro animation plays every load (no sessionStorage gate).
  */
 export default function LandingClient() {
   const [introComplete, setIntroComplete] = useState(false)
-  const [shouldShowIntro, setShouldShowIntro] = useState(false)
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const seen = sessionStorage.getItem(INTRO_STORAGE_KEY)
-    if (!seen) {
-      setShouldShowIntro(true)
-    } else {
-      setIntroComplete(true)
-    }
-  }, [])
-
-  const handleIntroComplete = () => {
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem(INTRO_STORAGE_KEY, '1')
-    }
-    setIntroComplete(true)
-  }
+  const handleIntroComplete = () => setIntroComplete(true)
 
   return (
     <main className="bg-[#0A0F1E] min-h-screen" role="main">
-      {shouldShowIntro && (
-        <IntroAnimation onComplete={handleIntroComplete} />
-      )}
+      <IntroAnimation onComplete={handleIntroComplete} />
 
       <motion.div
         initial={{ opacity: introComplete ? 1 : 0, scale: introComplete ? 1 : 1.02 }}

@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     const first_name = parts[0] || display
     const last_name = parts.slice(1).join(' ')
 
-    const nextRole = enabled ? 'owner' : 'driver'
+    const nextRole = enabled ? 'manager' : 'driver'
 
     const { error: updateError } = await admin.auth.admin.updateUserById(targetId, {
       user_metadata: {

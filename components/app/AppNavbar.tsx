@@ -163,15 +163,25 @@ export default function AppNavbar() {
     setUnreadCount(0)
   }
 
+  function timeAgo(dateStr: string): string {
+    const d = new Date(dateStr)
+    const now = new Date()
+    const s = Math.floor((now.getTime() - d.getTime()) / 1000)
+    if (s < 60) return 'just now'
+    if (s < 3600) return `${Math.floor(s / 60)}m ago`
+    if (s < 86400) return `${Math.floor(s / 3600)}h ago`
+    if (s < 604800) return `${Math.floor(s / 86400)}d ago`
+    return d.toLocaleDateString()
+  }
+
   const handleNotifClick = (notif: NotificationRow) => {
     supabase.from('notifications').update({ read: true }).eq('id', notif.id)
     setNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)))
     setUnreadCount((prev) => (notif.read ? prev : prev - 1))
-    if (notif.type === 'inspection_failed' && notif.data?.inspection_id) {
-      router.push(`/dashboard/admin?tab=issues&inspection=${notif.data.inspection_id}`)
-    } else if (notif.type === 'issue_reported' && notif.data?.vehicle_id) {
-      router.push(`/dashboard/admin?tab=issues&vehicle=${notif.data.vehicle_id}`)
-    }
+    const params = new URLSearchParams({ tab: 'issues' })
+    if (notif.type === 'inspection_failed' && notif.data?.inspection_id) params.set('inspection', String(notif.data.inspection_id))
+    if (notif.type === 'issue_reported' && notif.data?.vehicle_id) params.set('vehicle', String(notif.data.vehicle_id))
+    router.push(`/dashboard/admin?${params.toString()}`)
     setNotifOpen(false)
   }
 
@@ -238,6 +248,7 @@ export default function AppNavbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        {(userRole === 'owner' || userRole === 'manager') && (
         <div ref={notifRef} className="relative">
           <button
             type="button"
@@ -346,8 +357,8 @@ export default function AppNavbar() {
                             )}
                           </div>
                           <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{notif.body}</p>
-                          <p className="text-[10px] text-slate-700 mt-1">
-                            {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <p className="text-[10px] text-slate-600 mt-1">
+                            {timeAgo(notif.created_at)}
                           </p>
                         </div>
                         <button
@@ -368,6 +379,7 @@ export default function AppNavbar() {
             )}
           </AnimatePresence>
         </div>
+        )}
 
         <div className="relative" ref={menuRef}>
           <button

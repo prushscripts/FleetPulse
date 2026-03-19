@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Papa from 'papaparse'
-import { Search, Upload, Plus, FileText, Edit2, Truck, CheckCircle, AlertTriangle, Wrench, ClipboardCheck, ArrowRight, UserPlus } from 'lucide-react'
+import { Search, Upload, Plus, FileText, Edit2, Truck, CheckCircle, AlertTriangle, Wrench, ClipboardCheck, ArrowRight, UserPlus, Copy, User } from 'lucide-react'
 import { normalizeTier, SubscriptionTier, TIER_CONFIG } from '@/lib/tiers'
 import { getUserDisplayName } from '@/lib/user-utils'
 import type { VehicleWithStats } from '@/lib/dashboard-types'
@@ -186,7 +186,7 @@ export default function DashboardClient(
       if (vehiclesError) throw vehiclesError
 
       // Fetch drivers (scoped by company when multi-tenant)
-      let driversQuery = supabase.from('drivers').select('id, first_name, last_name, email, location, is_ny_driver, is_dmv_driver')
+      let driversQuery = supabase.from('drivers').select('id, first_name, last_name, email, phone, location, is_ny_driver, is_dmv_driver')
       if (companyId) driversQuery = driversQuery.eq('company_id', companyId)
       const { data: driversData } = await driversQuery
 
@@ -207,9 +207,12 @@ export default function DashboardClient(
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
-      const driversMap = new Map()
-      driversData?.forEach((driver) => {
-        driversMap.set(driver.id, `${driver.first_name} ${driver.last_name}`)
+      const driversMap = new Map<string, { name: string; phone: string | null }>()
+      driversData?.forEach((d: { id: string; first_name?: string; last_name?: string; phone?: string | null }) => {
+        driversMap.set(d.id, {
+          name: `${d.first_name ?? ''} ${d.last_name ?? ''}`.trim() || 'Driver',
+          phone: d.phone ?? null,
+        })
       })
       setAllDrivers((driversData || []).map((d: any) => ({
         id: d.id,
@@ -256,7 +259,8 @@ export default function DashboardClient(
           open_issues_count: openIssues,
           expired_documents_count: expiredDocuments,
           documents_count: allDocuments,
-          driver_name: vehicle.driver_id ? driversMap.get(vehicle.driver_id) || null : null,
+          driver_name: vehicle.driver_id ? driversMap.get(vehicle.driver_id)?.name ?? null : null,
+          driver_phone: vehicle.driver_id ? driversMap.get(vehicle.driver_id)?.phone ?? null : null,
           group_name: groupGuess,
           vehicle_type: vehicleTypeGuess,
         }
@@ -573,11 +577,19 @@ export default function DashboardClient(
     setPanelOpen(true)
   }
 
+  const copyVehicleSummary = (e: React.MouseEvent, vehicle: VehicleWithStats) => {
+    e.stopPropagation()
+    const ymm = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ')
+    const line = `Truck #${vehicle.code ?? ''} | ${ymm || '—'} | Driver: ${vehicle.driver_name ?? 'Unassigned'} | Phone: ${vehicle.driver_phone ?? '—'} | Mileage: ${(vehicle.current_mileage ?? 0).toLocaleString()} | Oil Due: ${(vehicle.oil_change_due_mileage ?? 0).toLocaleString()}`
+    navigator.clipboard.writeText(line)
+    showToast('Copied', 'Vehicle summary copied to clipboard.')
+  }
+
   const unassignDriverFromVehicle = async (vehicleId: string) => {
     const res = await fetch(`/api/vehicles/${vehicleId}/unassign-driver`, { method: 'POST' })
     if (!res.ok) throw new Error('Unable to unassign driver')
     await loadVehicles()
-    if (selectedVehicle?.id === vehicleId) setSelectedVehicle((prev) => (prev?.id === vehicleId ? { ...prev!, driver_id: null, driver_name: null } : prev))
+    if (selectedVehicle?.id === vehicleId) setSelectedVehicle((prev) => (prev?.id === vehicleId ? { ...prev!, driver_id: null, driver_name: null, driver_phone: null } : prev))
   }
 
   const openVehicleDocuments = (vehicleId: string) => {
@@ -1245,27 +1257,20 @@ export default function DashboardClient(
 
         {viewMode === 'list' && (
           <div className="mx-4 md:mx-6 card-glass rounded-2xl overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-2 border-b border-white/[0.06] bg-white/[0.02]">
-              <div className="w-28 text-[10px] text-slate-600 uppercase tracking-widest">Vehicle</div>
-              <div className="w-36 text-[10px] text-slate-600 uppercase tracking-widest hidden sm:block">Location</div>
-              <div className="w-28 text-[10px] text-slate-600 uppercase tracking-widest hidden md:block">Driver</div>
-              <div className="w-28 text-[10px] text-slate-600 uppercase tracking-widest hidden lg:block text-right">Mileage</div>
-              <div className="w-20 text-[10px] text-slate-600 uppercase tracking-widest hidden xl:block">VIN</div>
-              <div className="flex-1" />
-              <div className="w-24 text-[10px] text-slate-600 uppercase tracking-widest text-right">Oil Status</div>
-              <div className="w-16" />
-            </div>
             <div className="divide-y divide-white/[0.04]">
               {filteredVehicles.map((vehicle, index) => {
                 const current = vehicle.current_mileage ?? 0
                 const due = vehicle.oil_change_due_mileage ?? 0
                 const oilOverdueMiles = due > 0 && current >= due ? current - due : 0
+                const milesUntilOil = due > 0 ? due - current : 0
                 const borderClass =
-                  oilOverdueMiles > 5000
+                  oilOverdueMiles > 0
                     ? 'border-l-red-500'
-                    : oilOverdueMiles > 0
+                    : milesUntilOil > 0 && milesUntilOil <= 2000
                       ? 'border-l-amber-500/70'
                       : 'border-l-emerald-500/40'
+                const statusLabel = (vehicle.status || 'active') === 'active' ? 'Active' : (vehicle.status === 'out_of_service' ? 'Out of service' : vehicle.status === 'in_shop' ? 'In shop' : vehicle.status ?? 'Active')
+                const ymm = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ')
                 return (
                   <motion.div
                     key={vehicle.id}
@@ -1281,71 +1286,78 @@ export default function DashboardClient(
                         openVehiclePanel(vehicle)
                       }
                     }}
-                    className={`group flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.03] transition-all duration-150 cursor-pointer border-l-2 ${borderClass} ${lastVehicleId === vehicle.id ? 'ring-1 ring-inset ring-blue-500/20' : ''}`}
+                    className={`group flex items-center gap-4 px-4 py-3.5 border-l-4 ${borderClass} border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.03] transition-all duration-150 cursor-pointer ${lastVehicleId === vehicle.id ? 'ring-1 ring-inset ring-blue-500/20' : ''}`}
                   >
-                    <div className="w-28 flex-shrink-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-bold text-sm text-white">{vehicle.code}</span>
-                        {vehicle.open_issues_count > 0 && (
-                          <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 text-[9px] font-bold flex items-center justify-center flex-shrink-0">
-                            {vehicle.open_issues_count}
-                          </span>
+                    {/* Left: truck number, ymm, status */}
+                    <div className="min-w-0 flex-shrink-0" style={{ width: 'clamp(120px, 18%, 180px)' }}>
+                      <div className="font-mono font-bold text-base text-white truncate">{vehicle.code}</div>
+                      <div className="text-[11px] text-slate-500 truncate mt-0.5">{ymm || '—'}</div>
+                      <span className={`inline-block mt-1.5 px-2 py-0.5 rounded text-[10px] font-medium ${(vehicle.status || 'active') === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'}`}>
+                        {statusLabel}
+                      </span>
+                    </div>
+                    {/* Middle: driver, phone, territory */}
+                    <div className="min-w-0 flex-1 flex items-center gap-4 flex-wrap">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <User size={12} className="text-slate-500 flex-shrink-0" />
+                        {vehicle.driver_name ? (
+                          <span className="text-sm text-slate-300 truncate">{vehicle.driver_name}</span>
+                        ) : (
+                          <span className="text-sm text-slate-600 italic">Unassigned</span>
                         )}
                       </div>
-                      <span className="text-[10px] text-slate-600 uppercase tracking-wide">{vehicle.vehicle_type ?? '—'}</span>
-                    </div>
-                    <div className="w-36 flex-shrink-0 hidden sm:block">
-                      <div className="text-xs text-slate-400">{getTerritory(vehicle)}</div>
-                      <div className="text-[10px] text-slate-600">
-                        {vehicle.year ?? ''} {vehicle.make ?? ''}
-                      </div>
-                    </div>
-                    <div className="w-28 flex-shrink-0 hidden md:block">
-                      {vehicle.driver_name ? (
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center text-[9px] font-bold text-blue-300 flex-shrink-0">
-                            {vehicle.driver_name.charAt(0)}
-                          </div>
-                          <span className="text-xs text-slate-400 truncate">{vehicle.driver_name}</span>
+                      {vehicle.driver_phone && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-slate-500 font-mono">{vehicle.driver_phone}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigator.clipboard.writeText(vehicle.driver_phone ?? '')
+                              showToast('Copied', 'Phone copied.')
+                            }}
+                            className="p-1 rounded text-slate-500 hover:text-white hover:bg-white/[0.06]"
+                            aria-label="Copy phone"
+                          >
+                            <Copy size={11} />
+                          </button>
                         </div>
-                      ) : (
-                        <span className="text-[10px] text-slate-700 italic">Unassigned</span>
                       )}
+                      <span className="px-2 py-0.5 rounded text-[10px] bg-white/[0.08] text-slate-400 uppercase tracking-wide">
+                        {getTerritory(vehicle)}
+                      </span>
                     </div>
-                    <div className="w-28 flex-shrink-0 hidden lg:block text-right">
-                      <div className="font-mono text-xs text-white">{current.toLocaleString()} mi</div>
-                      <div className="text-[10px] text-slate-600">current</div>
-                    </div>
-                    <div className="w-20 flex-shrink-0 hidden xl:block">
-                      <div className="font-mono text-[10px] text-slate-600 uppercase tracking-wide">
-                        {vehicle.vin ? '···' + vehicle.vin.slice(-6) : '—'}
+                    {/* Right: mileage, oil due, miles until */}
+                    <div className="flex items-center gap-4 flex-shrink-0">
+                      <div className="text-right">
+                        <div className="font-mono text-sm text-white">{current.toLocaleString()}</div>
+                        <div className="text-[10px] text-slate-600">mi</div>
                       </div>
-                      <div className="text-[10px] text-slate-700">VIN</div>
+                      <div className="text-right">
+                        <div className={`font-mono text-sm ${oilOverdueMiles > 0 ? 'text-red-400' : 'text-slate-300'}`}>{due.toLocaleString()}</div>
+                        <div className="text-[10px] text-slate-600">oil due</div>
+                      </div>
+                      <div className="text-right min-w-[4rem]">
+                        {oilOverdueMiles > 0 ? (
+                          <div className="text-[11px] font-mono text-red-400">+{oilOverdueMiles.toLocaleString()} overdue</div>
+                        ) : milesUntilOil <= 2000 && milesUntilOil > 0 ? (
+                          <div className="text-[11px] font-mono text-amber-400">{milesUntilOil.toLocaleString()} mi</div>
+                        ) : milesUntilOil > 0 ? (
+                          <div className="text-[11px] font-mono text-slate-500">{milesUntilOil.toLocaleString()} mi</div>
+                        ) : (
+                          <div className="text-[11px] text-slate-600">—</div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1" />
-                    <div className="flex-shrink-0">
-                      {oilOverdueMiles > 0 ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-mono font-medium">
-                          +{oilOverdueMiles.toLocaleString()} mi
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium">
-                          Oil OK
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          openVehiclePanel(vehicle)
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-medium hover:bg-blue-500/20 transition-colors"
-                      >
-                        Open
-                      </button>
-                    </div>
+                    {/* Far right: copy summary */}
+                    <button
+                      type="button"
+                      onClick={(e) => copyVehicleSummary(e, vehicle)}
+                      className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/[0.06] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Copy vehicle summary"
+                    >
+                      <Copy size={14} />
+                    </button>
                   </motion.div>
                 )
               })}

@@ -21,6 +21,7 @@ export interface VehicleWithStats extends Vehicle {
   expired_documents_count: number
   documents_count: number
   driver_name: string | null
+  driver_phone: string | null
   group_name: 'New York' | 'DMV'
   vehicle_type: string
 }

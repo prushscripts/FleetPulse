@@ -44,6 +44,8 @@ type IssueRow = {
   priority: string
   source?: string | null
   reported_date: string
+  created_at?: string
+  inspection_id?: string | null
   vehicles?: { id: string; code: string | null; location?: string | null } | null
 }
 
@@ -95,6 +97,7 @@ export default function AdminClient({
     body: '',
     target_territory: 'all',
     expires_at: '',
+    is_active: true,
   })
   const [announcementSaving, setAnnouncementSaving] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
@@ -131,10 +134,10 @@ export default function AdminClient({
       }
       const { data, error } = await supabase
         .from('issues')
-        .select('id, vehicle_id, title, description, status, priority, source, reported_date')
+        .select('id, vehicle_id, title, description, status, priority, source, reported_date, created_at, inspection_id')
         .in('vehicle_id', vehicleIds)
         .neq('status', 'resolved')
-        .order('reported_date', { ascending: false })
+        .order('created_at', { ascending: false })
       if (error) throw error
       const withVehicles = (data || []).map((row) => ({
         ...row,
@@ -210,6 +213,7 @@ export default function AdminClient({
   }, [activeTab, loadTeam])
 
   const filteredIssues = issues.filter((issue) => {
+    if (inspectionId && (issue.inspection_id ?? null) !== inspectionId) return false
     const vehicle = issue.vehicles
     const location = vehicle?.location ?? null
     if (sourceFilter !== 'all' && (issue.source ?? 'manual') !== sourceFilter) return false
@@ -231,7 +235,9 @@ export default function AdminClient({
         company_id: companyId,
         title: announcementForm.title.trim(),
         body: announcementForm.body.trim() || '',
-        is_active: true,
+        target_territory: announcementForm.target_territory === 'all' ? null : announcementForm.target_territory,
+        expires_at: announcementForm.expires_at ? announcementForm.expires_at : null,
+        is_active: announcementForm.is_active,
       }
       const { error } = await supabase.from('announcements').insert(payload)
       if (error) throw error
@@ -239,7 +245,7 @@ export default function AdminClient({
         type: 'success',
         message: `Announcement sent to ${announcementForm.target_territory === 'all' ? 'all' : announcementForm.target_territory} drivers`,
       })
-      setAnnouncementForm({ title: '', body: '', target_territory: 'all', expires_at: '' })
+      setAnnouncementForm({ title: '', body: '', target_territory: 'all', expires_at: '', is_active: true })
       setShowAnnouncementForm(false)
       loadAnnouncements()
     } catch (err: unknown) {
@@ -342,6 +348,11 @@ export default function AdminClient({
         {/* Tab: Issues */}
         {activeTab === 'issues' && (
           <div className="space-y-4">
+            {inspectionId && (
+              <div className="w-full mb-3 px-4 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-sm text-blue-300">
+                Showing issues for this inspection (filtered by inspection ID).
+              </div>
+            )}
             <div className="flex flex-wrap gap-2 items-center">
               <span className="text-xs text-slate-500">Source:</span>
               <select
@@ -351,6 +362,7 @@ export default function AdminClient({
               >
                 <option value="all">All</option>
                 <option value="pre_trip">Pre-Trip</option>
+                <option value="post_trip">Post-Trip</option>
                 <option value="manual">Manual</option>
               </select>
               <span className="text-xs text-slate-500 ml-2">Territory:</span>
@@ -386,18 +398,19 @@ export default function AdminClient({
                 {filteredIssues.map((issue) => {
                   const vehicle = issue.vehicles
                   const loc = (vehicle?.location ?? '').trim() || '—'
+                  const isFromDeepLink = Boolean(inspectionId && (issue.inspection_id ?? null) === inspectionId)
                   return (
                     <div
                       key={issue.id}
                       onClick={() => router.push(`/dashboard/vehicles/${issue.vehicle_id}`)}
-                      className={`flex items-center gap-4 p-4 rounded-xl bg-white/[0.04] border border-white/[0.06] border-l-4 cursor-pointer hover:bg-white/[0.06] transition-colors ${priorityBorder[issue.priority] || 'border-l-slate-500'}`}
+                      className={`flex items-center gap-4 p-4 rounded-xl border border-l-4 cursor-pointer hover:bg-white/[0.06] transition-colors ${priorityBorder[issue.priority] || 'border-l-slate-500'} ${isFromDeepLink ? 'bg-blue-500/10 border-blue-500/30 ring-1 ring-blue-500/20' : 'bg-white/[0.04] border-white/[0.06]'}`}
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono text-sm font-semibold text-white">{vehicle?.code ?? issue.vehicle_id}</span>
                           <span className="text-sm text-white">{issue.title}</span>
                           <span className="px-2 py-0.5 rounded text-[10px] bg-white/[0.1] text-slate-400">
-                            {(issue.source ?? 'manual') === 'pre_trip' ? 'Pre-Trip Inspection' : 'Manual Report'}
+                            {(issue.source ?? 'manual') === 'pre_trip' ? 'Pre-Trip' : (issue.source === 'post_trip' ? 'Post-Trip' : 'Manual')}
                           </span>
                           <span className="px-2 py-0.5 rounded text-[10px] bg-white/[0.1] text-slate-400">{loc}</span>
                         </div>
@@ -472,13 +485,23 @@ export default function AdminClient({
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1">Expiry (optional)</label>
+                    <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1">Expires at (optional)</label>
                     <input
                       type="date"
                       value={announcementForm.expires_at}
                       onChange={(e) => setAnnouncementForm((f) => ({ ...f, expires_at: e.target.value }))}
                       className="w-full px-4 py-2.5 bg-white/[0.06] border border-white/[0.1] rounded-xl text-white"
                     />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="announcement-active"
+                      checked={announcementForm.is_active}
+                      onChange={(e) => setAnnouncementForm((f) => ({ ...f, is_active: e.target.checked }))}
+                      className="rounded border-white/20 bg-white/[0.06] text-blue-500 focus:ring-blue-500/50"
+                    />
+                    <label htmlFor="announcement-active" className="text-sm text-slate-300">Active (visible to drivers)</label>
                   </div>
                   <button
                     type="submit"

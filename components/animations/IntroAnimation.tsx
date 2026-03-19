@@ -1,91 +1,92 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 
+const TOTAL_DURATION_MS = 2200
+const OVERLAY_EXIT_MS = 600
+const LOGO_SCALE_OUT_START_MS = 1400
+
+/**
+ * Premium CSS + Framer Motion intro. Plays every time the landing page loads.
+ * No video, no sessionStorage. ~2.2s: logo in → pulse rings → logo scale/fade → overlay slides up.
+ */
 export default function IntroAnimation({
   onComplete,
 }: {
   onComplete: () => void
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const [done, setDone] = useState(false)
-
-  const finish = () => {
-    if (done) return
-    setDone(true)
-    sessionStorage.setItem('fp_intro_shown', 'true')
-    setTimeout(onComplete, 800)
-  }
+  const [visible, setVisible] = useState(true)
 
   useEffect(() => {
-    const fallback = setTimeout(finish, 5000)
+    const t = setTimeout(() => setVisible(false), TOTAL_DURATION_MS)
+    return () => clearTimeout(t)
+  }, [])
 
-    const video = videoRef.current
-    if (video) {
-      video.addEventListener('ended', finish)
-      video.addEventListener('error', finish)
-      const maxDuration = setTimeout(finish, 4000)
-      return () => {
-        clearTimeout(fallback)
-        clearTimeout(maxDuration)
-        video.removeEventListener('ended', finish)
-        video.removeEventListener('error', finish)
-      }
+  useEffect(() => {
+    if (!visible) {
+      const t = setTimeout(onComplete, OVERLAY_EXIT_MS)
+      return () => clearTimeout(t)
     }
-    return () => clearTimeout(fallback)
-  }, [done])
+  }, [visible, onComplete])
 
   return (
-    <AnimatePresence>
-      {!done && (
-        <motion.div
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0, filter: 'blur(12px)' }}
-          transition={{ duration: 0.8 }}
-          className="fixed inset-0 z-[9999] bg-[#0A0F1E] flex items-center justify-center overflow-hidden"
-        >
-          {/* Video truly fullscreen — no container constraints */}
-          <video
-            ref={videoRef}
-            src="/Animations/officialFPAnimation.mp4"
-            autoPlay
-            muted
-            playsInline
-            className="fixed inset-0 w-full h-full object-cover"
-            onError={(e) => {
-              console.error('Intro video failed:', e)
-              finish()
-            }}
-            aria-hidden
-          />
-
+    <>
+      <AnimatePresence mode="wait">
+        {visible && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-            className="relative z-10 flex flex-col items-center gap-4"
+            key="landing-intro-overlay"
+            initial={{ opacity: 1, y: 0 }}
+            exit={{
+              opacity: 0,
+              y: '-100%',
+              transition: { duration: OVERLAY_EXIT_MS / 1000, ease: [0.32, 0.72, 0, 1] },
+            }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0A0F1E] overflow-hidden will-change-transform"
+            style={{ transformOrigin: 'center top' }}
           >
-            <Image
-              src="/branding/fleetpulse-logo.png"
-              alt="FleetPulse"
-              width={220}
-              height={50}
-              className="w-48 md:w-56 h-auto"
-              priority
-            />
-          </motion.div>
+            {/* Pulse rings (CSS in globals.css) */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="absolute w-32 h-32 rounded-full border-2 border-[#3B82F6]/60 landing-intro-pulse-ring landing-intro-pulse-ring-1" />
+              <div className="absolute w-32 h-32 rounded-full border-2 border-[#3B82F6]/50 landing-intro-pulse-ring landing-intro-pulse-ring-2" />
+              <div className="absolute w-32 h-32 rounded-full border-2 border-[#3B82F6]/40 landing-intro-pulse-ring landing-intro-pulse-ring-3" />
+            </div>
 
-          <button
-            type="button"
-            onClick={finish}
-            className="absolute top-6 right-6 z-20 text-xs text-white/40 hover:text-white/80 transition-colors px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/20"
-          >
-            Skip
-          </button>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            {/* Logo: fade in, then scale up + fade out before curtain */}
+            <motion.div
+              className="relative z-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+            >
+              <motion.div
+                initial={false}
+                animate={{
+                  scale: [1, 1.08],
+                  opacity: [1, 0],
+                }}
+                transition={{
+                  delay: LOGO_SCALE_OUT_START_MS / 1000,
+                  duration: 0.4,
+                  ease: [0.32, 0.72, 0, 1],
+                }}
+                style={{ transformOrigin: 'center' }}
+              >
+                <Image
+                  src="/branding/fleetpulse-logo.png"
+                  alt="FleetPulse"
+                  width={220}
+                  height={50}
+                  className="w-48 md:w-56 h-auto"
+                  priority
+                  unoptimized={false}
+                />
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
