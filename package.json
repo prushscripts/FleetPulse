@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "mobile": "npm run start --prefix FleetPulseApp",
     "lint": "next lint",
     "import-fleetio": "node scripts/imports/import-fleetio.js",
     "import-voyager": "node scripts/imports/import-voyager-mileage.js"

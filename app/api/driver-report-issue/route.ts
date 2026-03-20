@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createServerClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseJsClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
+import type { User } from '@supabase/supabase-js'
 
 type Body = {
   title: string
@@ -8,12 +10,34 @@ type Body = {
   priority?: string
 }
 
+/** Cookie session (web) or Authorization: Bearer <jwt> (Expo / mobile). */
+async function getAuthenticatedUser(request: Request): Promise<User | null> {
+  const supabase = await createServerClient()
+  const {
+    data: { user: cookieUser },
+  } = await supabase.auth.getUser()
+  if (cookieUser) return cookieUser
+
+  const hdr = request.headers.get('authorization') ?? request.headers.get('Authorization')
+  if (!hdr?.toLowerCase().startsWith('bearer ')) return null
+  const jwt = hdr.slice(7).trim()
+  if (!jwt) return null
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !anon) return null
+
+  const anonClient = createSupabaseJsClient(url, anon, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  })
+  const { data: { user }, error } = await anonClient.auth.getUser(jwt)
+  if (error || !user) return null
+  return user
+}
+
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
