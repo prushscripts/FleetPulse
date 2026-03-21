@@ -195,7 +195,7 @@ export default function SignupPage() {
         </div>
 
         {/* RIGHT — centered form */}
-        <div className="flex-1 flex items-center justify-center min-h-screen min-h-[100dvh] p-6 sm:p-8 w-full">
+        <div className="flex-1 flex items-center justify-center min-h-screen min-h-[100dvh] pt-16 p-6 sm:p-8 w-full overflow-y-auto">
           <div className="w-full max-w-sm">
             <AnimatePresence mode="wait">
               {!uiReady ? (

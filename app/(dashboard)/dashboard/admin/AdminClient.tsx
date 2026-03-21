@@ -353,19 +353,34 @@ export default function AdminClient({
     setAnnouncementSaving(true)
     setToast(null)
     try {
-      const payload: Record<string, unknown> = {
+      const title = announcementForm.title.trim()
+      const body = announcementForm.body.trim() || ''
+      const territory = announcementForm.target_territory
+
+      const { error: annError } = await supabase.from('announcements').insert({
         company_id: companyId,
-        title: announcementForm.title.trim(),
-        body: announcementForm.body.trim() || '',
-        target_territory: announcementForm.target_territory === 'all' ? null : announcementForm.target_territory,
-        expires_at: announcementForm.expires_at ? announcementForm.expires_at : null,
+        title,
+        body,
+        target_territory: territory,
+        expires_at: announcementForm.expires_at || null,
         is_active: announcementForm.is_active,
-      }
-      const { error } = await supabase.from('announcements').insert(payload)
-      if (error) throw error
+        created_by: user.id,
+      })
+      if (annError) throw annError
+
+      await supabase.from('notifications').insert({
+        company_id: companyId,
+        type: 'announcement',
+        title,
+        body,
+        recipient_territory: territory === 'all' ? null : territory,
+        read: false,
+        deleted: false,
+      })
+
       setToast({
         type: 'success',
-        message: `Announcement sent to ${announcementForm.target_territory === 'all' ? 'all' : announcementForm.target_territory} drivers`,
+        message: `Announcement sent to ${territory === 'all' ? 'all' : territory} drivers`,
       })
       setAnnouncementForm({ title: '', body: '', target_territory: 'all', expires_at: '', is_active: true })
       setShowAnnouncementForm(false)
