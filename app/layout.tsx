@@ -42,20 +42,22 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/fpfavicon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/branding/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/branding/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/branding/favicon.ico' },
     ],
-    apple: '/favicon.svg',
-    shortcut: '/favicon.svg',
-  },
-  other: {
-    'cache-control': 'no-cache',
+    apple: '/branding/apple-touch-icon.png',
+    shortcut: '/branding/favicon.ico',
   },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={inter.variable}>
+      <head>
+        <link rel="icon" href="/branding/favicon.ico" />
+        <link rel="shortcut icon" href="/branding/favicon.ico" />
+      </head>
       <body className={`${inter.className} overflow-x-hidden min-h-full`}>
         <ThemeProvider>
           <ErrorBoundary>
