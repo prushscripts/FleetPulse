@@ -41,7 +41,10 @@ export const metadata: Metadata = {
     images: ['/opengraph-image'],
   },
   icons: {
-    icon: '/fpfavicon.png',
+    icon: [
+      { url: '/fpfavicon.svg', type: 'image/svg+xml' },
+      { url: '/fpfavicon.png', sizes: '32x32', type: 'image/png' },
+    ],
     apple: '/fpfavicon.png',
   },
 }
