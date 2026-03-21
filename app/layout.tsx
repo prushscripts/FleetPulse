@@ -42,10 +42,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/fpfavicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
       { url: '/fpfavicon.png', sizes: '32x32', type: 'image/png' },
     ],
-    apple: '/fpfavicon.png',
+    apple: '/favicon.svg',
+    shortcut: '/favicon.svg',
+  },
+  other: {
+    'cache-control': 'no-cache',
   },
 }
 

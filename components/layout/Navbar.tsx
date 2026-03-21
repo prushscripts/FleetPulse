@@ -106,7 +106,22 @@ export default function Navbar() {
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      setIsAdmin(user?.user_metadata?.is_admin === true)
+      // Show Admin tab if is_admin flag set, or if profiles.role is owner/manager
+      // (mirrors the server-side access guard on /dashboard/admin)
+      const isAdminFromMeta = user?.user_metadata?.is_admin === true
+      const roleFromMeta = user?.user_metadata?.role as string | undefined
+      const isAdminFromRoleMeta = roleFromMeta === 'owner' || roleFromMeta === 'manager'
+      let isAdminFromProfile = false
+      if (user) {
+        const { data: profileRow } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .maybeSingle()
+        const profileRole = (profileRow as { role?: string } | null)?.role
+        isAdminFromProfile = profileRole === 'owner' || profileRole === 'manager'
+      }
+      setIsAdmin(isAdminFromMeta || isAdminFromRoleMeta || isAdminFromProfile)
       setUserEmail(user?.email ?? null)
       const list = user?.user_metadata?.companies as Company[] | undefined
       const cid = user?.user_metadata?.company_id as string | undefined

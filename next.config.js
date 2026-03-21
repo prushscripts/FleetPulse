@@ -14,6 +14,13 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: '/favicon.svg',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+          { key: 'Content-Type', value: 'image/svg+xml' },
+        ],
+      },
+      {
         source: '/animations/:path*',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
